@@ -139,118 +139,130 @@
         <script>
             // Your array of numbers
             var numbers = [
-[18,38,46,76,77],
-[11,13,50,51,77],
-[28,30,56,60,65],
-[14,32,54,57,61],
-[01,23,27,70,80],
-[04,10,22,43,75],
-[09,40,42,48,77],
-[30,36,55,68,70],
-[07,19,24,29,39],
-[16,17,44,59,68],
-[09,18,44,70,75],
-[06,22,27,32,34],
-[16,19,21,47,57],
-[40,44,48,54,77],
-[02,10,19,43,71],
-[05,09,12,39,64],
-[32,36,43,65,69],
-[04,49,50,63,71],
-[17,22,34,49,55],
-[10,13,26,40,67],
-[11,31,58,62,70],
-[20,42,47,53,59],
-[16,19,21,27,80],
-[05,48,67,72,79],
-[07,34,46,50,53],
-[14,62,70,77,79],
-[31,48,49,58,73],
-[15,48,62,68,79],
-[28,49,59,62,73],
-[08,54,64,73,79],
-[15,16,21,22,44],
-[11,31,37,52,53],
-[60,65,68,73,76],
-[25,51,62,75,80],
-[11,14,22,38,48],
-[10,11,17,23,31],
-[23,28,32,46,63],
-[02,07,10,60,63],
-[04,33,50,71,79],
-[07,08,30,60,79],
-[03,07,48,77,78],
-[17,40,57,58,65],
-[05,06,36,63,71],
-[02,20,42,45,64],
-[03,08,12,38,67],
-[05,13,27,29,43],
-[45,60,65,68,80],
-[14,37,48,54,75],
-[29,49,50,51,64],
-[37,56,68,74,80],
-[19,26,61,65,72],
-[02,23,24,42,58],
-[12,19,46,54,66],
-[25,44,66,69,70],
-[10,28,71,72,76],
-[02,45,56,58,75],
-[22,26,59,60,72],
-[03,59,72,74,75],
-[11,27,58,59,79],
-[11,26,31,53,80],
-[05,14,28,36,70],
-[02,56,62,73,77],
-[10,13,15,19,39],
-[22,44,51,57,80],
-[21,23,37,58,79],
-[08,29,67,71,77],
-[21,26,42,44,79],
-[24,32,46,63,76],
-[24,32,42,47,66],
-[09,19,30,50,69],
-[06,34,46,62,68],
-[23,37,51,64,71],
-[24,37,39,47,61],
-[10,14,45,64,69],
-[05,07,40,54,58],
-[35,38,50,56,63],
-[04,10,26,36,78],
-[33,63,65,68,73],
-[19,22,34,66,68],
-[20,45,59,66,72]
+                [18,38,46,76,77],
+                [11,13,50,51,77],
+                [28,30,56,60,65],
+                [14,32,54,57,61],
+                [01,23,27,70,80],
+                [04,10,22,43,75],
+                [09,40,42,48,77],
+                [30,36,55,68,70],
+                [07,19,24,29,39],
+                [16,17,44,59,68],
+                [09,18,44,70,75],
+                [06,22,27,32,34],
+                [16,19,21,47,57],
+                [40,44,48,54,77],
+                [02,10,19,43,71],
+                [05,09,12,39,64],
+                [32,36,43,65,69],
+                [04,49,50,63,71],
+                [17,22,34,49,55],
+                [10,13,26,40,67],
+                [11,31,58,62,70],
+                [20,42,47,53,59],
+                [16,19,21,27,80],
+                [05,48,67,72,79],
+                [07,34,46,50,53],
+                [14,62,70,77,79],
+                [31,48,49,58,73],
+                [15,48,62,68,79],
+                [28,49,59,62,73],
+                [08,54,64,73,79],
+                [15,16,21,22,44],
+                [11,31,37,52,53],
+                [60,65,68,73,76],
+                [25,51,62,75,80],
+                [11,14,22,38,48],
+                [10,11,17,23,31],
+                [23,28,32,46,63],
+                [02,07,10,60,63],
+                [04,33,50,71,79],
+                [07,08,30,60,79],
+                [03,07,48,77,78],
+                [17,40,57,58,65],
+                [05,06,36,63,71],
+                [02,20,42,45,64],
+                [03,08,12,38,67],
+                [05,13,27,29,43],
+                [45,60,65,68,80],
+                [14,37,48,54,75],
+                [29,49,50,51,64],
+                [37,56,68,74,80],
+                [19,26,61,65,72],
+                [02,23,24,42,58],
+                [12,19,46,54,66],
+                [25,44,66,69,70],
+                [10,28,71,72,76],
+                [02,45,56,58,75],
+                [22,26,59,60,72],
+                [03,59,72,74,75],
+                [11,27,58,59,79],
+                [11,26,31,53,80],
+                [05,14,28,36,70],
+                [02,56,62,73,77],
+                [10,13,15,19,39],
+                [22,44,51,57,80],
+                [21,23,37,58,79],
+                [08,29,67,71,77],
+                [21,26,42,44,79],
+                [24,32,46,63,76],
+                [24,32,42,47,66],
+                [09,19,30,50,69],
+                [06,34,46,62,68],
+                [23,37,51,64,71],
+                [24,37,39,47,61],
+                [10,14,45,64,69],
+                [05,07,40,54,58],
+                [35,38,50,56,63],
+                [04,10,26,36,78],
+                [33,63,65,68,73],
+                [19,22,34,66,68],
+                [20,45,59,66,72]
 
 
             ];
-            // Function to create a table from an array of numbers
-            function createTable(numbersArray) {
-                var table = $('<table class="table table-bordered center-table"><tbody><tr></tr></tbody></table>');
+            $(document).ready(function () {
+                // === REVISED CODE TO CREATE A SINGLE TABLE ===
 
-                numbersArray.forEach(function(number) {
-                table.find('tr').append('<td style="width: 20%">' + number + '</td>');
+                var tablesContainer = $('#tables-container');
+                
+                // Create the table structure once
+                var mainTable = $('<table class="table table-bordered center-table"><tbody></tbody></table>');
+                var tableBody = mainTable.find('tbody');
+
+                // Iterate over each array of numbers (each game)
+                numbers.forEach(function(numbersArray) {
+                    // Create a new row for the game
+                    var row = $('<tr></tr>');
+                    
+                    // Iterate over each number in the game
+                    numbersArray.forEach(function(number) {
+                        // Create a cell for the number and add it to the row
+                        row.append('<td>' + number + '</td>');
+                    });
+
+                    // Add the completed row to the table body
+                    tableBody.append(row);
                 });
 
-                return table;
-            }
+                // Add the complete table to the container in the HTML
+                tablesContainer.append(mainTable);
 
-            // Display tables in the container
-            var tablesContainer = $('#tables-container');
+                // === END OF REVISED CODE ===
 
-            numbers.forEach(function(numbersArray) {
-                var table = createTable(numbersArray);
-                tablesContainer.append(table);
-            });
 
-            $(document).ready(function () {
-              $('#numberTable td').click(function () {
-                var numberSelected = $(this).text();
-                console.log($(this).text());
-                $(this).toggleClass('highlight');
-                $("#tables-container td").filter(function() {
-                    return $(this).text() === numberSelected;
-                }).toggleClass("highlight");
-                //$("#tables-container td:contains('"+$(this).text()+"')").toggleClass("highlight");
-              });
+                // Click event handler for the number selection table
+                $('#numberTable td').click(function () {
+                    var numberSelected = $(this).text();
+                    // Toggle the highlight class on the clicked number
+                    $(this).toggleClass('highlight');
+
+                    // Find all matching numbers in the games table and toggle their highlight
+                    $("#tables-container td").filter(function() {
+                        return $(this).text() === numberSelected;
+                    }).toggleClass("highlight");
+                });
             });
         </script>
         
