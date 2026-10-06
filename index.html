@@ -151,7 +151,7 @@ homeView();
 scene.add(new THREE.HemisphereLight(0xffffff,0x9a958c,0.75));
 const sun=new THREE.DirectionalLight(0xffffff,0.75);
 sun.position.set(9,16,12);sun.castShadow=true;
-sun.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);
+sun.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.02;
 Object.assign(sun.shadow.camera,{left:-10,right:10,top:10,bottom:-10,near:1,far:50});
 sun.target.position.copy(CENTER);scene.add(sun,sun.target);
 
@@ -587,9 +587,15 @@ function joints(pts,w,y,arr){ // discos nas emendas para as curvas não abrirem
   for(const [x,z] of pts){const n=8,r=w/2;for(let k=0;k<n;k++){const a0=k/n*Math.PI*2,a1=(k+1)/n*Math.PI*2;
     arr.push(x,y,z, x+Math.cos(a0)*r,y,z+Math.sin(a0)*r, x+Math.cos(a1)*r,y,z+Math.sin(a1)*r);}}
 }
-function meshFrom(arr,mat){if(!arr.length)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
+function meshFrom(arr,mat){if(!arr.length)return;
+  // todos os triângulos virados para cima: senão a face de trás fica escura e briga com a da frente ao mover a câmera
+  for(let i=0;i<arr.length;i+=9){
+    const ax=arr[i],az=arr[i+2],bx=arr[i+3],bz=arr[i+5],cx=arr[i+6],cz=arr[i+8];
+    if((bz-az)*(cx-ax)-(bx-ax)*(cz-az)<0){for(let k=0;k<3;k++){const t=arr[i+3+k];arr[i+3+k]=arr[i+6+k];arr[i+6+k]=t;}}
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
   const n=new Float32Array(arr.length);for(let i=1;i<n.length;i+=3)n[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(n,3));
-  mat.side=THREE.DoubleSide;const m=new THREE.Mesh(g,mat);m.receiveShadow=true;osmG.add(m);return m;}
+  const m=new THREE.Mesh(g,mat);m.receiveShadow=true;osmG.add(m);return m;}
 function buildOSM(data){
   const roads={car:[],foot:[]}, side=[], names={};
   const bGeo=[[],[],[]], land=[], trees=[];
