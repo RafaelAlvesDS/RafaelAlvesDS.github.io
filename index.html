@@ -45,6 +45,7 @@ button{font:500 12.5px var(--f-body);color:var(--ink);background:transparent;bor
 button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fail{position:absolute;left:16px;right:16px;top:45%;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;text-align:center;font-size:14px}
 .hint{position:absolute;right:16px;top:16px;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 9px}
 @media (max-width:640px){.hint{display:none}.card dl{display:none}.card h1{font-size:19px}}
 </style>
@@ -85,10 +86,17 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
+function showFail(msg){const d=document.createElement('div');d.className='fail';d.textContent=msg;document.getElementById('app').appendChild(d);}
+window.addEventListener('error',e=>{if(!document.querySelector('.fail'))showFail('Erro ao carregar o modelo: '+(e.message||'desconhecido'));});
 (function(){
+if(!window.THREE||!THREE.OrbitControls){showFail('Não foi possível baixar a biblioteca 3D. Verifique a conexão e recarregue.');return;}
 const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const MOBILE=Math.min(screen.width,screen.height)<700;
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas,antialias:!MOBILE,powerPreference:'default'});}
+catch(e){showFail('Seu navegador não conseguiu iniciar o 3D (WebGL). Tente abrir no Chrome ou Safari atualizados.');return;}
+renderer.setPixelRatio(Math.min(devicePixelRatio,MOBILE?1.5:2));
+canvas.addEventListener('webglcontextlost',ev=>{ev.preventDefault();showFail('O 3D foi interrompido pelo celular. Recarregue a página.');});
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
@@ -97,13 +105,13 @@ const controls=new THREE.OrbitControls(camera,canvas);
 controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.495;controls.minDistance=4;controls.maxDistance=40;
 
 const CENTER=new THREE.Vector3(2.8,1.6,3.25);
-function homeView(){camera.position.set(11.5,10.5,14);controls.target.copy(CENTER);controls.update();}
+function homeView(){const k=innerWidth<640?1.45:1;camera.position.set(2.8+8.7*k,1.6+8.9*k,3.25+10.75*k);controls.target.copy(CENTER);controls.update();}
 homeView();
 
 scene.add(new THREE.HemisphereLight(0xffffff,0x9a958c,0.75));
 const sun=new THREE.DirectionalLight(0xffffff,0.75);
 sun.position.set(9,16,12);sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);
+sun.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);
 Object.assign(sun.shadow.camera,{left:-10,right:10,top:10,bottom:-10,near:1,far:50});
 sun.target.position.copy(CENTER);scene.add(sun,sun.target);
 
@@ -346,7 +354,8 @@ function sceneColor(){
   scene.background=new THREE.Color(v);
 }
 sceneColor();
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change',sceneColor);
+(function(){const mq=matchMedia('(prefers-color-scheme: dark)');
+  if(mq.addEventListener) mq.addEventListener('change',sceneColor); else if(mq.addListener) mq.addListener(sceneColor);})();
 new MutationObserver(sceneColor).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 // ---------- loop
