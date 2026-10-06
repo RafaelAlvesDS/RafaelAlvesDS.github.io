@@ -512,7 +512,7 @@ const lawn=new THREE.Mesh(new THREE.PlaneGeometry(2400,2400),CM.grass);
 lawn.rotation.x=-Math.PI/2;lawn.position.set(CX,0,CZ);lawn.receiveShadow=true;ctx.add(lawn);
 const LOT=layer(CM.asphalt,6),GR2=layer(CM.grass,7);
 flatPoly(SITE,0.10,LOT);
-SITE.forEach((p,i)=>segWall(p,SITE[(i+1)%SITE.length],2.2,0.2,CM.conc));
+SITE.forEach((p,i)=>{if(i!==4) segWall(p,SITE[(i+1)%SITE.length],2.2,0.2,CM.conc);});   // lado 4 = entrada da portaria (aberto)
 // canteiros e jardins
 [ [[150,40],[152,470],[88,470]],                                   // horta e pet place (19, 20)
   [[1045,462],[1129,462],[1081,720],[1045,720]],                   // jardim lateral: espaço zen, praça, cross-trainer (07–10)
@@ -539,7 +539,15 @@ flatPoly(rectPx(800,395,850,450),0.13,layer(FIELD,7));                      // 1
 {const a=pw(1070,735),b=pw(1092,795);cbox(a[0],b[0],2.4,2.6,a[1],b[1],CM.conc);}   // 06 bicicletário (cobertura)
 {const a=pw(1062,790),b=pw(1090,812);cbox(a[0],b[0],0,2.2,a[1],b[1],CM.conc);}     // 05 gás
 {const a=pw(1035,825),b=pw(1060,860);cbox(a[0],b[0],0,3.2,a[1],b[1],CM.conc);}     // 01 guarita
-flatPoly(rectPx(1040,828,1260,885),0.09,layer(CM.asphalt,5));                               // acesso de veículos
+// portaria: corredor de acesso entre a guarita e a Av. Djalma Castro Alves (veículos e pedestres)
+const ACCESS=[pw(1040,828),pw(1189,828),pw(1189,885),pw(1040,885)].map(p=>p.slice());
+flatPoly(ACCESS,0.09,layer(CM.asphalt,5));
+segWall(pw(1060,828),pw(1189,828),2.2,0.2,CM.conc);segWall(pw(1040,885),pw(1189,885),2.2,0.2,CM.conc);
+{const a=pw(1060,850),b=pw(1186,856);cbox(a[0],b[0],0.09,0.25,a[1],b[1],CM.conc);}   // calçada central do corredor
+// "frente" do condomínio: faixa entre o muro e a avenida, onde só há galpões comerciais (lojas)
+const AV=[[-17.7,103],[11,98],[75,87],[100,81.6]];   // borda oeste da avenida (z, x) a partir do mapa
+const avEdge=z=>{for(let i=0;i<AV.length-1;i++){const [z0,x0]=AV[i],[z1,x1]=AV[i+1];if(z<=z1||i===AV.length-2){const t=(z-z0)/(z1-z0);return x0+(x1-x0)*t;}}};
+const FRONT=[[80.2,-17.7],[103,-17.7],[98,11],[87,75],[81.6,100],[58,100],[61.6,72],[65.1,62.3]];
 // vagas: colunas de vagas (5 m de fundo, 2,5 m de largura) e a fileira ao longo do muro sul
 (function(){
   const cols=[[160,120,440],[205,120,440],[250,120,760],[295,120,800],[70,520,800],[105,520,800],
@@ -604,10 +612,10 @@ const TER={span:2400,seg:120};                 // malha de 2,4 km com nós a cad
 TER.x0=ANCHOR[0]-TER.span/2; TER.z0=ANCHOR[1]-TER.span/2;
 let HT=(x,z)=>0;                                // altura relativa ao platô do condomínio (0 se o relevo não carregar)
 function distToSite(x,z){
-  if(inPoly([x,z],SITE)) return 0;
-  let d=1e9;for(let i=0;i<SITE.length;i++){const [ax,az]=SITE[i],[bx,bz]=SITE[(i+1)%SITE.length];
+  if(inPoly([x,z],SITE)||inPoly([x,z],ACCESS)) return 0;
+  let d=1e9;for(const P of [SITE,ACCESS,FRONT]) for(let i=0;i<P.length;i++){const [ax,az]=P[i],[bx,bz]=P[(i+1)%P.length];
     const vx=bx-ax,vz=bz-az,t=Math.max(0,Math.min(1,((x-ax)*vx+(z-az)*vz)/(vx*vx+vz*vz)));
-    d=Math.min(d,Math.hypot(x-ax-vx*t,z-az-vz*t));}
+    d=Math.min(d,Math.hypot(x-ax-vx*t,z-az-vz*t)+(P===FRONT?12:0));}
   return d;
 }
 function finishTerrain(grid){
@@ -714,7 +722,8 @@ function buildWorld(data,terr){
   roads.forEach(({pts,t})=>{if(['primary','secondary','tertiary','trunk'].includes(t.highway)){g.setLineDash([3*k,6*k]);stroke(pts,0.15,'#e9e4d6');g.setLineDash([]);}});
   roads.forEach(({pts,t})=>{if(isFoot(t)) stroke(pts,RW[t.highway],'#b8b2a6');});
   // terreno do condomínio (fica por baixo do modelo 3D)
-  g.fillStyle='#8e959b';g.beginPath();SITE.forEach((p,i)=>{const [u,v]=P(p);i?g.lineTo(u,v):g.moveTo(u,v);});g.closePath();g.fill();
+  g.fillStyle='#8e959b';for(const Q of [SITE,ACCESS]){g.beginPath();Q.forEach((p,i)=>{const [u,v]=P(p);i?g.lineTo(u,v):g.moveTo(u,v);});g.closePath();g.fill();}
+  g.fillStyle='#bdb7aa';g.beginPath();FRONT.forEach((p,i)=>{const [u,v]=P(p);i?g.lineTo(u,v):g.moveTo(u,v);});g.closePath();g.fill();  // pátio dos galpões
   // malha do relevo com o mapa como textura
   const tex=new THREE.CanvasTexture(cv);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const pg=new THREE.PlaneGeometry(TER.span,TER.span,TER.seg,TER.seg);pg.rotateX(-Math.PI/2);
@@ -731,7 +740,7 @@ function buildWorld(data,terr){
     if(geo){const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;osmG.add(m);}
     else L.forEach(gg=>{const m=new THREE.Mesh(gg,mat);m.castShadow=true;osmG.add(m);});});
   // casas e prédios do bairro + iluminação noturna
-  const houses=populate(roads,bbs,greens);drawHouses(houses);streetLamps(roads);buildCityLights();
+  const houses=populate(roads,bbs,greens);drawHouses(houses);drawSheds();streetLamps(roads);buildCityLights();
   // árvores
   if(trees.length){
     const ti=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.18,0.25,3,6),CM.trunk,trees.length);
@@ -815,7 +824,7 @@ function populate(roads,bbs,greens){
           const cx=a[0]+ux*s+nx*side*off,cz=a[1]+uz*s+nz*side*off;
           if(Math.abs(cx-ANCHOR[0])>LIM||Math.abs(cz-ANCHOR[1])>LIM) continue;
           const r=Math.max(wid,dep)/2;
-          if(inPoly([cx,cz],SITE_PAD)||!free(cx,cz,r-1)||!clearOfRoads(cx,cz,r*0.8)||inGreen(cx,cz)) continue;
+          if(inPoly([cx,cz],SITE_PAD)||inPoly([cx,cz],FRONT)||inPoly([cx,cz],ACCESS)||!free(cx,cz,r-1)||!clearOfRoads(cx,cz,r*0.8)||inGreen(cx,cz)) continue;
           let h=3.2+rnd()*3.4,kind=0;                                   // casa térrea ou sobrado
           const p=rnd();
           if(main&&p<0.16){h=6+rnd()*6;kind=1;}                        // comércio de 2 a 4 pavimentos
@@ -867,6 +876,24 @@ function streetLamps(roads){
         NIGHT.lamps.push(x,HT(x,z)+7.5,z);const led=['primary','secondary','trunk'].includes(t.highway);NIGHT.lampCols.push(1,led?0.95:0.72,led?0.85:0.38);}
       acc=(acc+L)%30;
     }
+  });
+}
+
+// galpões comerciais na frente do condomínio, de frente para a avenida
+function drawSheds(){
+  const SH=[{z:-6,len:20,dep:15},{z:19,len:22,dep:15},{z:44,len:20,dep:13},{z:88,len:14,dep:11}];
+  const wall=new THREE.MeshStandardMaterial({color:0xd8d4cb,roughness:.9}),roof=new THREE.MeshStandardMaterial({color:0x9aa1a6,roughness:.5,metalness:.4});
+  const sign=[0xc0533d,0x2f6f9f,0xd9a23a,0x3d8a5a];
+  SH.forEach(({z,len,dep},i)=>{
+    const xe=avEdge(z),ang=Math.atan2(avEdge(z+1)-xe,1);           // alinhado com a avenida
+    const cx=xe-3.5-dep/2,cy=HT(cx,z),h=6.5;
+    const grp=new THREE.Group();grp.position.set(cx,cy,z);grp.rotation.y=ang;osmG.add(grp);
+    const add=(w,hh,d,x,y,zz,m)=>{const me=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),m);me.position.set(x,y,zz);me.castShadow=me.receiveShadow=true;grp.add(me);return me;};
+    add(dep,h+0.5,len,0,(h-0.5)/2,0,wall);
+    add(dep+0.6,0.35,len+0.6,0,h+0.2,0,roof);
+    add(0.3,1.1,len*0.9,dep/2+0.15,h-0.9,0,new THREE.MeshStandardMaterial({color:sign[i%sign.length],roughness:.6})); // fachada/letreiro
+    for(let k=0;k<Math.floor(len/5);k++) add(0.12,2.8,3.6,dep/2+0.05,1.4,-len/2+2.5+k*5,new THREE.MeshStandardMaterial({color:0x4f6573,roughness:.2,metalness:.3})); // portas de enrolar / vitrines
+    NIGHT.pts.push(cx+dep/2+1,cy+4,z);NIGHT.cols.push(1,0.95,0.85);
   });
 }
 
