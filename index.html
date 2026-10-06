@@ -1487,9 +1487,30 @@ function tvAnimate(dt){
    PED.t+=Math.max(-s,Math.min(s,PED.goal-PED.t));pedGate.rotation.y=PED.closedA+(PED.openA-PED.closedA)*PED.t;}
   {const near=tour.on&&tour.zone==='ground'&&Math.hypot(tour.x-XE,tour.z-27.3)<2.4;const g=near?1:0;if(g!==ENT.goal){ENT.goal=g;if(tour.on)SFX.whoosh();}
    const s=dt*1.6;ENT.t+=Math.max(-s,Math.min(s,ENT.goal-ENT.t));entL.position.z=26.95-ENT.t*0.68;entR.position.z=27.65+ENT.t*0.68;}
-  liftUpdate(dt);
+  liftUpdate(dt);measFrame();
   if(toastT>0){toastT-=dt;if(toastT<=0){toastVR.visible=false;$('walktoast').hidden=true;}}
 }
+
+// ---------- pisos com textura em tamanho real (porcelanato 60×60, tábuas de 20 cm, pastilhas 30×30, deck)
+function canvasTex(px,meters,draw){const c=document.createElement('canvas');c.width=c.height=px;draw(c.getContext('2d'),px);
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1/meters,1/meters);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t;}
+const rndT=(a)=>{let s=a;return ()=>(s=(s*16807)%2147483647)/2147483647;};
+function tilesTex(n,base,grout,var_,seed){return (g,px)=>{const r=rndT(seed),w=px/n;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=Math.round((r()-0.5)*var_);
+  g.fillStyle=`rgb(${base[0]+v},${base[1]+v},${base[2]+v})`;g.fillRect(i*w,j*w,w,w);
+  for(let k=0;k<40;k++){g.fillStyle=`rgba(255,255,255,${r()*0.06})`;g.fillRect(i*w+r()*w,j*w+r()*w,2+r()*6,1+r()*3);}}
+  g.strokeStyle=grout;g.lineWidth=Math.max(1,px/256*1.6);for(let i=0;i<=n;i++){g.beginPath();g.moveTo(i*w,0);g.lineTo(i*w,px);g.stroke();g.beginPath();g.moveTo(0,i*w);g.lineTo(px,i*w);g.stroke();}};}
+function planksTex(n,base,var_,seed){return (g,px)=>{const r=rndT(seed),h=px/n;for(let i=0;i<n;i++){let x=-r()*px*0.6;while(x<px){const L=px*(0.45+r()*0.5),v=Math.round((r()-0.5)*var_);
+  g.fillStyle=`rgb(${base[0]+v},${base[1]+v*0.8},${base[2]+v*0.6})`;g.fillRect(x,i*h,L,h);
+  for(let k=0;k<6;k++){g.strokeStyle=`rgba(60,35,15,${0.05+r()*0.08})`;g.lineWidth=1;g.beginPath();const y=i*h+r()*h;g.moveTo(x,y);g.bezierCurveTo(x+L*0.3,y+(r()-0.5)*6,x+L*0.6,y+(r()-0.5)*6,x+L,y);g.stroke();}
+  g.fillStyle='rgba(40,25,10,0.35)';g.fillRect(x,i*h,2,h);x+=L;}g.fillStyle='rgba(40,25,10,0.3)';g.fillRect(0,i*h,px,2);}};}
+const FLOORTEX={
+  porc:canvasTex(512,1.2,tilesTex(2,[214,207,196],'#b9b0a2',10,3)),
+  wood:canvasTex(512,1.2,planksTex(6,[170,128,88],34,7)),
+  bath:canvasTex(512,0.6,tilesTex(2,[204,214,216],'#9fb0b4',8,5)),
+  deck:canvasTex(512,0.84,planksTex(6,[150,112,82],30,9))};
+[[M.stone,'porc'],[M.wood,'wood'],[M.tile,'bath'],[M.deck,'deck']].forEach(([m,k])=>{m.map=FLOORTEX[k];m.color.setHex(0xffffff);m.needsUpdate=true;});
+tourG.traverse(o=>{if(o.isMesh&&o.material===TM.tile){const g=o.geometry.parameters,t=FLOORTEX.porc.clone();t.needsUpdate=true;t.repeat.set(g.width/1.2,g.depth/1.2);
+  o.material=TM.tile.clone();o.material.map=t;o.material.color.setHex(0xffffff);}});
 
 // ---------- colisão no térreo (rua, portaria, estacionamento e hall)
 const GRID=new Map(),GC=8,DYN=[];
@@ -1560,7 +1581,7 @@ const inLobby=(x,z)=>x>0.5&&x<XE&&z>C0&&z<C1;
 function groundY(x,z){if(inLobby(x,z))return 0.12;if(inPoly([x,z],SITE)||inPoly([x,z],ACCESS))return 0.1;return Math.max(HT(x,z),-60);}
 
 // ---------- estado do passeio e deslocamento por zona
-const tour={on:false,xr:false,zone:'ground',L:0,x:88.8,z:63.5,ys:0,apt:{x:4.3,z:5.0,y:0,floor:0,stair:false,phi:0},seen:{},where:''};
+const tour={on:false,xr:false,zone:'ground',L:0,x:88.8,z:63.5,ys:0,apt:{x:4.3,z:5.0,y:0,floor:0,stair:false,phi:0},seen:{},where:'',adj:0,wristOff:false,run:false};
 const HALLR=[[3.70+PR,9.55-PR,C0+0.15+PR,C1-0.15-PR],[COR[0]+PR,COR[1]-PR,C1-0.5,BL-UD-PR],[COR[0]+PR,COR[1]-PR,UD+PR,C0+0.5]];
 const inR=(x,z,L)=>L.some(r=>x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3]);
 const DOOR_IN=[25.62+0.16,26.52-0.16];
@@ -1615,26 +1636,52 @@ function zoneHints(){
   if(w==='16º andar') hintOnce('h16','16º andar. O apartamento 12 fica no fim do corredor da direita.',6);
   if(w==='17º andar') hintOnce('h17','17º andar, nível da cobertura. O apartamento 12 fica no fim do corredor da direita.',6);
   if(tour.zone==='hall'&&tour.z>46&&FRONT_DOORS[tour.L-1].t<0.5) hintOnce('door'+tour.L,'Toque na porta para abrir.',4);
-  if(tour.zone==='apt') hintOnce('apt',tour.xr?'Bem-vindos à casa nova! Aperte o gatilho apontando para o chão ou a parede para medir distâncias.':'Bem-vindos à casa nova! Aperte M duas vezes (início e fim) para medir distâncias.',8);
+  if(tour.zone==='apt') hintOnce('apt',tour.xr?'Bem-vindos à casa nova! Para medir: aponte para um ponto, segure o gatilho, arraste até o outro ponto e solte.':'Bem-vindos à casa nova! Aperte M duas vezes (início e fim) para medir distâncias.',8);
   if(w==='Terraço descoberto') hintOnce('ter','Terraço descoberto: a torre vizinha fica a uns 32 m.',5);
   if(w!==tour.where){tour.where=w;const el=$('walkwhere');if(el.textContent!==w)el.textContent=w;}
 }
 
-// ---------- medição (fita métrica)
-const MEAS={a:null,line:null,lbl:null};
-const measMat=new THREE.LineBasicMaterial({color:0xff6a3d,depthTest:false});
+// ---------- medição (fita métrica): mira só em superfícies, rótulo sempre virado para quem olha
+const RAY=new THREE.Raycaster();RAY.params.Line={threshold:0.002};RAY.params.Points={threshold:0.005};
+const MEAS={a:null,b:null,line:null,lbl:null,dots:[],done:true};
+const measMat=new THREE.LineBasicMaterial({color:0xff6a3d,depthTest:false,transparent:true});
+const dotMat=new THREE.MeshBasicMaterial({color:0xff6a3d,depthTest:false,transparent:true});
+const dotGeo=new THREE.SphereGeometry(1,14,10);
+const reticle=new THREE.Mesh(dotGeo,new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false,transparent:true,opacity:.9}));
+reticle.renderOrder=1001;reticle.visible=false;scene.add(reticle);
 function measTargets(){return [lower,upper,stairG,tourG];}
-const RAY=new THREE.Raycaster();
-function measPoint(p){
-  if(!MEAS.a||MEAS.done){clearMeas();MEAS.a=p.clone();MEAS.done=false;
-    const g=new THREE.BufferGeometry().setFromPoints([p,p.clone()]);MEAS.line=new THREE.Line(g,measMat);MEAS.line.renderOrder=998;scene.add(MEAS.line);
-    MEAS.lbl=label('',0.32,0.11,{px:256,bg:'rgba(255,106,61,0.95)',fg:'#fff',round:true,transparent:true,depthTest:false,fs:56});MEAS.lbl.renderOrder=999;scene.add(MEAS.lbl);
-    measMove(p);return;}
-  measMove(p);MEAS.done=true;SFX.beep();
+function measHit(){
+  const hs=RAY.intersectObjects(measTargets(),true);
+  for(const h of hs){const o=h.object;if(!o.isMesh||o.material.visible===false||o.material.transparent&&o.material.opacity<0.5)continue;
+    let p=o,ok=true;while(p){if(!p.visible){ok=false;break;}p=p.parent;}if(ok)return h;}
+  return null;}
+function makeSprite(){const c=document.createElement('canvas');c.width=320;c.height=112;const t=new THREE.CanvasTexture(c);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));s.userData={c,t};s.renderOrder=1002;return s;}
+function measStart(p){
+  clearMeas();MEAS.a=p.clone();MEAS.b=p.clone();MEAS.done=false;
+  MEAS.line=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10,1,true),dotMat);MEAS.line.renderOrder=1000;MEAS.line.frustumCulled=false;scene.add(MEAS.line);
+  MEAS.lbl=makeSprite();scene.add(MEAS.lbl);
+  MEAS.dots=[0,1].map(()=>{const d=new THREE.Mesh(dotGeo,dotMat);d.renderOrder=1001;scene.add(d);return d;});
+  SFX.click();measMove(p);}
+function measMove(p){
+  if(!MEAS.a||MEAS.done)return;MEAS.b.copy(p);
+  drawText(MEAS.lbl.userData.c,MEAS.a.distanceTo(p).toFixed(2).replace('.',',')+' m',{bg:'rgba(255,106,61,0.96)',fg:'#fff',round:true,fs:62,weight:'700'});
+  MEAS.lbl.userData.t.needsUpdate=true;}
+function measEnd(p){if(!MEAS.a||MEAS.done)return;if(p)measMove(p);MEAS.done=true;SFX.beep();}
+function clearMeas(){if(MEAS.line){scene.remove(MEAS.line,MEAS.lbl,...MEAS.dots);MEAS.line.geometry.dispose();MEAS.lbl.material.map.dispose();}
+  Object.assign(MEAS,{a:null,b:null,line:null,lbl:null,dots:[],done:true});}
+const _cw=new THREE.Vector3();
+function measFrame(){                              // tamanho constante na visão, qualquer que seja a distância
+  if(!MEAS.a){return;}camera.getWorldPosition(_cw);
+  MEAS.dots[0].position.copy(MEAS.a);MEAS.dots[1].position.copy(MEAS.b);
+  MEAS.dots.forEach(d=>d.scale.setScalar(Math.max(0.008,_cw.distanceTo(d.position)*0.012)));
+  const mid=_tip2.copy(MEAS.a).add(MEAS.b).multiplyScalar(0.5),k=Math.max(0.25,_cw.distanceTo(mid));
+  MEAS.lbl.scale.set(0.24*k,0.084*k,1);MEAS.lbl.position.copy(mid);MEAS.lbl.position.y+=0.07*k;
+  const L=MEAS.a.distanceTo(MEAS.b),r=Math.max(0.003,k*0.0035);                   // fita: cilindro entre os dois pontos
+  MEAS.line.position.copy(mid);MEAS.line.scale.set(r,Math.max(L,1e-4),r);
+  if(L>1e-4)MEAS.line.quaternion.setFromUnitVectors(_cw.set(0,1,0),_tip.copy(MEAS.b).sub(MEAS.a).normalize());
 }
-function measMove(p){if(!MEAS.a||MEAS.done)return;const pos=MEAS.line.geometry.attributes.position;pos.setXYZ(1,p.x,p.y,p.z);pos.needsUpdate=true;
-  const d=MEAS.a.distanceTo(p);relabel(MEAS.lbl,d.toFixed(2).replace('.',',')+' m');MEAS.lbl.position.copy(MEAS.a).add(p).multiplyScalar(0.5);MEAS.lbl.position.y+=0.08;}
-function clearMeas(){if(MEAS.line){scene.remove(MEAS.line,MEAS.lbl);MEAS.line.geometry.dispose();}MEAS.a=null;MEAS.line=null;MEAS.lbl=null;MEAS.done=false;}
+const _tip2=new THREE.Vector3();
 
 // ---------- computador e celular: alvo no centro da tela
 let tvTarget=null;
@@ -1642,7 +1689,7 @@ const _o=new THREE.Vector3(),_d=new THREE.Vector3(),_p=new THREE.Vector3();
 function centerRay(){camera.getWorldPosition(_o);camera.getWorldDirection(_d);RAY.set(_o,_d);RAY.far=50;}
 function tvFindTarget(){
   centerRay();RAY.far=2.6;
-  const hits=RAY.intersectObjects(INTER.map(i=>i.obj),false);
+  const hits=RAY.intersectObjects(INTER.filter(i=>!i.wrist).map(i=>i.obj),false);
   tvTarget=hits.length?INTER.find(i=>i.obj===hits[0].object):null;
   const el=$('walkhint');
   if(tvTarget){const t=(matchMedia('(pointer:coarse)').matches?'Toque aqui: ':'Clique ou E: ')+tvTarget.label;if(el.textContent!==t)el.textContent=t;el.hidden=false;}else el.hidden=true;
@@ -1651,61 +1698,131 @@ function tvUseTarget(){if(tvTarget)return useItem(tvTarget,null)||true;return fa
 function tvKey(code){
   if(code==='KeyE')tvUseTarget();
   if(code==='KeyN')setNight(!state.night);
-  if(code==='KeyM'){centerRay();const h=RAY.intersectObjects(measTargets(),true);if(h.length)measPoint(h[0].point);}
+  if(code==='KeyM'){centerRay();RAY.far=30;const h=measHit();if(!h)return;if(MEAS.done||!MEAS.a)measStart(h.point);else measEnd(h.point);}
 }
 $('walkhint').addEventListener('click',()=>tvUseTarget());
 
-// ---------- realidade virtual: mãos, toque, gatilho, menu no pulso
+// ---------- realidade virtual: mãos com cinco dedos
+// Eixos do "grip" no WebXR: −Z é o lado do polegar, +Y aponta para o antebraço, a palma da mão direita fica voltada para −X.
+const SKIN=new THREE.MeshStandardMaterial({color:0xd6a283,roughness:.62});
+const SKIN_TIP=new THREE.MeshStandardMaterial({color:0xd6a283,roughness:.62,emissive:0x000000});
+const jointG=new THREE.SphereGeometry(1,16,12);
+function seg(parent,len,r0,r1,mat=SKIN){const g=new THREE.Group();parent.add(g);
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,len,12,1,true),SKIN);c.position.y=-len/2;g.add(c);
+  const j=new THREE.Mesh(jointG,SKIN);j.scale.setScalar(r0);g.add(j);
+  const end=new THREE.Group();end.position.y=-len;g.add(end);return {g,end};}
+function buildFinger(parent,pos,lens,r,spread,tipMat){
+  const root=new THREE.Group();root.position.set(...pos);root.rotation.x=spread;parent.add(root);
+  const a=seg(root,lens[0],r,r*0.93),b=seg(a.end,lens[1],r*0.93,r*0.85),c=seg(b.end,lens[2],r*0.85,r*0.76);
+  const tip=new THREE.Mesh(jointG,tipMat||SKIN);tip.scale.setScalar(r*0.76);c.end.add(tip);
+  const nail=new THREE.Mesh(jointG,new THREE.MeshStandardMaterial({color:0xf0cbb8,roughness:.3}));nail.scale.set(r*0.25,r*0.55,r*0.55);nail.position.set(r*0.62,-lens[2]*0.45,0);c.g.add(nail);
+  return {root,j:[a.g,b.g,c.g],tip,cur:[0,0,0]};}
+function buildHand(left){
+  const h=new THREE.Group();
+  const palm=new THREE.Mesh(jointG,SKIN);palm.scale.set(0.017,0.047,0.042);palm.position.set(0.03,0.02,0);h.add(palm);
+  const knuck=new THREE.Mesh(jointG,SKIN);knuck.scale.set(0.016,0.013,0.041);knuck.position.set(0.031,-0.019,-0.001);h.add(knuck);
+  const heel=new THREE.Mesh(jointG,SKIN);heel.scale.set(0.017,0.022,0.03);heel.position.set(0.026,0.052,0.012);h.add(heel);
+  const wrist=new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.027,0.08,16),SKIN);wrist.scale.set(0.72,1,1);wrist.position.set(0.032,0.1,0.002);h.add(wrist);
+  const tipMat=SKIN_TIP.clone();
+  const fingers=[
+    buildFinger(h,[0.03,-0.024,-0.027],[0.043,0.025,0.021],0.0092,0.07,tipMat),     // indicador
+    buildFinger(h,[0.031,-0.028,-0.008],[0.047,0.029,0.022],0.0095,0.02),           // médio
+    buildFinger(h,[0.03,-0.026,0.011],[0.044,0.027,0.021],0.009,-0.04),             // anelar
+    buildFinger(h,[0.028,-0.019,0.028],[0.035,0.021,0.019],0.0079,-0.1)];           // mínimo
+  const th=buildFinger(h,[0.021,0.026,-0.027],[0.038,0.031,0.025],0.0112,0);
+  th.root.rotation.set(1.0,0,-0.4);
+  if(left) h.scale.x=-1;
+  return {h,fingers,th,tipMat};
+}
+function poseHand(HH,gp,dt){
+  const bt=gp?gp.buttons:[],val=k=>bt[k]?(bt[k].value||0):0,tch=k=>!!(bt[k]&&(bt[k].touched||bt[k].pressed));
+  const idx=tch(0)?0.35+val(0)*0.8:0.04;                 // sem o dedo no gatilho: indicador esticado, apontando
+  const oth=0.95+val(1)*0.45;                             // demais dedos envolvendo o controle; apertam com o botão lateral
+  const thDown=tch(3)||tch(4)||tch(5);
+  const k=Math.min(1,dt*14);
+  const set=(f,c,w)=>f.j.forEach((j,i)=>{f.cur[i]+=(-c*w[i]-f.cur[i])*k;j.rotation.z=f.cur[i];});
+  set(HH.fingers[0],idx,[0.9,1.15,0.75]);
+  for(let i=1;i<4;i++) set(HH.fingers[i],oth*(1+i*0.05),[1.0,1.3,0.95]);
+  HH.th.root.rotation.z+=((thDown?-0.85:-0.4)-HH.th.root.rotation.z)*k;
+  set(HH.th,thDown?0.45:0.12,[0.2,0.6,0.5]);
+}
+
+// ---------- relógio no pulso esquerdo: vire o pulso para ver; toque com o indicador da mão direita
+const WRIST=new THREE.Group();
+WRIST.position.set(-0.064,0.098,0.0);
+WRIST.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0,-1,0),new THREE.Vector3(0,0,1),new THREE.Vector3(-1,0,0)));
+const WBTN=[];
+{
+  const bg=label('',0.14,0.13,{px:512,bg:'rgba(20,24,28,0.92)',round:true,transparent:true});WRIST.add(bg);
+  var wristInfo=label('',0.13,0.024,{px:512,bg:'rgba(0,0,0,0)',transparent:true,weight:'500'});wristInfo.position.set(0,0.049,0.002);WRIST.add(wristInfo);
+  const items=[['Dia / Noite',()=>setNight(!state.night)],['Casa',()=>tvGo('casa')],['Rua',()=>tvGo('rua')],['Elevador',()=>tvGo('hall')],
+    ['− altura',()=>{tour.adj=Math.round((tour.adj-0.02)*100)/100;}],['+ altura',()=>{tour.adj=Math.round((tour.adj+0.02)*100)/100;}]];
+  items.forEach(([t,f],i)=>{
+    const g=new THREE.Group();g.position.set(i%2?0.033:-0.033,0.02-Math.floor(i/2)*0.032,0.006);WRIST.add(g);
+    const box=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.026,0.01),new THREE.MeshStandardMaterial({color:i<4?0x1f6f6a:0x3b3f45,roughness:.5,emissive:0x000000}));g.add(box);
+    const lb=label(t,0.056,0.02,{px:256,bg:'rgba(0,0,0,0)',transparent:true,weight:'600'});lb.position.z=0.0052;g.add(lb);
+    interact(box,t,()=>{SFX.click();f();box.material.emissive.setHex(0x5fb8ae);g.position.z=0.002;setTimeout(()=>{box.material.emissive.setHex(0);g.position.z=0.006;},180);});
+    INTER[INTER.length-1].wrist=true;WBTN.push(box);
+  });
+}
+let wristT=0;
+function wristFrame(dt){
+  const show=renderer.xr.isPresenting&&tour.on&&!tour.wristOff&&WRIST.parent;
+  if(!show){WRIST.visible=false;return;}
+  WRIST.updateWorldMatrix(true,false);camera.getWorldPosition(_cw);
+  const n=_tip2.set(0,0,1).transformDirection(WRIST.matrixWorld),to=_p.setFromMatrixPosition(WRIST.matrixWorld);to.subVectors(_cw,to).normalize();
+  WRIST.visible=n.dot(to)>0.35;                      // aparece quando o pulso está virado para o rosto
+  wristT-=dt;if(wristT<=0&&WRIST.visible){wristT=0.4;relabel(wristInfo,'Olhos a '+(camera.position.y+tour.adj).toFixed(2).replace('.',',')+' m do chão');}
+}
+
+// ---------- controles: toque com o indicador, gatilho, analógicos
 const HANDS=[];
-const tipGeo=new THREE.SphereGeometry(0.012,12,8),fingerGeo=new THREE.CylinderGeometry(0.009,0.011,0.07,10);
-const gloveMat=new THREE.MeshStandardMaterial({color:0xe6dfd4,roughness:.7}),tipMat=new THREE.MeshBasicMaterial({color:0x5fb8ae});
 for(let i=0;i<2;i++){
   const ray=renderer.xr.getController(i),grip=renderer.xr.getControllerGrip(i);rig.add(ray,grip);
-  const finger=new THREE.Mesh(fingerGeo,gloveMat);finger.rotation.x=Math.PI/2;finger.position.z=-0.04;ray.add(finger);
-  const tip=new THREE.Mesh(tipGeo,tipMat.clone());tip.position.z=-0.078;ray.add(tip);
-  const palm=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.03,0.1),gloveMat);palm.position.set(0,-0.01,0.03);grip.add(palm);
   const lineG=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-1)]);
-  const line=new THREE.Line(lineG,new THREE.LineBasicMaterial({color:0x5fb8ae,transparent:true,opacity:.8}));line.scale.z=3;line.visible=false;ray.add(line);
-  const H={ray,grip,tip,line,src:null,prev:{},inside:new Set(),hand:''};
-  ray.addEventListener('connected',e=>{H.src=e.data;H.hand=e.data.handedness;if(H.hand==='left')grip.add(WRIST);});
+  const line=new THREE.Line(lineG,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.7}));line.visible=false;ray.add(line);
+  const H={ray,grip,line,src:null,prev:{},inside:new Set(),hand:'',hh:null};
+  ray.addEventListener('connected',e=>{
+    H.src=e.data;H.hand=e.data.handedness;
+    if(H.hh) grip.remove(H.hh.h);
+    H.hh=buildHand(H.hand==='left');grip.add(H.hh.h);
+    if(H.hand==='left') grip.add(WRIST);
+  });
   ray.addEventListener('disconnected',()=>{H.src=null;});
   HANDS.push(H);
 }
-// menu no pulso esquerdo (toque com o dedo da mão direita)
-const WRIST=new THREE.Group();WRIST.position.set(0,0.035,0.06);WRIST.rotation.x=-1.0;
-{const bg=label('MENU',0.2,0.13,{px:512,bg:'rgba(22,26,30,0.9)',round:true,transparent:true,fs:30});bg.rotation.x=-Math.PI/2;bg.position.y=-0.002;WRIST.add(bg);
-  [['Dia / Noite',()=>setNight(!state.night)],['Rua',()=>tvGo('rua')],['Elevador',()=>tvGo('hall')],['Casa',()=>tvGo('casa')]].forEach(([t,f],i)=>{
-    const b=label(t,0.085,0.032,{px:256,bg:'#1f6f6a',round:true,transparent:true,fs:30});b.rotation.x=-Math.PI/2;
-    b.position.set(i%2?0.047:-0.047,0.004,-0.012+Math.floor(i/2)*0.042);WRIST.add(b);
-    const hit=new THREE.Mesh(new THREE.BoxGeometry(0.085,0.02,0.032),new THREE.MeshBasicMaterial({visible:false}));hit.position.copy(b.position);WRIST.add(hit);
-    interact(hit,t,()=>{SFX.click();f();});
-  });}
 const _tip=new THREE.Vector3(),_loc=new THREE.Vector3(),_m=new THREE.Matrix4();
 function xrInput(dt){
   let move=[0,0],turn=0;
+  wristFrame(dt);
+  reticle.visible=false;
   for(const H of HANDS){
-    const gp=H.src&&H.src.gamepad;if(!gp)continue;
+    const gp=H.src&&H.src.gamepad;if(!gp||!H.hh)continue;
     const ax=gp.axes,bt=gp.buttons,pr=k=>bt[k]&&bt[k].pressed,edge=k=>pr(k)&&!H.prev[k];
     const sx=ax.length>=4?ax[2]:ax[0]||0,sy=ax.length>=4?ax[3]:ax[1]||0;
-    if(H.hand==='left'){move=[sx,-sy];if(edge(5))setNight(!state.night);if(edge(4))WRIST.visible=!WRIST.visible;tour.run=pr(3);}
+    poseHand(H.hh,gp,dt);
+    if(H.hand==='left'){move=[sx,-sy];if(edge(5))setNight(!state.night);if(edge(4))tour.wristOff=!tour.wristOff;tour.run=pr(3);}
     else{if(Math.abs(sx)>0.7&&!H.turnLock){turn=-Math.sign(sx);H.turnLock=true;}if(Math.abs(sx)<0.3)H.turnLock=false;}
-    // toque com a ponta do dedo
-    H.tip.getWorldPosition(_tip);let touching=false;
+    // toque: ponta do indicador
+    H.hh.fingers[0].tip.updateWorldMatrix(true,false);_tip.setFromMatrixPosition(H.hh.fingers[0].tip.matrixWorld);
+    let touching=false;
     for(const it of INTER){
-      if(!it.obj.visible&&it.obj.material.visible!==false)continue;
-      if(it.obj.parent===WRIST&&H.hand==='left')continue;
+      if(it.wrist&&(H.hand==='left'||!WRIST.visible))continue;
+      let p=it.obj,vis=true;while(p){if(!p.visible){vis=false;break;}p=p.parent;}if(!vis)continue;
       it.obj.updateWorldMatrix(true,false);_loc.copy(_tip).applyMatrix4(_m.copy(it.obj.matrixWorld).invert());
       const inside=it.box.containsPoint(_loc);
       if(inside){touching=true;if(!H.inside.has(it)){H.inside.add(it);useItem(it,H.src);}}else H.inside.delete(it);
     }
-    H.tip.material.color.setHex(touching?0xff8a2a:0x5fb8ae);
-    // gatilho: usa o que estiver na mira ou mede distâncias
+    H.hh.tipMat.emissive.setHex(touching?0x7a3a10:0x000000);
+    // gatilho: usa o que estiver na mira; apontado para chão ou parede, segura e solta para medir
     H.ray.updateWorldMatrix(true,false);_o.setFromMatrixPosition(H.ray.matrixWorld);_d.set(0,0,-1).transformDirection(H.ray.matrixWorld);RAY.set(_o,_d);RAY.far=4;
-    const hi=RAY.intersectObjects(INTER.map(i=>i.obj),false),aim=hi.length?INTER.find(i=>i.obj===hi[0].object):null;
-    H.line.visible=!!aim||pr(0);H.line.scale.z=aim?hi[0].distance:3;
-    if(edge(0)){if(aim)useItem(aim,H.src);else{RAY.far=30;const h=RAY.intersectObjects(measTargets(),true);if(h.length){H.meas=true;MEAS.done=true;measPoint(h[0].point);}}}
-    if(H.meas&&pr(0)){RAY.far=30;const h=RAY.intersectObjects(measTargets(),true);if(h.length)measMove(h[0].point);}
-    if(H.meas&&!pr(0)){H.meas=false;RAY.far=30;const h=RAY.intersectObjects(measTargets(),true);if(h.length&&MEAS.a)measPoint(h[0].point);}
+    const hi=RAY.intersectObjects(INTER.filter(i=>!i.wrist).map(i=>i.obj),false),aim=hi.length?INTER.find(i=>i.obj===hi[0].object):null;
+    let hit=null;if(pr(0)||H.meas){RAY.far=30;hit=measHit();}
+    H.line.visible=!!aim||pr(0);H.line.scale.z=aim?hi[0].distance:hit?hit.distance:2;
+    if(hit&&(pr(0)||H.meas)){reticle.visible=true;reticle.position.copy(hit.point);camera.getWorldPosition(_cw);reticle.scale.setScalar(Math.max(0.005,_cw.distanceTo(hit.point)*0.007));}
+    if(edge(0)){if(aim)useItem(aim,H.src);else if(hit){H.meas=true;measStart(hit.point);}}
+    if(H.meas&&pr(0)&&hit)measMove(hit.point);
+    if(H.meas&&!pr(0)){H.meas=false;measEnd(hit?hit.point:null);}
     bt.forEach((b,k)=>H.prev[k]=b.pressed);
   }
   return {move,turn};
@@ -1737,11 +1854,11 @@ function tvUpdate(dt){
     camera.position.set(0,EYE,0);_e2.set(walk.pitch,walk.yaw,0);camera.quaternion.setFromEuler(_e2);
     rig.position.x=tour.x;rig.position.z=tour.z;rig.rotation.y=0;
     tvFindTarget();
-    if(MEAS.a&&!MEAS.done){centerRay();const h=RAY.intersectObjects(measTargets(),true);if(h.length)measMove(h[0].point);}
+    if(MEAS.a&&!MEAS.done){centerRay();RAY.far=30;const h=measHit();if(h)measMove(h.point);}
   }
   const fy=floorY();
   tour.ys=(tour.zone==='ground'&&Math.abs(fy-tour.ys)<1.5)?tour.ys+(fy-tour.ys)*Math.min(1,dt*10):fy;
-  rig.position.y=tour.ys;
+  rig.position.y=tour.ys+(renderer.xr.isPresenting?tour.adj:0);
   zoneHints();
 }
 const SPOTS={rua:['ground',0,88.8,63.5,Math.PI/2],hall:['ground',0,6.6,27.0,Math.PI/2],casa:['apt',1,5.2,50.1,Math.PI]};
@@ -1769,13 +1886,13 @@ function startTour(xr){
   camera.near=0.05;camera.far=2000;camera.updateProjectionMatrix();
   if(xr){shadowWas=sun.castShadow;sun.castShadow=false;apt.traverse(o=>{if(o.isLineSegments)o.visible=false;});}
   tvGo('rua');resize();
-  say(xr?'Vocês estão na Av. Djalma Castro Alves. Toque com o dedo no botão do interfone, no pilar ao lado do portão de pedestres.':
+  say(xr?'Vocês estão na Av. Djalma Castro Alves. Toque com o indicador no botão do interfone, no pilar ao lado do portão. Vire o pulso esquerdo para ver o menu.':
     'Vocês estão na Av. Djalma Castro Alves, em frente à portaria. Mire no botão do interfone (pilar à direita do portão) e clique.',9);
 }
 function stopTour(){
   if(!tour.on)return;tour.on=false;
   if(renderer.xr.isPresenting){const s=renderer.xr.getSession();if(s)s.end().catch(()=>{});}
-  sun.castShadow=shadowWas;humOn(false);clearMeas();apt.traverse(o=>{if(o.isLineSegments)o.visible=true;});
+  sun.castShadow=shadowWas;humOn(false);clearMeas();reticle.visible=false;apt.traverse(o=>{if(o.isLineSegments)o.visible=true;});
   rig.position.set(0,0,0);rig.rotation.set(0,0,0);camera.quaternion.identity();
   DOORS.forEach(d=>d.goal=1);if(SLD)SLD.goal=1;
   controls.enabled=true;document.getElementById('app').classList.remove('walking');$('walkhud').hidden=true;$('tourbtns').hidden=true;$('walktoast').hidden=true;$('walkhint').hidden=true;
