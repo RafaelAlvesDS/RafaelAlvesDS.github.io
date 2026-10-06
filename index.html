@@ -58,6 +58,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .walkhud .joy{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid #ffffffaa;background:#0002}
 .walkhud .joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#ffffffcc}
 .walking .card,.walking .dock,.walking .hint,.walking #tags{display:none}
+.loadbar{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);
+  background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:8px 12px;font-size:13px;box-shadow:0 2px 10px #0002;z-index:2}
+.loadbar.err{border-color:#c0533d} .loadbar.err #lb-text{color:#c0533d}
+.loadbar button{background:var(--accent);color:var(--accent-ink);padding:5px 10px}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+@media (max-width:640px){.loadbar{top:auto;bottom:150px}}
+.walking .loadbar{display:none}
 .hint{position:absolute;right:16px;top:16px;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 9px}
 @media (max-width:640px){.hint{display:none}.card dl{display:none}.card h1{font-size:19px}}
 </style>
@@ -79,6 +88,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
       <dt>Andares</dt><dd>16º e 17º</dd>
     </dl>
   </div>
+  <div class="loadbar" id="loadbar" hidden role="status" aria-live="polite"><span class="spin" id="lb-spin"></span><span id="lb-text"></span><button id="lb-retry" hidden>Tentar de novo</button></div>
   <div class="hint">Arraste para girar · role para zoom · botão direito move</div>
   <div class="walkhud" id="walkhud" hidden>
     <div class="cross"></div>
@@ -575,6 +585,12 @@ function inPoly([x,z],P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){
   if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c;}return c;}
 const SITE_PAD=SITE.map(([x,z])=>[CX+(x-CX)*1.06,CZ+(z-CZ)*1.06]);
 function osmStatus(html){const el=$('osm');el.hidden=state.mode!=='ctx';el.innerHTML=html;}
+let lbTimer=null;
+function loadBar(text,kind){ // kind: 'busy' | 'ok' | 'err'
+  const el=$('loadbar');clearTimeout(lbTimer);el.hidden=state.mode!=='ctx';el.classList.toggle('err',kind==='err');
+  $('lb-text').textContent=text;$('lb-spin').hidden=kind!=='busy';$('lb-retry').hidden=kind!=='err';
+  if(kind==='ok') lbTimer=setTimeout(()=>{el.hidden=true;},4000);
+}
 
 // --- relevo
 const TER={span:2400,seg:120};                 // malha de 2,4 km com nós a cada 20 m, centrada no apartamento
@@ -587,7 +603,28 @@ function distToSite(x,z){
     d=Math.min(d,Math.hypot(x-ax-vx*t,z-az-vz*t));}
   return d;
 }
+function finishTerrain(grid){
+  const n=TER.seg+1,step=TER.span/TER.seg;
+  let base=0,cnt=0;
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const e=grid[j*n+i];if(inPoly([TER.x0+i*step,TER.z0+j*step],SITE)&&isFinite(e)){base+=e;cnt++;}}
+  if(!cnt){base=grid[Math.floor(n/2)*n+Math.floor(n/2)];cnt=1;}
+  base/=cnt;
+  for(let k=0;k<grid.length;k++) grid[k]=isFinite(grid[k])?grid[k]-base:0;
+  // o condomínio fica num platô nivelado; o relevo real começa a ~40 m do muro
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const d=distToSite(TER.x0+i*step,TER.z0+j*step);
+    const t=Math.max(0,Math.min(1,(d-8)/40)),s=t*t*(3-2*t);grid[j*n+i]*=s;}
+  HT=(x,z)=>{const fx=(x-TER.x0)/step,fz=(z-TER.z0)/step;
+    const i=Math.max(0,Math.min(n-2,Math.floor(fx))),j=Math.max(0,Math.min(n-2,Math.floor(fz))),u=Math.max(0,Math.min(1,fx-i)),v=Math.max(0,Math.min(1,fz-j));
+    return grid[j*n+i]*(1-u)*(1-v)+grid[j*n+i+1]*u*(1-v)+grid[(j+1)*n+i]*(1-u)*v+grid[(j+1)*n+i+1]*u*v;};
+  let mn=1e9,mx=-1e9;for(const v of grid){mn=Math.min(mn,v);mx=Math.max(mx,v);}
+  return {base,mn,mx};
+}
 async function loadTerrain(){
+  // 1) cópia salva no próprio site (gerada pelo GitHub Actions)
+  try{const r=await fetch('data/relevo.json',{cache:'no-cache'});
+    if(r.ok){const d=await r.json();
+      if(d.seg===TER.seg&&d.span===TER.span&&Math.abs(d.x0-TER.x0)<0.01&&Math.abs(d.z0-TER.z0)<0.01){const t=finishTerrain(Float32Array.from(d.elev));t.cached=d.fetched;return t;}}}catch(e){}
+  // 2) direto da fonte
   const Z=13,N=2**Z,tiles={};
   const merc=(lat,lon)=>{const r=lat*Math.PI/180;return [(lon+180)/360*N,(1-Math.asinh(Math.tan(r))/Math.PI)/2*N];};
   // tiles necessários
@@ -610,20 +647,8 @@ async function loadTerrain(){
     return at(ix,iy)*(1-u)*(1-v)+at(ix+1,iy)*u*(1-v)+at(ix,iy+1)*(1-u)*v+at(ix+1,iy+1)*u*v;
   };
   const n=TER.seg+1,step=TER.span/TER.seg,grid=new Float32Array(n*n);
-  let base=0,cnt=0;
-  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const x=TER.x0+i*step,z=TER.z0+j*step;const [la,lo]=w2geo(x,z);
-    const e=elev(la,lo);grid[j*n+i]=e;if(inPoly([x,z],SITE)&&isFinite(e)){base+=e;cnt++;}}
-  if(!cnt){const [la,lo]=w2geo(CX,CZ);base=elev(la,lo);cnt=1;}
-  base/=cnt;
-  for(let k=0;k<grid.length;k++) grid[k]=isFinite(grid[k])?grid[k]-base:0;
-  // o condomínio fica num platô nivelado; o relevo real começa a ~40 m do muro
-  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const d=distToSite(TER.x0+i*step,TER.z0+j*step);
-    const t=Math.max(0,Math.min(1,(d-8)/40)),s=t*t*(3-2*t);grid[j*n+i]*=s;}
-  HT=(x,z)=>{const fx=(x-TER.x0)/step,fz=(z-TER.z0)/step;
-    const i=Math.max(0,Math.min(n-2,Math.floor(fx))),j=Math.max(0,Math.min(n-2,Math.floor(fz))),u=Math.max(0,Math.min(1,fx-i)),v=Math.max(0,Math.min(1,fz-j));
-    return grid[j*n+i]*(1-u)*(1-v)+grid[j*n+i+1]*u*(1-v)+grid[(j+1)*n+i]*(1-u)*v+grid[(j+1)*n+i+1]*u*v;};
-  let mn=1e9,mx=-1e9;for(const v of grid){mn=Math.min(mn,v);mx=Math.max(mx,v);}
-  return {base,mn,mx};
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const [la,lo]=w2geo(TER.x0+i*step,TER.z0+j*step);grid[j*n+i]=elev(la,lo);}
+  return finishTerrain(grid);
 }
 
 // --- mapa pintado numa textura que cobre o relevo (sem peças sobrepostas, então não pisca)
@@ -712,6 +737,7 @@ function buildWorld(data,terr){
   osmStatus('Entorno: ruas'+(nb?', '+nb+' construções':'')+' e áreas verdes num raio de 800 m, do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.'+rel);
 }
 async function fetchOSM(){
+  try{const r=await fetch('data/osm.json',{cache:'no-cache'});if(r.ok){const d=await r.json();if(d&&d.elements){d.cached=d.fetched||true;return d;}}}catch(e){}
   const a=`(around:800,${GEO.lat},${GEO.lon})`;
   const q=`[out:json][timeout:40];(way${a}[highway];way${a}[building];way${a}[landuse];way${a}[leisure];way${a}[natural];node(around:500,${GEO.lat},${GEO.lon})[natural=tree];);out geom;`;
   for(const h of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter']){
@@ -721,12 +747,26 @@ async function fetchOSM(){
   return null;
 }
 async function loadOSM(){
-  if(osmState!=='idle') return;osmState='loading';
-  osmStatus('Entorno: baixando relevo, ruas e construções…');
-  const [terr,data]=await Promise.all([loadTerrain().catch(()=>null),fetchOSM()]);
-  if(!terr&&!data){osmState='idle';osmStatus('Entorno: não foi possível baixar o mapa agora. Ele tenta de novo quando você voltar ao Condomínio.');return;}
-  try{buildWorld(data,terr);osmState='done';}catch(e){osmState='idle';osmStatus('Entorno: erro ao montar o mapa ('+e.message+').');}
+  if(osmState==='loading'||osmState==='done') return;osmState='loading';
+  let tDone=false,oDone=false;
+  const show=()=>loadBar('Carregando entorno: relevo '+(tDone?'✓':'…')+' · ruas e construções '+(oDone?'✓':'…'),'busy');
+  show();
+  const [terr,data]=await Promise.all([
+    loadTerrain().catch(()=>null).then(v=>{tDone=true;show();return v;}),
+    fetchOSM().then(v=>{oDone=true;show();return v;})]);
+  if(!terr&&!data){osmState='idle';
+    loadBar('Não foi possível carregar o entorno (sem conexão com os servidores de mapa).','err');
+    osmStatus('Entorno indisponível no momento.');return;}
+  loadBar('Montando o mapa…','busy');
+  await new Promise(r=>setTimeout(r,30));             // deixa a mensagem aparecer antes do trabalho pesado
+  try{buildWorld(data,terr);osmState='done';
+    const miss=[!terr&&'relevo',!data&&'ruas'].filter(Boolean);
+    const src=(terr&&terr.cached)||(data&&data.cached)?'cópia salva no site':'servidores de mapa';
+    if(miss.length) loadBar('Entorno carregado sem '+miss.join(' e ')+'.','err');
+    else loadBar('Entorno carregado ('+src+').','ok');
+  }catch(e){osmState='idle';loadBar('Erro ao montar o entorno: '+e.message,'err');}
 }
+document.getElementById('lb-retry').onclick=()=>{if(osmState==='done'){osmG.clear();tags.filter(t=>t.f==='ctx'&&t.n&&!t.p).forEach(t=>t.el.remove());}osmState='idle';loadOSM();};
 
 function placeApt(){
   if(state.mode==='ctx'){apt.rotation.y=Math.PI/2;apt.position.set(0.2,Y16,BL-0.2);}
@@ -810,6 +850,7 @@ function setMode(m){
   placeApt();setSun();sceneColor();
   if(m==='ctx'){ctxView('all');loadOSM();} else {state.vp='all';resize();homeView();}
   $('osm').hidden=m!=='ctx'||osmState==='idle'&&!$('osm').innerHTML;
+  if(m!=='ctx') $('loadbar').hidden=true;
 }
 $('m-apt').onclick=()=>setMode('apt');
 $('m-ctx').onclick=()=>setMode('ctx');
