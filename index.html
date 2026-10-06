@@ -659,7 +659,7 @@ async function loadTerrain(){
 }
 
 // --- mapa pintado numa textura que cobre o relevo (sem peças sobrepostas, então não pisca)
-const RW={motorway:16,trunk:14,primary:13,secondary:11,tertiary:9,unclassified:7,residential:7.5,living_street:6,service:4.5,
+const RW={motorway:16,trunk:14,primary:13,secondary:11,tertiary:9,primary_link:8,secondary_link:7.5,tertiary_link:7,unclassified:7,residential:7.5,living_street:6,service:4.5,
   pedestrian:4,footway:2,path:1.6,cycleway:2.2,track:3,steps:2};
 const LC={grass:'#9cbf7a',park:'#93bd74',recreation_ground:'#9cbf7a',meadow:'#a8c486',forest:'#5f8f4e',wood:'#5f8f4e',scrub:'#86a564',
   farmland:'#c9c08e',residential:'#d6d2c4',commercial:'#d2cdd0',retail:'#d6c9c6',industrial:'#c9c6bd',water:'#6fb3d8',
@@ -818,8 +818,8 @@ function populate(roads,bbs,greens){
           if(inPoly([cx,cz],SITE_PAD)||!free(cx,cz,r-1)||!clearOfRoads(cx,cz,r*0.8)||inGreen(cx,cz)) continue;
           let h=3.2+rnd()*3.4,kind=0;                                   // casa térrea ou sobrado
           const p=rnd();
-          if(main&&p<0.18){h=6+rnd()*6;kind=1;}                        // comércio de 2 a 4 pavimentos
-          else if(p<(main?0.24:0.035)){h=15+rnd()*36;kind=2;}            // prédio residencial
+          if(main&&p<0.16){h=6+rnd()*6;kind=1;}                        // comércio de 2 a 4 pavimentos
+          else if(p<(main?0.2:0.015)){h=15+rnd()*30;kind=2;}            // prédio residencial
           houses.push({x:cx,z:cz,w:wid,d:dep,h,ang,kind});mark(cx,cz,r);
         }
       }
@@ -897,7 +897,7 @@ const SKY=new THREE.Mesh(new THREE.SphereGeometry(1800,48,24),new THREE.ShaderMa
     nig+=vec3(0.95,0.55,0.25)*exp(-max(h,0.0)*14.0)*0.38*step(-0.02,h);   // brilho alaranjado da cidade
     vec2 sp=floor(d.xz/(abs(h)+0.25)*320.0);float st=step(0.9975,h21(sp))*smoothstep(0.08,0.4,h);
     nig+=vec3(st)*(0.6+0.4*sin(time*2.0+h21(sp+7.0)*20.0));
-    float md=max(dot(d,normalize(vec3(0.4,0.55,-0.5))),0.0);nig+=vec3(0.9,0.92,1.0)*smoothstep(0.9992,0.9996,md)+vec3(0.25,0.28,0.35)*pow(md,40.0)*0.3;
+    float md=max(dot(d,normalize(vec3(0.4,0.55,-0.5))),0.0);nig+=vec3(0.9,0.92,1.0)*smoothstep(0.99993,0.99996,md)+vec3(0.25,0.28,0.35)*pow(md,400.0)*0.25;
     nig=mix(nig,vec3(0.12,0.12,0.15)+vec3(0.25,0.14,0.06)*exp(-h*6.0),cl*0.55);
     gl_FragColor=vec4(mix(day,nig,night),1.0);
   }`}));
@@ -915,7 +915,7 @@ function buildCityLights(){
     const m=new THREE.PointsMaterial({size,vertexColors:true,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending,map:GLOW,fog:false,sizeAttenuation:true});
     return new THREE.Points(g,m);};
   cityLights=new THREE.Group();
-  cityLights.add(mk(P,C,3.2,0.95),mk(NIGHT.lamps,NIGHT.lampCols,9,0.9));
+  cityLights.add(mk(P,C,3.2,0.95),mk(NIGHT.lamps,NIGHT.lampCols,6,0.85));
   cityLights.visible=state.night;osmG.add(cityLights);
 }
 const GLOW=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
