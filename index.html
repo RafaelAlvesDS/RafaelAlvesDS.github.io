@@ -111,6 +111,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
       <button id="v-sala" aria-pressed="false">Sala 17º</button>
       <button id="v-qto" aria-pressed="false">Quarto 16º</button>
       <button id="v-cor" aria-pressed="false">Corredor</button>
+      <button id="b-night" aria-pressed="false">Noite</button>
     </div>
     <div class="grp" role="group" aria-label="Pavimentos">
       <span class="lbl">Ver</span>
@@ -151,14 +152,14 @@ const camera=new THREE.PerspectiveCamera(40,1,0.05,2000);
 const controls=new THREE.OrbitControls(camera,canvas);
 controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.495;controls.minDistance=0.05;controls.maxDistance=40;
 
-const state={view:'both',explode:false,cut:false,tags:true,expOff:0,mode:'apt',vp:'all'};
+const state={view:'both',explode:false,cut:false,tags:true,expOff:0,mode:'apt',vp:'all',night:false};
 const CENTER=new THREE.Vector3(2.8,1.6,3.25);
 function homeView(){
   if(state.mode==='ctx'){ctxView('all');return;}
   const k=innerWidth<640?1.45:1;camera.position.set(2.8+8.7*k,1.6+8.9*k,3.25+10.75*k);controls.target.copy(CENTER);controls.maxDistance=40;controls.update();}
 homeView();
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x9a958c,0.75));
+const hemi=new THREE.HemisphereLight(0xffffff,0x9a958c,0.75);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,0.75);
 sun.position.set(9,16,12);sun.castShadow=true;
 sun.shadow.mapSize.set(MOBILE?1024:2048,MOBILE?1024:2048);sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.02;
@@ -473,17 +474,23 @@ const pw=(x,y)=>[(x-P0[0])/PX,(y-P0[1])/PX];
 const BX=[pw(157,0)[0],pw(432,0)[0],0];       // torres I, II e III (a de vocês)
 const GAPV=-(BX[1]+BW);                        // ≈ 32 m entre a torre de vocês e a vizinha
 BX.forEach((x0,i)=>building(x0,i===2));
+let GLASS_LIT=null;
 (function(){
+  { // ~45% das janelas das torres acendem à noite
+    let sd=9;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
+    IB.glassLit=[];IB.glass=IB.glass.filter(b=>{if(r()<0.45){IB.glassLit.push(b);return false;}return true;});
+  }
   const mats={wall:new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.9}),
     band:new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:.9}),
     glass:new THREE.MeshStandardMaterial({color:0x4f6573,roughness:.15,metalness:.4}),
     door:new THREE.MeshStandardMaterial({color:0x7a6450,roughness:.7})};
+  mats.glassLit=GLASS_LIT=mats.glass.clone();
   const mt=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sv=new THREE.Vector3();
   Object.keys(IB).forEach(k=>{
     const L=IB[k];if(!L.length) return;
     const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mats[k],L.length);
     L.forEach(([x0,x1,y0,y1,z0,z1],i)=>{pv.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);sv.set(Math.max(x1-x0,0.01),Math.max(y1-y0,0.01),Math.max(z1-z0,0.01));mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});
-    im.castShadow=k!=='glass';im.receiveShadow=true;ctx.add(im);
+    im.castShadow=k!=='glass'&&k!=='glassLit';im.receiveShadow=true;ctx.add(im);
   });
 })();
 // contorno do terreno (muro), medido na implantação
@@ -661,7 +668,7 @@ function buildWorld(data,terr){
   const S=MOBILE?2048:4096, cv=document.createElement('canvas');cv.width=cv.height=S;const g=cv.getContext('2d');
   const k=S/TER.span, P=([x,z])=>[(x-TER.x0)*k,(z-TER.z0)*k];
   g.fillStyle='#a3b385';g.fillRect(0,0,S,S);
-  const names={},bGeo=[[],[],[]],trees=[],roads=[],land=[];
+  const names={},bGeo=[[],[],[]],trees=[],roads=[],land=[],bbs=[],greens=[];
   for(const el of (data&&data.elements)||[]){
     if(el.type==='node'){if(el.tags&&el.tags.natural==='tree') trees.push(geo2w(el.lat,el.lon));continue;}
     if(!el.geometry||el.geometry.length<2) continue;
@@ -681,15 +688,19 @@ function buildWorld(data,terr){
     const ring=pts.slice(0,-1),c=ring.reduce((a,p)=>[a[0]+p[0]/ring.length,a[1]+p[1]/ring.length],[0,0]);
     if(t.building){
       if(inPoly(c,SITE_PAD)) continue;                     // as torres do condomínio já estão no modelo
+      {let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const [x,z] of ring){x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z);}bbs.push([x0,x1,z0,z1]);}
       let h=parseFloat(t.height)||(t['building:levels']?(+t['building:levels'])*3+1:0);
       if(!h) h={apartments:24,commercial:8,retail:6,industrial:8,warehouse:8,church:10,school:7}[t.building]||4.5;
       let lo=1e9,hi=-1e9;for(const [x,z] of ring){const y=HT(x,z);lo=Math.min(lo,y);hi=Math.max(hi,y);}
       try{const sh=new THREE.Shape(ring.map(([x,z])=>new THREE.Vector2(x,-z)));
         const geo=new THREE.ExtrudeGeometry(sh,{depth:h+(hi-lo)+0.3,bevelEnabled:false});geo.rotateX(-Math.PI/2);geo.translate(0,lo-0.3,0);
         bGeo[Math.abs(Math.round(c[0]*7+c[1]*3))%3].push(geo.index?geo.toNonIndexed():geo);}catch(e){}
+      for(let f=1.5;f<h;f+=3) if(((c[0]*13+c[1]*7+f*3)|0)%3!==0){NIGHT.pts.push(c[0],lo+f,c[1]);NIGHT.cols.push(1,0.8,0.5);}
       continue;
     }
     const lu=t.landuse||t.leisure||t.natural;
+    if(lu&&LC[lu]&&!['residential','commercial','retail','industrial','construction','brownfield'].includes(lu)){
+      let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const [x,z] of ring){x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z);}greens.push({ring,bb:[x0,x1,z0,z1]});}
     if(lu&&LC[lu]) land.push({ring,col:LC[lu],pri:['residential','commercial','retail','industrial','farmland','construction'].includes(lu)?0:1});
   }
   // áreas (residencial por baixo, verdes por cima)
@@ -719,6 +730,8 @@ function buildWorld(data,terr){
     let geo=null;try{geo=THREE.BufferGeometryUtils&&THREE.BufferGeometryUtils.mergeBufferGeometries(L);}catch(e){}
     if(geo){const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;osmG.add(m);}
     else L.forEach(gg=>{const m=new THREE.Mesh(gg,mat);m.castShadow=true;osmG.add(m);});});
+  // casas e prédios do bairro + iluminação noturna
+  const houses=populate(roads,bbs,greens);drawHouses(houses);streetLamps(roads);buildCityLights();
   // árvores
   if(trees.length){
     const ti=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.18,0.25,3,6),CM.trunk,trees.length);
@@ -732,7 +745,7 @@ function buildWorld(data,terr){
       const d=document.createElement('div');d.className='tag ctx';
       const b=document.createElement('b');b.textContent=n;const sp=document.createElement('span');sp.textContent='via';d.append(b,sp);
       tagsEl.appendChild(d);tags.push({n,f:'ctx',el:d,v:new THREE.Vector3(p[0],HT(p[0],p[1])+2,p[1])});});
-  const nb=bGeo.reduce((a,L)=>a+L.length,0);
+  const nb=bGeo.reduce((a,L)=>a+L.length,0)+houses.length;
   const rel=terr?` Relevo: de ${Math.round(terr.mn)} a +${Math.round(terr.mx)} m em relação ao condomínio (≈ ${Math.round(terr.base)} m de altitude).`:' Relevo indisponível agora; o chão ficou plano.';
   osmStatus('Entorno: ruas'+(nb?', '+nb+' construções':'')+' e áreas verdes num raio de 800 m, do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>.'+rel);
 }
@@ -767,6 +780,160 @@ async function loadOSM(){
   }catch(e){osmState='idle';loadBar('Erro ao montar o entorno: '+e.message,'err');}
 }
 document.getElementById('lb-retry').onclick=()=>{if(osmState==='done'){osmG.clear();tags.filter(t=>t.f==='ctx'&&t.n&&!t.p).forEach(t=>t.el.remove());}osmState='idle';loadOSM();};
+
+// ---------- casas e prédios do bairro (preenche as quadras ao longo das ruas onde o mapa não tem construções)
+const NIGHT={pts:[],cols:[],lamps:[],lampCols:[]};   // luzes acesas à noite (janelas e postes)
+function populate(roads,bbs,greens){
+  let seed=2024;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  // índice espacial dos trechos de rua
+  const CELL=24,segIdx=new Map(),key=(i,j)=>i+','+j;
+  const segs=[];
+  roads.forEach(({pts,t})=>{const hw=RW[t.highway]/2+(['footway','path','cycleway','steps','pedestrian'].includes(t.highway)?0.5:1.8);
+    for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const s={a,b,hw};segs.push(s);
+      const i0=Math.floor(Math.min(a[0],b[0])/CELL)-1,i1=Math.floor(Math.max(a[0],b[0])/CELL)+1,j0=Math.floor(Math.min(a[1],b[1])/CELL)-1,j1=Math.floor(Math.max(a[1],b[1])/CELL)+1;
+      for(let ii=i0;ii<=i1;ii++)for(let jj=j0;jj<=j1;jj++){const k=key(ii,jj);if(!segIdx.has(k))segIdx.set(k,[]);segIdx.get(k).push(s);}}});
+  const clearOfRoads=(x,z,r)=>{const L=segIdx.get(key(Math.floor(x/CELL),Math.floor(z/CELL)));if(!L)return true;
+    for(const {a,b,hw} of L){const vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1,t=Math.max(0,Math.min(1,((x-a[0])*vx+(z-a[1])*vz)/l2));
+      if(Math.hypot(x-a[0]-vx*t,z-a[1]-vz*t)<hw+r) return false;}return true;};
+  const occ=new Set(),OC=5,oKey=(x,z)=>Math.floor(x/OC)+','+Math.floor(z/OC);
+  const free=(x,z,r)=>{for(let dx=-r;dx<=r;dx+=OC)for(let dz=-r;dz<=r;dz+=OC)if(occ.has(oKey(x+dx,z+dz)))return false;return true;};
+  const mark=(x,z,r)=>{for(let dx=-r;dx<=r;dx+=OC)for(let dz=-r;dz<=r;dz+=OC)occ.add(oKey(x+dx,z+dz));};
+  bbs.forEach(([x0,x1,z0,z1])=>{for(let x=x0-2;x<=x1+2;x+=OC)for(let z=z0-2;z<=z1+2;z+=OC)occ.add(oKey(x,z));});
+  const inGreen=(x,z)=>greens.some(g=>x>=g.bb[0]&&x<=g.bb[1]&&z>=g.bb[2]&&z<=g.bb[3]&&inPoly([x,z],g.ring));
+  const houses=[];
+  const LIM=TER.span/2-40;
+  roads.forEach(({pts,t})=>{
+    if(!['residential','tertiary','secondary','primary','unclassified','living_street','trunk'].includes(t.highway)) return;
+    const main=['secondary','primary','trunk'].includes(t.highway);
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);if(L<6)continue;
+      const ux=dx/L,uz=dz/L,nx=-uz,nz=ux,ang=Math.atan2(-uz,ux);
+      for(let s=4;s<L-4;s+=9+rnd()*4){
+        for(const side of [-1,1]){
+          const wid=7+rnd()*4,dep=9+rnd()*6;
+          const off=RW[t.highway]/2+1.8+1.2+dep/2;
+          const cx=a[0]+ux*s+nx*side*off,cz=a[1]+uz*s+nz*side*off;
+          if(Math.abs(cx-ANCHOR[0])>LIM||Math.abs(cz-ANCHOR[1])>LIM) continue;
+          const r=Math.max(wid,dep)/2;
+          if(inPoly([cx,cz],SITE_PAD)||!free(cx,cz,r-1)||!clearOfRoads(cx,cz,r*0.8)||inGreen(cx,cz)) continue;
+          let h=3.2+rnd()*3.4,kind=0;                                   // casa térrea ou sobrado
+          const p=rnd();
+          if(main&&p<0.18){h=6+rnd()*6;kind=1;}                        // comércio de 2 a 4 pavimentos
+          else if(p<(main?0.24:0.035)){h=15+rnd()*36;kind=2;}            // prédio residencial
+          houses.push({x:cx,z:cz,w:wid,d:dep,h,ang,kind});mark(cx,cz,r);
+        }
+      }
+    }
+  });
+  return houses;
+}
+function drawHouses(houses){
+  if(!houses.length) return;
+  const body=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({roughness:.9}),houses.length);
+  const roof=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({roughness:.85}),houses.length);
+  const mt=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sv=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),c=new THREE.Color();
+  const WALLS=[0xf1ead9,0xe9dcc4,0xdfe3e1,0xf3e3c9,0xd9cbb4,0xe7d2c4,0xcfd8d2,0xf0efe9];
+  const ROOFS=[0xa65a3c,0x9b4f35,0x8c8f91,0xb36a45,0x7d7f80];
+  let seed=77;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  houses.forEach((hs,i)=>{
+    const y=HT(hs.x,hs.z);q.setFromAxisAngle(up,hs.ang);
+    pv.set(hs.x,y+hs.h/2-0.3,hs.z);sv.set(hs.w,hs.h+0.3,hs.d);mt.compose(pv,q,sv);body.setMatrixAt(i,mt);
+    body.setColorAt(i,c.setHex(hs.kind===2?[0xe8e4dc,0xd6d9dc,0xeee6d6][i%3]:WALLS[Math.floor(rnd()*WALLS.length)]));
+    const rh=hs.kind===0?0.6:0.25;pv.set(hs.x,y+hs.h+rh/2,hs.z);sv.set(hs.w+(hs.kind?0:0.6),rh,hs.d+(hs.kind?0:0.6));mt.compose(pv,q,sv);roof.setMatrixAt(i,mt);
+    roof.setColorAt(i,c.setHex(hs.kind===0?ROOFS[Math.floor(rnd()*ROOFS.length)]:0xb9b7b2));
+    // janelas acesas à noite
+    const floors=Math.max(1,Math.floor(hs.h/3));
+    const lit=hs.kind===2?Math.ceil(floors*0.5):(rnd()<0.7?1:0);
+    for(let k=0;k<lit;k++){
+      const fy=hs.kind===2?(Math.floor(rnd()*floors)+0.5)*3:1.6+Math.min(floors-1,k)*3;
+      const sx=(rnd()-0.5)*hs.w*0.7, fz=(rnd()<0.5?-1:1)*(hs.d/2+0.2);
+      const cs=Math.cos(hs.ang),sn=Math.sin(hs.ang);
+      NIGHT.pts.push(hs.x+sx*cs+fz*sn,y+fy,hs.z-sx*sn+fz*cs);
+      const warm=rnd()<0.75;NIGHT.cols.push(warm?1:0.85,warm?0.78:0.92,warm?0.5:1);
+    }
+  });
+  body.instanceColor.needsUpdate=true;roof.instanceColor.needsUpdate=true;
+  body.castShadow=roof.castShadow=true;body.receiveShadow=true;osmG.add(body,roof);
+}
+function streetLamps(roads){
+  roads.forEach(({pts,t})=>{
+    if(['footway','path','cycleway','steps','track'].includes(t.highway)) return;
+    let acc=0,side=1;
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);if(!L)continue;
+      const nx=-dz/L,nz=dx/L,off=RW[t.highway]/2+0.6;
+      for(let s=(30-acc)%30;s<L;s+=30){const x=a[0]+dx/L*s+nx*off*side,z=a[1]+dz/L*s+nz*off*side;side=-side;
+        if(inPoly([x,z],SITE_PAD)) continue;
+        NIGHT.lamps.push(x,HT(x,z)+7.5,z);const led=['primary','secondary','trunk'].includes(t.highway);NIGHT.lampCols.push(1,led?0.95:0.72,led?0.85:0.38);}
+      acc=(acc+L)%30;
+    }
+  });
+}
+
+// ---------- céu (dia com nuvens / noite com estrelas e o brilho da cidade no horizonte)
+const SKY=new THREE.Mesh(new THREE.SphereGeometry(1800,48,24),new THREE.ShaderMaterial({
+  side:THREE.BackSide,depthWrite:false,depthTest:false,fog:false,
+  uniforms:{night:{value:0},time:{value:0},sunDir:{value:new THREE.Vector3(-0.5,0.6,0.4).normalize()}},
+  vertexShader:`varying vec3 vDir;void main(){vDir=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`
+  uniform float night,time;uniform vec3 sunDir;varying vec3 vDir;
+  float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+  float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+    return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);}
+  float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=0.5;}return v;}
+  void main(){
+    vec3 d=normalize(vDir);float h=d.y;
+    // dia
+    vec3 top=vec3(0.24,0.50,0.84),hor=vec3(0.74,0.84,0.92),gnd=vec3(0.66,0.70,0.64);
+    vec3 day=h>0.0?mix(hor,top,pow(clamp(h,0.0,1.0),0.55)):mix(hor,gnd,clamp(-h*6.0,0.0,1.0));
+    float sd=max(dot(d,sunDir),0.0);day+=vec3(1.0,0.92,0.75)*(pow(sd,900.0)*3.0+pow(sd,12.0)*0.18);
+    // nuvens projetadas num plano alto
+    vec2 cp=d.xz/(h+0.12)*1.6+vec2(time*0.004,time*0.0025);
+    float cl=smoothstep(0.52,0.78,fbm(cp))*smoothstep(0.0,0.18,h);
+    day=mix(day,mix(vec3(1.0),vec3(0.78,0.80,0.84),smoothstep(0.6,0.9,fbm(cp*1.7+3.0))),cl*0.92);
+    // noite
+    vec3 ntop=vec3(0.015,0.03,0.08),nhor=vec3(0.10,0.11,0.20);
+    vec3 nig=h>0.0?mix(nhor,ntop,pow(clamp(h,0.0,1.0),0.45)):mix(nhor,vec3(0.02,0.025,0.04),clamp(-h*5.0,0.0,1.0));
+    nig+=vec3(0.95,0.55,0.25)*exp(-max(h,0.0)*14.0)*0.38*step(-0.02,h);   // brilho alaranjado da cidade
+    vec2 sp=floor(d.xz/(abs(h)+0.25)*320.0);float st=step(0.9975,h21(sp))*smoothstep(0.08,0.4,h);
+    nig+=vec3(st)*(0.6+0.4*sin(time*2.0+h21(sp+7.0)*20.0));
+    float md=max(dot(d,normalize(vec3(0.4,0.55,-0.5))),0.0);nig+=vec3(0.9,0.92,1.0)*smoothstep(0.9992,0.9996,md)+vec3(0.25,0.28,0.35)*pow(md,40.0)*0.3;
+    nig=mix(nig,vec3(0.12,0.12,0.15)+vec3(0.25,0.14,0.06)*exp(-h*6.0),cl*0.55);
+    gl_FragColor=vec4(mix(day,nig,night),1.0);
+  }`}));
+SKY.renderOrder=-1;SKY.frustumCulled=false;SKY.visible=false;scene.add(SKY);
+let cityLights=null;
+function buildCityLights(){
+  if(cityLights){osmG.remove(cityLights);}
+  // brilho distante: a cidade continua além do raio do mapa
+  let seed=5;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const P=NIGHT.pts.slice(),C=NIGHT.cols.slice();
+  for(let i=0;i<9000;i++){const a=rnd()*Math.PI*2,r=900+Math.pow(rnd(),0.7)*800;
+    const x=ANCHOR[0]+Math.cos(a)*r,z=ANCHOR[1]+Math.sin(a)*r;P.push(x,2+rnd()*12,z);const w=rnd()<0.7;C.push(1,w?0.75:0.9,w?0.45:1);}
+  const mk=(pos,col,size,op)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+    const m=new THREE.PointsMaterial({size,vertexColors:true,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending,map:GLOW,fog:false,sizeAttenuation:true});
+    return new THREE.Points(g,m);};
+  cityLights=new THREE.Group();
+  cityLights.add(mk(P,C,3.2,0.95),mk(NIGHT.lamps,NIGHT.lampCols,9,0.9));
+  cityLights.visible=state.night;osmG.add(cityLights);
+}
+const GLOW=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.25,'rgba(255,255,255,0.8)');gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+// luzes internas do apartamento (só à noite)
+const aptLights=[new THREE.PointLight(0xffe2b8,0,9,1.6),new THREE.PointLight(0xffe2b8,0,9,1.6)];
+aptLights[0].position.set(3.2,2.3,4.0);aptLights[1].position.set(3.6,LEVEL+2.3,4.6);apt.add(...aptLights);
+function setNight(on){
+  state.night=on;press('b-night',on);
+  SKY.material.uniforms.night.value=on?1:0;
+  hemi.intensity=on?0.16:0.75;hemi.color.setHex(on?0x8fa3d6:0xffffff);hemi.groundColor.setHex(on?0x20232c:0x9a958c);
+  sun.intensity=on?0.22:0.75;sun.color.setHex(on?0x9fb3e6:0xffffff);
+  if(GLASS_LIT){GLASS_LIT.emissive.setHex(on?0xffc77a:0x000000);GLASS_LIT.emissiveIntensity=on?0.85:0;}
+  aptLights.forEach(l=>l.intensity=on?1.1:0);
+  if(cityLights) cityLights.visible=on;
+  sceneColor();
+}
 
 function placeApt(){
   if(state.mode==='ctx'){apt.rotation.y=Math.PI/2;apt.position.set(0.2,Y16,BL-0.2);}
@@ -850,11 +1017,12 @@ function setMode(m){
   placeApt();setSun();sceneColor();
   if(m==='ctx'){ctxView('all');loadOSM();} else {state.vp='all';resize();homeView();}
   $('osm').hidden=m!=='ctx'||osmState==='idle'&&!$('osm').innerHTML;
-  if(m!=='ctx') $('loadbar').hidden=true;
+  if(m!=='ctx'){$('loadbar').hidden=true;if(state.night) setNight(false);}
 }
 $('m-apt').onclick=()=>setMode('apt');
 $('m-ctx').onclick=()=>setMode('ctx');
 ['all','ter','sala','qto','cor'].forEach(k=>$('v-'+k).onclick=()=>ctxView(k));
+$('b-night').onclick=()=>setNight(!state.night);
 function applyCut(){
   const lim=state.cut?1.2:99;
   for(const L of [lowWalls,upWalls]) for(const w of L){
@@ -870,8 +1038,10 @@ function sceneColor(){
   const cs=getComputedStyle(document.documentElement);
   const isCtx=state.mode==='ctx';
   const v=(isCtx?cs.getPropertyValue('--sky'):cs.getPropertyValue('--scene')).trim()||'#e4e2dc';
-  scene.background=new THREE.Color(v);
-  scene.fog=isCtx?new THREE.Fog(v,400,1500):null;
+  const night=isCtx&&state.night, col=night?'#11152b':v;
+  scene.background=new THREE.Color(col);
+  scene.fog=isCtx?(night?new THREE.Fog(col,350,1700):new THREE.Fog(v,450,1600)):null;
+  if(typeof SKY!=='undefined') SKY.visible=isCtx;
 }
 sceneColor();
 (function(){const mq=matchMedia('(prefers-color-scheme: dark)');
@@ -1036,6 +1206,8 @@ function frame(){
   {const dist=camera.position.distanceTo(controls.target);
    const near=(walk.on||state.vp!=='all')?0.05:Math.min(2,Math.max(0.05,dist*0.01));
    if(Math.abs(camera.near-near)>near*0.2){camera.near=near;camera.updateProjectionMatrix();}}
+  if(SKY.visible){SKY.position.copy(camera.position);SKY.material.uniforms.time.value=now/1000;
+    SKY.material.uniforms.sunDir.value.copy(sun.position).sub(sun.target.position).normalize();}
   renderer.render(scene,camera);
   if(state.tags&&!walk.on){
     const w=canvas.clientWidth,h=canvas.clientHeight;
