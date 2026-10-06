@@ -47,6 +47,16 @@ button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .fail{position:absolute;left:16px;right:16px;top:45%;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;text-align:center;font-size:14px}
+.walkhud{position:absolute;inset:0;pointer-events:none}
+.walkhud .bar{position:absolute;left:16px;right:16px;top:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.walkhud .info{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:8px 11px;font-size:12.5px;line-height:1.45;max-width:min(420px,70vw)}
+.walkhud .info b{font-family:var(--f-display);letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--accent);display:block}
+.walkhud .info span{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.walkhud button{pointer-events:auto;background:var(--accent);color:var(--accent-ink)}
+.walkhud .cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #0006}
+.walkhud .joy{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid #ffffffaa;background:#0002}
+.walkhud .joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:#ffffffcc}
+.walking .card,.walking .dock,.walking .hint,.walking #tags{display:none}
 .hint{position:absolute;right:16px;top:16px;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 9px}
 @media (max-width:640px){.hint{display:none}.card dl{display:none}.card h1{font-size:19px}}
 </style>
@@ -68,6 +78,14 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
     </dl>
   </div>
   <div class="hint">Arraste para girar · role para zoom · botão direito move</div>
+  <div class="walkhud" id="walkhud" hidden>
+    <div class="cross"></div>
+    <div class="joy" id="joy" hidden><i id="joyk"></i></div>
+    <div class="bar">
+      <div class="info" id="walkinfo"><b id="walkwhere">Pavimento inferior</b><span id="walkhelp">Clique na tela para olhar com o mouse · W A S D ou setas para andar · Shift corre · Esc libera o mouse</span></div>
+      <button id="b-walkexit">Sair</button>
+    </div>
+  </div>
   <div class="dock">
     <div class="grp" role="group" aria-label="Cena">
       <span class="lbl">Cena</span>
@@ -92,6 +110,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
       <button id="b-exp" aria-pressed="false">Separar andares</button>
       <button id="b-cut" aria-pressed="false">Paredes baixas</button>
       <button id="b-tag" aria-pressed="true">Nomes</button>
+      <button id="b-walk">Andar (1ª pessoa)</button>
       <button id="b-top">Vista de cima</button>
       <button id="b-reset">Recentralizar</button>
     </div>
@@ -318,6 +337,11 @@ bathroom(U,upWalls);
   }
   const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rail),120,0.022,8,false),M.steel);
   stairG.add(tube);
+  // guarda-corpo do vão no andar de cima (aberto só na chegada da escada, a sudeste)
+  const gr=[],R2=ST.r+0.08;
+  for(let a=45;a<=375;a+=5){const t=THREE.MathUtils.degToRad(a);gr.push(new THREE.Vector3(ST.x+Math.sin(t)*R2,0.95,ST.z+Math.cos(t)*R2));
+    if(a%30===15||a===375){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.95,6),M.steel);p.position.set(gr[gr.length-1].x,0.475,gr[gr.length-1].z);U.add(p);}}
+  U.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gr),80,0.022,8,false),M.steel));
 })();
 
 // chão em volta
@@ -593,21 +617,163 @@ sceneColor();
   if(mq.addEventListener) mq.addEventListener('change',sceneColor); else if(mq.addListener) mq.addListener(sceneColor);})();
 new MutationObserver(sceneColor).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
+// ---------- primeira pessoa (olhos a 1,70 m)
+const EYE=1.70, PR=0.22;                    // altura dos olhos e raio do corpo
+const walk={on:false,x:5.0,z:6.0,y:0,yaw:Math.PI/2,pitch:0,floor:0,stair:false,phi:0,keys:{},run:false,
+  joy:null,look:null,mv:[0,0]};
+// colisores 2D (em coordenadas da planta) para cada pavimento
+function colliders(list,parent){
+  const out=[];
+  for(const {m,y0} of list){
+    if(m.parent!==parent||y0>1.0) continue;
+    if(m.material===M.glass&&y0===0) continue;           // porta de correr do terraço: passa
+    const g=m.geometry.parameters;if(!g||g.width===undefined) continue;
+    out.push([m.position.x-g.width/2,m.position.x+g.width/2,m.position.z-g.depth/2,m.position.z+g.depth/2]);
+  }
+  return out;
+}
+let COL=null;
+function buildColliders(){
+  const low=colliders(lowWalls,lower), up=colliders(upWalls,U);
+  low.push([3.2,5.6,0,0.6],[5.0,5.6,0.6,1.8]);           // bancada da cozinha
+  [low,up].forEach(L=>L.push([1.0,1.4,2.9,3.3]));         // vaso sanitário
+  COL=[low,up];
+}
+const DEG=180/Math.PI;
+const angOf=(x,z)=>{let a=Math.atan2(x-ST.x,z-ST.z)*DEG;return a<0?a+360:a;};
+const wrap=d=>{while(d>180)d-=360;while(d<-180)d+=360;return d;};
+function pushOut(x,z,L){
+  for(let it=0;it<3;it++) for(const [x0,x1,z0,z1] of L){
+    const cx=Math.max(x0,Math.min(x,x1)), cz=Math.max(z0,Math.min(z,z1));
+    const dx=x-cx, dz=z-cz, d2=dx*dx+dz*dz;
+    if(d2<PR*PR){
+      if(d2>1e-8){const d=Math.sqrt(d2),k=(PR-d)/d;x+=dx*k;z+=dz*k;}
+      else{const l=x-x0+PR,r=x1-x+PR,t=z-z0+PR,b=z1-z+PR,mn=Math.min(l,r,t,b);
+        if(mn===l)x=x0-PR;else if(mn===r)x=x1+PR;else if(mn===t)z=z0-PR;else z=z1+PR;}
+    }
+  }
+  return [Math.max(0.05,Math.min(5.55,x)),Math.max(0.05,Math.min(6.45,z))];
+}
+// Escada: 15 degraus de 21° a partir do leste (90°), subindo no sentido norte → oeste → sul.
+// Entrada embaixo pelo lado sudeste (entre 30° e 95°); saída em cima para o sudeste (entre 10° e 45°).
+function stepWalk(nx,nz){
+  const R=ST.r;
+  if(walk.stair){
+    let d=Math.hypot(nx-ST.x,nz-ST.z);
+    const a=angOf(nx,nz), phi=walk.phi+wrap(a-angOf(walk.x,walk.z));
+    if(phi<-60||phi>330) return;                          // não sai pelo vão
+    if(d>R-0.08){
+      if(phi<=8){ if(d>R){walk.stair=false;walk.floor=0;walk.y=0;} }          // sai embaixo
+      else if(phi>=292){ if(d>R+0.1){walk.stair=false;walk.floor=1;walk.y=LEVEL;} } // sai em cima
+      else{const k=(R-0.08)/d;nx=ST.x+(nx-ST.x)*k;nz=ST.z+(nz-ST.z)*k;d=R-0.08;}
+    }
+    if(walk.stair&&d<0.2){const k=0.2/Math.max(d,1e-4);nx=ST.x+(nx-ST.x)*k;nz=ST.z+(nz-ST.z)*k;}
+    walk.phi=phi;walk.x=nx;walk.z=nz;
+    if(walk.stair) walk.y=Math.max(0,Math.min(LEVEL,phi/315*LEVEL));
+    return;
+  }
+  [nx,nz]=pushOut(nx,nz,COL[walk.floor]);
+  const d=Math.hypot(nx-ST.x,nz-ST.z), a=angOf(nx,nz);
+  if(walk.floor===0&&d<R){
+    if(a>=30&&a<=95){walk.stair=true;walk.phi=a-90;}
+    else{const k=R/Math.max(d,1e-4);nx=ST.x+(nx-ST.x)*k;nz=ST.z+(nz-ST.z)*k;}
+  } else if(walk.floor===1&&d<R+0.1){
+    if(a>=10&&a<=45){walk.stair=true;walk.phi=a+270;}
+    else{const k=(R+0.1)/Math.max(d,1e-4);nx=ST.x+(nx-ST.x)*k;nz=ST.z+(nz-ST.z)*k;}
+  }
+  walk.x=nx;walk.z=nz;
+}
+const _e=new THREE.Euler(0,0,0,'YXZ'),_q=new THREE.Quaternion(),_v=new THREE.Vector3();
+function walkCamera(){
+  _v.set(walk.x,walk.y+EYE,walk.z);apt.localToWorld(_v);camera.position.copy(_v);
+  _e.set(walk.pitch,walk.yaw,0);_q.setFromEuler(_e);
+  apt.getWorldQuaternion(camera.quaternion);camera.quaternion.multiply(_q);
+}
+function walkUpdate(dt){
+  let f=0,r=0;const K=walk.keys;
+  if(K.KeyW||K.ArrowUp)f+=1;if(K.KeyS||K.ArrowDown)f-=1;if(K.KeyD||K.ArrowRight)r+=1;if(K.KeyA||K.ArrowLeft)r-=1;
+  f+=walk.mv[1];r+=walk.mv[0];
+  const len=Math.hypot(f,r);
+  if(len>0.01){
+    const sp=(K.ShiftLeft||K.ShiftRight?2.6:1.4)*dt*Math.min(1,len)/len;
+    const sy=Math.sin(walk.yaw),cy=Math.cos(walk.yaw);
+    const dx=(-sy*f+cy*r)*sp, dz=(-cy*f-sy*r)*sp;
+    const n=Math.ceil(Math.hypot(dx,dz)/0.05);           // passos pequenos para não atravessar paredes
+    for(let i=0;i<n;i++) stepWalk(walk.x+dx/n,walk.z+dz/n);
+  }
+  const w=$('walkwhere');
+  const where=walk.stair?'Escada caracol':(walk.floor===0?'Pavimento inferior':(walk.x<3.05&&walk.z<2.9?'Terraço':'Pavimento superior'));
+  if(w.textContent!==where) w.textContent=where;
+  walkCamera();
+}
+function startWalk(){
+  if(!COL) buildColliders();
+  state.explode=false;press('b-exp',false);state.expOff=0;upper.position.y=0;
+  if(state.cut){state.cut=false;press('b-cut',false);applyCut();}
+  state.view='both';applyView();
+  Object.assign(walk,{on:true,x:4.95,z:5.95,y:0,floor:0,stair:false,yaw:Math.PI*0.62,pitch:0,keys:{},mv:[0,0]});
+  controls.enabled=false;document.getElementById('app').classList.add('walking');$('walkhud').hidden=false;
+  const touch=matchMedia('(pointer:coarse)').matches;
+  $('walkhelp').textContent=touch?'Arraste do lado esquerdo para andar · arraste do lado direito para olhar':
+    'Clique na tela para olhar com o mouse · W A S D ou setas para andar · Shift corre · Esc libera o mouse';
+  resize();walkCamera();
+}
+function stopWalk(){
+  walk.on=false;controls.enabled=true;document.getElementById('app').classList.remove('walking');$('walkhud').hidden=true;
+  if(document.pointerLockElement) document.exitPointerLock();
+  resize();homeView();
+}
+$('b-walk').onclick=startWalk;$('b-walkexit').onclick=stopWalk;
+addEventListener('keydown',e=>{if(!walk.on)return;walk.keys[e.code]=true;if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();});
+addEventListener('keyup',e=>{walk.keys[e.code]=false;});
+addEventListener('blur',()=>{walk.keys={};});
+const look=(dx,dy,k)=>{walk.yaw-=dx*k;walk.pitch=Math.max(-1.35,Math.min(1.35,walk.pitch-dy*k));};
+canvas.addEventListener('click',()=>{if(walk.on&&!matchMedia('(pointer:coarse)').matches&&canvas.requestPointerLock){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}});
+addEventListener('mousemove',e=>{if(walk.on&&document.pointerLockElement===canvas) look(e.movementX,e.movementY,0.0022);});
+// sem trava do mouse: arrastar com o botão pressionado também olha
+let drag=null;
+canvas.addEventListener('mousedown',e=>{if(walk.on&&document.pointerLockElement!==canvas) drag=[e.clientX,e.clientY];});
+addEventListener('mouseup',()=>drag=null);
+addEventListener('mousemove',e=>{if(walk.on&&drag){look(e.clientX-drag[0],e.clientY-drag[1],0.004);drag=[e.clientX,e.clientY];}});
+// toque: esquerda = andar, direita = olhar
+const joy=$('joy'),joyk=$('joyk');
+canvas.addEventListener('touchstart',e=>{if(!walk.on)return;e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.clientX<innerWidth*0.45&&!walk.joy){walk.joy={id:t.identifier,x:t.clientX,y:t.clientY};joy.hidden=false;joy.style.left=t.clientX+'px';joy.style.top=t.clientY+'px';joyk.style.transform='';}
+    else if(!walk.look) walk.look={id:t.identifier,x:t.clientX,y:t.clientY};
+  }},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(!walk.on)return;e.preventDefault();
+  for(const t of e.changedTouches){
+    if(walk.joy&&t.identifier===walk.joy.id){
+      let dx=t.clientX-walk.joy.x,dy=t.clientY-walk.joy.y;const l=Math.hypot(dx,dy),m=50;
+      if(l>m){dx*=m/l;dy*=m/l;}
+      joyk.style.transform='translate('+dx+'px,'+dy+'px)';walk.mv=[dx/m,-dy/m];
+    } else if(walk.look&&t.identifier===walk.look.id){
+      look(t.clientX-walk.look.x,t.clientY-walk.look.y,0.006);walk.look.x=t.clientX;walk.look.y=t.clientY;
+    }
+  }},{passive:false});
+const tend=e=>{for(const t of e.changedTouches){
+  if(walk.joy&&t.identifier===walk.joy.id){walk.joy=null;walk.mv=[0,0];joy.hidden=true;}
+  if(walk.look&&t.identifier===walk.look.id) walk.look=null;}};
+canvas.addEventListener('touchend',tend);canvas.addEventListener('touchcancel',tend);
+
 // ---------- loop
 function resize(){
   const w=canvas.clientWidth,h=canvas.clientHeight;
   renderer.setSize(w,h,false);camera.aspect=w/h;
-  camera.fov=(state.mode==='ctx'&&state.vp!=='all')?(w<640?80:68):(w<640?55:40);camera.updateProjectionMatrix();
+  camera.fov=walk.on?(w<640?80:72):(state.mode==='ctx'&&state.vp!=='all')?(w<640?80:68):(w<640?55:40);camera.updateProjectionMatrix();
 }
 addEventListener('resize',resize);resize();
 const tmp=new THREE.Vector3();
+let lastT=performance.now();
 function frame(){
+  const now=performance.now(),dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
   const target=state.explode?3.2:0;
   state.expOff+=(target-state.expOff)*0.12;
   upper.position.y=state.expOff;
-  controls.update();
+  if(walk.on) walkUpdate(dt); else controls.update();
   renderer.render(scene,camera);
-  if(state.tags){
+  if(state.tags&&!walk.on){
     const w=canvas.clientWidth,h=canvas.clientHeight;
     for(const t of tags){
       const lowSeen=lower.visible&&(!upper.visible||state.expOff>1.5);
