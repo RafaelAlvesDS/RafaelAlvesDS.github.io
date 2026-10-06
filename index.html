@@ -213,9 +213,9 @@ floorShape([[3.2,2.2],[5.6,2.2],[5.6,6.5],[3.2,6.5],[3.2,4.05],[2.23,4.05],[2.23
 
 // ---------- lower walls
 wall('x',-0.1,-0.2,5.8,TE,H,lower,lowWalls,[WIN(1.0,2.15),WIN(3.85,5.0)],M.ext);    // fachada topo
-wall('x',6.6,-0.2,5.8,TE,H,lower,lowWalls,[DOOR(4.7,5.5)],M.ext);                    // base c/ entrada
+wall('x',6.6,-0.2,5.8,TE,H,lower,lowWalls,[],M.ext);                                  // base
 wall('z',-0.1,0,6.5,TE,H,lower,lowWalls,[HIGH(2.95,3.75),WIN(4.5,6.1)],M.ext);       // lateral esq.
-wall('z',5.7,0,6.5,TE,H,lower,lowWalls,[],M.ext);                                    // lateral dir.
+wall('z',5.7,0,6.5,TE,H,lower,lowWalls,[DOOR(5.7,6.48)],M.ext);                      // lateral dir. c/ entrada (mesma parede da escada)
 wall('z',3.125,0,6.5,0.15,H,lower,lowWalls,[{a:2.69,b:3.91,lo:0,hi:H}]);             // divisa quartos / sala — vão aberto, sem verga
 wall('x',2.63,0,3.05,TI,H,lower,lowWalls,[DOOR(2.25,3.0)]);                         // quarto 1 / circulação
 wall('x',3.97,0,3.05,TI,H,lower,lowWalls,[DOOR(2.25,3.0)]);                         // banho / quarto 2
@@ -250,8 +250,8 @@ wall('x',2.91,2.18,5.8,TI,H,U,upWalls,[SLIDE(2.7,3.85)]);                   // t
 wall('z',2.17,2.69,3.91,TI,H,U,upWalls,[DOOR(3.25,3.91)]);                  // banho / sala
 wall('x',3.97,0,2.3,TI,H,U,upWalls,[]);                                     // banho / sala (sul)
 wall('z',-0.1,2.6,6.5,TE,H,U,upWalls,[HIGH(2.95,3.75),WIN(4.5,6.1)],M.ext);
-wall('z',5.7,2.85,6.5,TE,H,U,upWalls,[],M.ext);
-wall('x',6.6,-0.2,5.8,TE,H,U,upWalls,[DOOR(4.7,5.5)],M.ext);
+wall('z',5.7,2.85,6.5,TE,H,U,upWalls,[DOOR(5.7,6.48)],M.ext);
+wall('x',6.6,-0.2,5.8,TE,H,U,upWalls,[],M.ext);
 
 // ---------- portas (abertas a 90°, como desenhadas na planta)
 function doorLeaf(parent,list,hx,hz,dx,dz,w){
@@ -265,9 +265,9 @@ function doorLeaf(parent,list,hx,hz,dx,dz,w){
 doorLeaf(lower,lowWalls,3.0,2.63,0,-1,0.75);   // quarto 1
 doorLeaf(lower,lowWalls,3.0,3.97,0,1,0.75);    // quarto 2
 doorLeaf(lower,lowWalls,2.17,3.88,-1,0,0.66);  // banho
-doorLeaf(lower,lowWalls,5.5,6.6,0,-1,0.8);     // entrada
+doorLeaf(lower,lowWalls,5.62,6.47,-1,0,0.78);  // entrada: abre para dentro, encostando na parede de baixo
 doorLeaf(U,upWalls,2.17,3.88,-1,0,0.66);       // banho superior
-doorLeaf(U,upWalls,5.5,6.6,0,-1,0.8);          // porta do pavimento superior
+doorLeaf(U,upWalls,5.62,6.47,-1,0,0.78);       // porta do pavimento superior
 
 // ---------- banheiros (mesmo layout nos dois andares)
 function bathroom(parent,list){
