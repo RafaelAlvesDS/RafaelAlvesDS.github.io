@@ -360,7 +360,7 @@ function unitMass(T,rects,y0,y1){rects.forEach(r=>{
 // janela: [eixo da face ('u'|'v'), posição da face, de, até, peitoril, verga]
 function unitWins(T,wins,f0,f1,kind='glass'){for(let f=f0;f<=f1;f++){const y=f*F;wins.forEach(([ax,c,a,b,lo,hi])=>{
   const r=ax==='v'?[a,b,c-0.05,c+0.05]:[c-0.05,c+0.05,a,b];const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y+lo,y+hi,z0,z1,kind);});}}
-function parapet(T,segs,y){segs.forEach(([u0,u1,v0,v1])=>{const [x0,x1,z0,z1]=T([u0,u1,v0,v1]);ibox(x0,x1,y,y+1.1,z0,z1,'wall');});}
+function parapet(T,segs,y,h=1.1){segs.forEach(([u0,u1,v0,v1])=>{const [x0,x1,z0,z1]=T([u0,u1,v0,v1]);ibox(x0,x1,y,y+h,z0,z1,'wall');});}
 
 // --- apartamento do meio (planta enviada). u: 0 = ponta da cozinha → 9,37; v: 0 = fachada externa → 5,34 = corredor
 const MID={
@@ -370,7 +370,8 @@ const MID={
   wins:[['v',1.12,0.56,1.49,1.1,2.1],['v',1.12,1.69,2.84,1.0,2.2],['v',0,4.93,5.82,1.0,2.2],['v',1.58,7.5,8.62,1.0,2.2]],
   wins17:[['v',1.12,0.56,1.49,1.1,2.1],['v',1.12,1.69,2.84,1.0,2.2],['u',4.29,1.4,3.4,0,2.2]],
   door:[['v',MD,3.66,4.4,0,2.1]],
-  terr:[[4.29,6.90,-0.05,0.05],[6.85,6.95,0,1.58],[6.90,ML,1.53,1.63],[ML-0.05,ML+0.05,1.58,4.85],[6.90,ML,4.8,4.9],[4.29,6.90,3.85,3.95],[4.24,4.34,0,1.12]],
+  divider:[[ML-0.06,ML,1.53,4.9]],                      // muro entre a cobertura e a vizinha
+  terr:[[4.29,6.90,-0.05,0.05],[6.85,6.95,0,1.58],[6.90,ML,1.53,1.63],[6.90,ML,4.8,4.9],[4.29,6.90,3.85,3.95],[4.24,4.34,0,1.12]],
 };
 function middle(ox,west,z0,flip,top){
   const T=([u0,u1,v0,v1])=>{
@@ -384,6 +385,7 @@ function middle(ox,west,z0,flip,top){
   unitWins(T,MID.wins17,17,17);
   unitWins(T,MID.door,0,17,'door');
   parapet(T,MID.terr,F17);
+  parapet(T,MID.divider,F17,2.4);
 }
 // --- apartamento de canto (a planta de vocês). Coordenadas do apto 12; os outros são espelhados.
 const CORNER={
@@ -421,6 +423,9 @@ function building(ox,ours){
     if(f>0){ibox(ox+COR[0],ox+COR[1],y-0.2,y,UD,CORE[0],'band');ibox(ox+COR[0],ox+COR[1],y-0.2,y,CORE[1],BL-UD,'band');}
   }
   ibox(ox+BW+1.7,ox+BW+4.5,3.2,3.4,CORE[0]+0.6,CORE[1]-0.6,'band');      // marquise da entrada
+  // telhado do corredor
+  ibox(ox+COR[0]-0.05,ox+COR[1]+0.05,TOP-0.25,TOP+0.1,UD,CORE[0],'wall');
+  ibox(ox+COR[0]-0.05,ox+COR[1]+0.05,TOP-0.25,TOP+0.1,CORE[1],BL-UD,'wall');
 }
 const BX=[-2*(BW+GAP),-(BW+GAP),0];
 BX.forEach((x0,i)=>building(x0,i===2));
