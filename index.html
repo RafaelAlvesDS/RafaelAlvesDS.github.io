@@ -343,48 +343,98 @@ function cbox(x0,x1,y0,y1,z0,z1,mat,parent=ctx){
   m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 }
 // caixas instanciadas (uma chamada de desenho por material, leve no celular)
-const IB={conc:[],glass:[]};
-const ibox=(x0,x1,y0,y1,z0,z1,k)=>IB[k].push([x0,x1,y0,y1,z0,z1]);
-function mass(x0,x1,z0,z1,y0,y1,pillars=true){
-  ibox(x0+0.25,x1-0.25,y0,y1-0.3,z0+0.25,z1-0.25,'glass');
-  for(let y=Math.ceil((y0+0.01)/F)*F;y<=y1+0.01;y+=F) ibox(x0,x1,y-0.24,y,z0,z1,'conc');
-  if(!pillars) return;
-  const pil=(x,z)=>ibox(x-0.2,x+0.2,y0,y1,z-0.2,z+0.2,'conc');
-  const nx=Math.max(1,Math.round((x1-x0)/5)), nz=Math.max(1,Math.round((z1-z0)/5));
-  for(let i=0;i<=nx;i++){const x=x0+0.2+(x1-x0-0.4)*i/nx;pil(x,z0+0.2);pil(x,z1-0.2);}
-  for(let i=1;i<nz;i++){const z=z0+0.2+(z1-z0-0.4)*i/nz;pil(x0+0.2,z);pil(x1-0.2,z);}
+const IB={wall:[],band:[],glass:[],door:[]};
+const ibox=(x0,x1,y0,y1,z0,z1,k)=>IB[k].push([Math.min(x0,x1),Math.max(x0,x1),y0,y1,Math.min(z0,z1),Math.max(z0,z1)]);
+const F17=17*F;                             // piso do 17º (coberturas)
+// Prédio medido na imagem da construtora + plantas (≈ 5,66 px/m na implantação, ≈ 134 px/m na planta do meio).
+// X: 0 = fachada oeste; Z: 0 = ponta norte. Colunas: pares a oeste, ímpares a leste, corredor aberto no meio.
+const ML=9.37, MD=5.34;                     // apartamento do meio: comprimento ao longo do prédio × profundidade
+const COR=[0.35+MD,BW-0.35-MD];             // corredor ≈ 5,69 → 8,11
+const ROWS=[[UD,false],[UD+ML,true],[29.86,false],[29.86+ML,true]]; // [início em Z, espelhado (cozinha para o sul)]
+const CORE=[UD+2*ML,29.86];
+function unitMass(T,rects,y0,y1){rects.forEach(r=>{
+  const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y0,y1,z0,z1,'wall');
+  for(let y=Math.ceil((y0+0.01)/F)*F;y<y1-0.01;y+=F) ibox(x0-0.04,x1+0.04,y-0.09,y+0.09,z0-0.04,z1+0.04,'band');
+  ibox(x0-0.04,x1+0.04,y1-0.12,y1+0.05,z0-0.04,z1+0.04,'band');
+});}
+// janela: [eixo da face ('u'|'v'), posição da face, de, até, peitoril, verga]
+function unitWins(T,wins,f0,f1,kind='glass'){for(let f=f0;f<=f1;f++){const y=f*F;wins.forEach(([ax,c,a,b,lo,hi])=>{
+  const r=ax==='v'?[a,b,c-0.05,c+0.05]:[c-0.05,c+0.05,a,b];const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y+lo,y+hi,z0,z1,kind);});}}
+function parapet(T,segs,y){segs.forEach(([u0,u1,v0,v1])=>{const [x0,x1,z0,z1]=T([u0,u1,v0,v1]);ibox(x0,x1,y,y+1.1,z0,z1,'wall');});}
+
+// --- apartamento do meio (planta enviada). u: 0 = ponta da cozinha → 9,37; v: 0 = fachada externa → 5,34 = corredor
+const MID={
+  kit:[[0,4.29,1.12,4.81],[1.68,4.29,4.81,MD]],       // cozinha, sala e jantar
+  bed:[[4.29,6.90,0,MD],[6.90,ML,1.58,4.85]],          // quarto, banho/circulação e quarto de casal
+  bath17:[[4.29,6.90,3.9,MD]],                         // banheiro da cobertura
+  wins:[['v',1.12,0.56,1.49,1.1,2.1],['v',1.12,1.69,2.84,1.0,2.2],['v',0,4.93,5.82,1.0,2.2],['v',1.58,7.5,8.62,1.0,2.2]],
+  wins17:[['v',1.12,0.56,1.49,1.1,2.1],['v',1.12,1.69,2.84,1.0,2.2],['u',4.29,1.4,3.4,0,2.2]],
+  door:[['v',MD,3.66,4.4,0,2.1]],
+  terr:[[4.29,6.90,-0.05,0.05],[6.85,6.95,0,1.58],[6.90,ML,1.53,1.63],[ML-0.05,ML+0.05,1.58,4.85],[6.90,ML,4.8,4.9],[4.29,6.90,3.85,3.95],[4.24,4.34,0,1.12]],
+};
+function middle(ox,west,z0,flip,top){
+  const T=([u0,u1,v0,v1])=>{
+    const X=v=>west?ox+0.35+v:ox+BW-0.35-v, Z=u=>flip?z0+ML-u:z0+u;
+    return [X(v0),X(v1),Z(u0),Z(u1)];
+  };
+  unitMass(T,MID.kit,0,TOP);
+  unitMass(T,MID.bed,0,F17);
+  unitMass(T,MID.bath17,F17,TOP);
+  unitWins(T,MID.wins,0,16);
+  unitWins(T,MID.wins17,17,17);
+  unitWins(T,MID.door,0,17,'door');
+  parapet(T,MID.terr,F17);
 }
-// Contorno do prédio medido na imagem da construtora (≈ 5,66 px por metro).
-// Duas colunas de apartamentos com um corredor aberto no meio, recortes nas fachadas
-// e o núcleo de elevadores atravessando no centro. X: 0 = fachada oeste; Z: 0 = ponta norte.
-const COR=[6.0,7.8];                       // corredor entre as duas colunas
-const BUMPS=[[10.1,12.9],[17.8,20.5],[33.7,36.7],[41.7,44.7]];
+// --- apartamento de canto (a planta de vocês). Coordenadas do apto 12; os outros são espelhados.
+const CORNER={
+  wins:[['x',0,BL-2.35,BL-1.2,1.0,2.2],['x',0,BL-5.2,BL-4.05,1.0,2.2],['z',BL,3.15,3.95,1.6,2.2],['z',BL,4.7,6.3,1.0,2.2]],
+  wins17:[['z',BL,3.15,3.95,1.6,2.2],['z',BL,4.7,6.3,1.0,2.2],['x',3.05,BL-4.05,BL-2.9,0,2.2]],
+};
+function corner(ox,mx,mz,skipTop){
+  const tx=x=>ox+(mx?BW-x:x), tz=z=>mz?BL-z:z;
+  const T=([x0,x1,z0,z1])=>[tx(x0),tx(x1),tz(z0),tz(z1)];
+  const winsT=W=>W.map(([ax,c,a,b,lo,hi])=>ax==='x'?['u',c,a,b,lo,hi]:['v',c,a,b,lo,hi]);
+  // aqui u = X local e v = Z local; a janela 'u' fica numa face X = c, a 'v' numa face Z = c
+  const Tw=([u0,u1,v0,v1])=>T([u0,u1,v0,v1]);
+  const W=(list,f0,f1)=>{for(let f=f0;f<=f1;f++){const y=f*F;list.forEach(([ax,c,a,b,lo,hi])=>{
+    const r=ax==='x'?[c-0.05,c+0.05,a,b]:[a,b,c-0.05,c+0.05];const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y+lo,y+hi,z0,z1,'glass');});}};
+  if(skipTop){unitMass(T,[[0,6.9,BL-UD,BL]],0,Y16-0.15);W(CORNER.wins,0,15);return;}
+  unitMass(T,[[0,6.9,BL-UD,BL]],0,F17);
+  unitMass(T,[[3.05,6.9,BL-UD,BL]],F17,TOP);
+  W(CORNER.wins,0,16);W(CORNER.wins17,17,17);
+  parapet(T,[[0,0.1,BL-UD,BL],[0,3.05,BL-0.1,BL],[0,3.05,BL-UD,BL-UD+0.1]],F17);
+}
 function building(ox,ours){
-  const R=(x0,x1,z0,z1,y0=0,y1=TOP,p=true)=>mass(ox+x0,ox+x1,z0,z1,y0,y1,p);
-  R(0,BW,0,UD);                             // apartamentos 01 e 02
-  R(1.8,COR[0],UD,BL-UD);                   // coluna oeste (pares)
-  R(COR[1],12.2,UD,BL-UD);                  // coluna leste (ímpares)
-  BUMPS.forEach(([a,b])=>{R(0.35,1.8,a,b,0,TOP,false);R(12.2,13.4,a,b,0,TOP,false);});
-  R(0.5,15.5,24.6,29.9);                    // núcleo: elevadores, escada e hall
-  ibox(ox+5,ox+11,TOP,TOP+2.8,25,29.5,'conc');               // casa de máquinas
-  if(ours){                                 // canto sudoeste dos andares 16 e 17 fica para o modelo
-    R(0,BW,BL-UD,BL,0,Y16-0.15);
-    R(6.9,BW,BL-UD,BL,Y16-0.15,TOP);
-  } else R(0,BW,BL-UD,BL);                  // apartamentos 11 e 12
-  // corredor: lajes abertas por andar, iluminado de cima
-  ibox(ox+COR[0]-0.02,ox+COR[0]+0.06,0,TOP,UD,BL-UD,'conc');ibox(ox+COR[1]-0.06,ox+COR[1]+0.02,0,TOP,UD,BL-UD,'conc');
-  for(let y=F;y<=TOP+0.01;y+=F){
-    ibox(ox+COR[0],ox+COR[1],y-0.2,y,UD,BL-UD,'conc');
+  ROWS.forEach(([z0,flip])=>{middle(ox,true,z0,flip);middle(ox,false,z0,flip);});
+  corner(ox,false,false,ours);              // 12 (o de vocês no prédio da direita)
+  corner(ox,true,false,false);              // 11
+  corner(ox,false,true,false);              // 02
+  corner(ox,true,true,false);               // 01
+  // núcleo: elevadores, escada e hall, atravessando o prédio
+  const T=([x0,x1,z0,z1])=>[ox+x0,ox+x1,z0,z1];
+  unitMass(T,[[0.5,BW+1.7,CORE[0],CORE[1]]],0,TOP+0.6);
+  ibox(ox+5,ox+11,TOP+0.6,TOP+3.2,CORE[0]+0.4,CORE[1]-0.4,'wall');      // casa de máquinas
+  for(let f=0;f<=17;f++){const y=f*F;
+    ibox(ox+0.45,ox+0.55,y+0.9,y+2.2,CORE[0]+1.8,CORE[1]-1.8,'glass');
+    ibox(ox+BW+1.65,ox+BW+1.75,y+0.9,y+2.2,CORE[0]+1.8,CORE[1]-1.8,'glass');
+    // corredor aberto: laje de cada andar
+    if(f>0){ibox(ox+COR[0],ox+COR[1],y-0.2,y,UD,CORE[0],'band');ibox(ox+COR[0],ox+COR[1],y-0.2,y,CORE[1],BL-UD,'band');}
   }
+  ibox(ox+BW+1.7,ox+BW+4.5,3.2,3.4,CORE[0]+0.6,CORE[1]-0.6,'band');      // marquise da entrada
 }
 const BX=[-2*(BW+GAP),-(BW+GAP),0];
 BX.forEach((x0,i)=>building(x0,i===2));
 (function(){
+  const mats={wall:new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.9}),
+    band:new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:.9}),
+    glass:new THREE.MeshStandardMaterial({color:0x4f6573,roughness:.15,metalness:.4}),
+    door:new THREE.MeshStandardMaterial({color:0x7a6450,roughness:.7})};
   const mt=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sv=new THREE.Vector3();
-  [['conc',CM.conc],['glass',CM.glass]].forEach(([k,mat])=>{
-    const L=IB[k],im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat,L.length);
-    L.forEach(([x0,x1,y0,y1,z0,z1],i)=>{pv.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);sv.set(x1-x0,y1-y0,z1-z0);mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});
-    im.castShadow=true;im.receiveShadow=true;ctx.add(im);
+  Object.keys(IB).forEach(k=>{
+    const L=IB[k];if(!L.length) return;
+    const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mats[k],L.length);
+    L.forEach(([x0,x1,y0,y1,z0,z1],i)=>{pv.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);sv.set(Math.max(x1-x0,0.01),Math.max(y1-y0,0.01),Math.max(z1-z0,0.01));mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});
+    im.castShadow=k!=='glass';im.receiveShadow=true;ctx.add(im);
   });
 })();
 const CX=(BX[0]+BW)/2, CZ=BL/2;
