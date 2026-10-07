@@ -353,7 +353,7 @@ const FURNCOL=[[],[]];                                  // obstáculos para quem
 function fb(g,x0,x1,y0,y1,z0,z1,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,y1-y0,z1-z0),mat);
   m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function fc(g,x,y,z,r,h,mat,seg=20,r2){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r2===undefined?r:r2,h,seg),mat);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
-function solid(f,x0,x1,z0,z1){FURNCOL[f].push([x0,x1,z0,z1]);}
+function solid(f,x0,x1,z0,z1){const k=0.08;FURNCOL[f].push([x0+k,x1-k,z0+k,z1-k]);}   // folga para chegar perto dos móveis
 function plant(g,x,z,s=1){fc(g,x,0,z,0.17*s,0.42*s,FM.pot,16,0.13*s);
   [[0,0.75,0,0.3],[0.12,0.62,0.05,0.22],[-0.1,0.66,-0.06,0.24],[0.02,0.9,0.08,0.18]].forEach(([dx,y,dz,r])=>{
     const b=new THREE.Mesh(new THREE.SphereGeometry(r*s,12,10),FM.leaf);b.position.set(x+dx*s,y*s,z+dz*s);b.castShadow=true;g.add(b);});}
@@ -417,7 +417,7 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
   [[3.25,5.0,1],[3.25,5.6,1],[4.65,5.0,-1],[4.65,5.6,-1]].forEach(([x,z,s])=>{
     fb(g,x-0.22,x+0.22,0.44,0.48,z-0.21,z+0.21,FM.white);fb(g,x-0.2*s-0.02,x-0.2*s+0.02,0.48,0.9,z-0.2,z+0.2,FM.white);
     [[-0.19,-0.18],[0.19,-0.18],[-0.19,0.18],[0.19,0.18]].forEach(([a,b])=>fb(g,x+a-0.015,x+a+0.015,0,0.44,z+b-0.015,z+b+0.015,FM.walnut));});
-  solid(0,3.0,4.9,4.55,6.05);
+  solid(0,3.55,4.35,4.7,5.9);                            // só a mesa; as cadeiras não bloqueiam
   plant(g,5.3,2.45,0.9);solid(0,5.1,5.5,2.25,2.65);
 })();
 
@@ -453,7 +453,6 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
     fb(c,-0.2,0.2,1.18,1.36,-0.37,-0.28,FM.leather);
     [-0.29,0.29].forEach(x=>{fb(c,x-0.03,x+0.03,0.52,0.66,-0.05,0.05,FM.black);fb(c,x-0.04,x+0.04,0.66,0.7,-0.2,0.15,FM.leather);});
   }
-  solid(1,2.72,3.38,5.05,5.72);
   plant(g,0.35,5.75,0.95);solid(1,0.15,0.55,5.55,5.95);
   // terraço: churrasqueira e pia de série, mesa sextavada e chaise redonda
   fb(g,4.95,5.6,0,0.9,2.06,2.78,FM.brick);fb(g,4.93,5.6,0.9,0.95,2.04,2.8,FM.granite);
@@ -466,7 +465,7 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
   plant(g,5.3,0.45,1.1);solid(1,5.05,5.55,0.2,0.7);
   fc(g,3.45,0.72,1.2,0.66,0.04,FM.white,6);fc(g,3.45,0,1.2,0.06,0.72,FM.black,12);fc(g,3.45,0,1.2,0.3,0.03,FM.black,6);
   for(let i=0;i<6;i++){const a=i/6*Math.PI*2+Math.PI/6,x=3.45+Math.cos(a)*0.9,z=1.2+Math.sin(a)*0.9;fc(g,x,0.42,z,0.2,0.05,FM.oak,16);fc(g,x,0,z,0.02,0.42,FM.black,8);}
-  solid(1,2.5,4.4,0.25,2.15);
+  solid(1,2.8,4.1,0.55,1.85);
   fc(g,1.0,0.05,1.1,0.85,0.3,FM.cushion,32);fc(g,1.0,0,1.1,0.8,0.05,FM.black,32);
   {const ring=new THREE.Mesh(new THREE.TorusGeometry(0.9,0.05,10,40,Math.PI*1.1),FM.rope);ring.rotation.set(-Math.PI/2+0.25,0,Math.PI*0.95);ring.position.set(1.0,0.75,1.1);ring.castShadow=true;g.add(ring);}
   [[0.7,0.62],[1.0,0.55],[1.3,0.62]].forEach(([x,z])=>{const p=new THREE.Mesh(new THREE.SphereGeometry(0.17,12,10),FM.fabricD);p.scale.set(1,0.75,0.6);p.position.set(x,0.5,z);g.add(p);});
@@ -475,13 +474,15 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
 
 
 // ---------- banheiros (mesmo layout nos dois andares)
+const SHOWERS=[];
 function bathroom(parent,list){
   // shaft de ventilação (o "X" da planta)
   box(0,0.75,0,H,2.69,2.88,M.wall,parent,list);
   // box do chuveiro
   box(0,0.75,0,0.04,2.88,3.91,M.ceramic,parent);
-  box(0.74,0.76,0.04,1.95,2.88,3.45,M.glass,parent,list);
-  box(0.70,0.72,0.04,1.95,3.15,3.91,M.glass,parent,list);
+  box(0.74,0.76,0.04,1.95,2.88,3.42,M.glass,parent,list);                       // vidro fixo
+  {const sl=box(0.70,0.72,0.04,1.95,3.38,3.91,M.glass,parent,list);sl.userData.dyn=true;   // vidro de correr (abre para o lado do fixo)
+   SHOWERS.push({m:sl,z0:sl.position.z,t:0,goal:0,floor:parent===U?1:0});}
   box(0.69,0.77,1.94,1.97,2.88,3.91,M.steel,parent,list);
   box(0.38,0.41,1.0,2.08,2.88,2.91,M.steel,parent,list);           // tubo
   const head=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.02,24),M.steel);
@@ -1264,7 +1265,7 @@ sceneColor();
 new MutationObserver(sceneColor).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 // ---------- primeira pessoa (olhos a 1,70 m)
-const EYE=1.70, PR=0.22;                    // altura dos olhos e raio do corpo
+const EYE=1.70, PR=0.17;                    // altura dos olhos e raio do corpo
 const walk={on:false,x:5.0,z:6.0,y:0,yaw:Math.PI/2,pitch:0,floor:0,stair:false,phi:0,keys:{},run:false,
   joy:null,look:null,mv:[0,0]};
 // colisores 2D (em coordenadas da planta) para cada pavimento
@@ -1273,6 +1274,7 @@ function colliders(list,parent){
   for(const {m,y0} of list){
     if(m.parent!==parent||y0>1.0) continue;
     if(m.material===M.glass&&y0===0) continue;           // porta de correr do terraço: passa
+    if(m.userData.dyn) continue;                         // vidro do box: colisão própria (abre e fecha)
     const g=m.geometry.parameters;if(!g||g.width===undefined) continue;
     out.push([m.position.x-g.width/2,m.position.x+g.width/2,m.position.z-g.depth/2,m.position.z+g.depth/2]);
   }
@@ -1625,6 +1627,7 @@ function setLights(on){lightsOn=on;aptLights.forEach(l=>l.intensity=on?1.1:0);LA
 const SLD=(function(){let m=null;for(const w of upWalls){if(w.m.material===M.glass&&Math.abs(w.m.position.z-2.91)<0.05&&Math.abs(w.m.position.x-3.275)<0.05)m=w.m;}
   return m?{m,x0:m.position.x,t:1,goal:1}:null;})();
 if(SLD) interact(SLD.m,'Porta de correr do terraço',()=>{SLD.goal=SLD.goal>0.5?0:1;SFX.whoosh();});
+SHOWERS.forEach(sh=>interact(sh.m,'Porta do box',()=>{sh.goal=sh.goal>0.5?0:1;SFX.whoosh();}));
 DOORS.forEach(d=>interact(d.leaf,d.kind==='front'?'Porta de entrada':d.kind,()=>{d.goal=d.goal>0.5?0:1;SFX.latch();}));
 const FRONT_DOORS=[DOORS.find(d=>d.kind==='front'&&d.floor===0),DOORS.find(d=>d.kind==='front'&&d.floor===1)];
 function doorCols(floor){                         // portas fechadas bloqueiam a passagem (coordenadas da planta)
@@ -1632,12 +1635,14 @@ function doorCols(floor){                         // portas fechadas bloqueiam a
   for(const d of DOORS){if(d.floor!==floor||d.t>0.6)continue;
     const ex=d.hx+d.cx*d.w,ez=d.hz+d.cz*d.w;out.push([Math.min(d.hx,ex)-0.06,Math.max(d.hx,ex)+0.06,Math.min(d.hz,ez)-0.06,Math.max(d.hz,ez)+0.06]);}
   if(floor===1&&SLD&&SLD.t<0.6) out.push([2.7,3.85,2.86,2.96]);
+  for(const sh of SHOWERS) if(sh.floor===floor&&sh.t<0.6) out.push([0.68,0.74,3.38,3.91]);
   return out;
 }
 const wrapA=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;};
 function tvAnimate(dt){
   for(const it of INTER) if(it.cd>0) it.cd-=dt;
   for(const d of DOORS){const s=dt*1.8;d.t+=Math.max(-s,Math.min(s,d.goal-d.t));d.pivot.rotation.y=d.closedA+wrapA(d.openA-d.closedA)*d.t;}
+  for(const sh of SHOWERS){const s=dt*1.5;sh.t+=Math.max(-s,Math.min(s,sh.goal-sh.t));sh.m.position.z=sh.z0-sh.t*0.48;}
   if(SLD){const s=dt*1.2;SLD.t+=Math.max(-s,Math.min(s,SLD.goal-SLD.t));SLD.m.position.x=SLD.x0+SLD.t*1.02;}
   {const s=dt*0.9;if(PED.timer>0){PED.timer-=dt;if(PED.timer<=0&&!(tour.zone==='ground'&&Math.abs(tour.x-PGX)<2.4&&tour.z<64.8))PED.goal=0;else if(PED.timer<=0)PED.timer=1;}
    PED.t+=Math.max(-s,Math.min(s,PED.goal-PED.t));pedGate.rotation.y=PED.closedA+(PED.openA-PED.closedA)*PED.t;}
@@ -1997,9 +2002,16 @@ function tvUpdate(dt){
     rig.updateMatrixWorld(true);_hw.copy(camera.position);rig.localToWorld(_hw);
     if(turn){const before=_hw.clone();rig.rotation.y+=turn*Math.PI/6;rig.updateMatrixWorld(true);_hw.copy(camera.position);rig.localToWorld(_hw);
       rig.position.x+=before.x-_hw.x;rig.position.z+=before.z-_hw.z;_hw.copy(before);}
-    const tx=_hw.x+mx,tz=_hw.z+mz,dx=tx-tour.x,dz=tz-tour.z,n=Math.max(1,Math.ceil(Math.hypot(dx,dz)/0.05));
-    if(Math.hypot(dx,dz)<3) for(let i=0;i<n;i++) tvStep(tour.x+dx/n,tour.z+dz/n);
-    rig.position.x+=tour.x-_hw.x;rig.position.z+=tour.z-_hw.z;
+    // 1) analógico: o corpo anda com colisão e o rig acompanha só o que o corpo andou
+    if(mx||mz){const bx=tour.x,bz=tour.z,n=Math.max(1,Math.ceil(Math.hypot(mx,mz)/0.04));
+      for(let i=0;i<n;i++) tvStep(tour.x+mx/n,tour.z+mz/n);
+      rig.position.x+=tour.x-bx;rig.position.z+=tour.z-bz;_hw.x+=tour.x-bx;_hw.z+=tour.z-bz;}
+    // 2) passos reais: o corpo segue a cabeça até onde as paredes deixam
+    {const dx=_hw.x-tour.x,dz=_hw.z-tour.z,d=Math.hypot(dx,dz);
+     if(d>0.01&&d<3){const n=Math.ceil(d/0.04);for(let i=0;i<n;i++) tvStep(tour.x+dx/n,tour.z+dz/n);}}
+    // 3) a cabeça pode passar da parede (debruçar na janela ou no parapeito) até LEAN; além disso, o rig puxa de volta
+    {const LEAN=0.55,dx=_hw.x-tour.x,dz=_hw.z-tour.z,d=Math.hypot(dx,dz);
+     if(d>LEAN){const k=(d-LEAN)/d;rig.position.x-=dx*k;rig.position.z-=dz*k;}}
   } else {
     let f=0,r=0;const K=walk.keys;
     if(K.KeyW||K.ArrowUp)f+=1;if(K.KeyS||K.ArrowDown)f-=1;if(K.KeyD||K.ArrowRight)r+=1;if(K.KeyA||K.ArrowLeft)r-=1;
