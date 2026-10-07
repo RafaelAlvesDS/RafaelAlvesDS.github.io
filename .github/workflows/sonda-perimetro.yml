@@ -1,0 +1,27 @@
+name: Sonda perímetro urbano (temporário)
+on:
+  workflow_dispatch:
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta limites mapeados em Uberaba
+        run: |
+          python3 - <<'PY'
+          import json, urllib.parse, urllib.request
+          q = ('[out:json][timeout:120];area["name"="Uberaba"]["admin_level"="8"]->.a;'
+               '(rel(area.a)[boundary];way(area.a)[boundary];rel(area.a)[place];way(area.a)[place];'
+               'rel(area.a)[landuse=residential][name];);out tags bb;'
+               'rel["name"="Uberaba"]["admin_level"="8"];out tags bb;')
+          for h in ('https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'):
+              try:
+                  d = json.loads(urllib.request.urlopen(urllib.request.Request(h, urllib.parse.urlencode({'data': q}).encode(),
+                      headers={'User-Agent': 'uberaba-3d'}), timeout=200).read()); break
+              except Exception as e: print('::warning::', h, e)
+          els = d['elements']
+          print(f'::notice::{len(els)} elementos')
+          for el in els:
+              t = el.get('tags', {}); b = el.get('bounds', {})
+              keys = {k: t[k] for k in ('name','boundary','admin_level','place','landuse','type','border_type') if k in t}
+              print(f"::notice::{el['type']} {el['id']} {json.dumps(keys, ensure_ascii=False)} bb={b.get('minlat')},{b.get('minlon')},{b.get('maxlat')},{b.get('maxlon')}")
+          PY
