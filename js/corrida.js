@@ -495,7 +495,7 @@ function update(dt,now){
     c.update(h,inp,locked);
     if(R) for(const d of R.racers){const ctl=d.control(h);d.veh.update(h,ctl);}
     wallHit=Math.max(wallHit,hitWalls(c));
-    if(R) for(const d of R.racers) hitWalls(d.veh);
+    // rivais da CPU seguem a rua e não colidem com muros (cortam as esquinas um pouco, como em qualquer jogo de corrida)
   }
   if(wallHit>5){G.shake=Math.min(1,wallHit/12);if(wallHit>11)pop('NA PAREDE!');}
   // colisões e "quase!" com o trânsito
