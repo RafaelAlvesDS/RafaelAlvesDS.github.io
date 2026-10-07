@@ -1,13 +1,13 @@
-name: Atualizar entorno (ruas e relevo)
+name: Atualizar mapa de Uberaba (vias e relevo)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - scripts/fetch_entorno.py
-      - .github/workflows/entorno.yml
+      - scripts/fetch_uberaba.py
+      - .github/workflows/uberaba.yml
   schedule:
-    - cron: '17 6 1 * *'   # todo dia 1º, para pegar ruas novas do OpenStreetMap
+    - cron: '41 6 2 * *'   # todo dia 2, para pegar ruas novas do OpenStreetMap
 
 permissions:
   contents: write
@@ -17,21 +17,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  entorno:
+  uberaba:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pillow
-      - run: python scripts/fetch_entorno.py
+      - run: pip install pillow numpy
+      - run: python scripts/fetch_uberaba.py
       - name: Salvar no site
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/uberaba
           git diff --cached --quiet && echo "sem mudanças" && exit 0
-          git commit -m "Atualiza entorno em cache (ruas e relevo)"
+          git commit -m "Atualiza mapa de Uberaba em cache (vias e relevo)"
           for i in 1 2 3; do git pull --rebase -q && git push && exit 0; sleep 5; done
           exit 1

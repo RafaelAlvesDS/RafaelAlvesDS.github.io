@@ -907,7 +907,14 @@ function buildWorld(data,terr){
   const isFoot=t=>['footway','path','cycleway','steps','pedestrian'].includes(t.highway);
   roads.forEach(({pts,t})=>{if(!isFoot(t)&&t.highway!=='service') stroke(pts,RW[t.highway]+3.2,'#cfccc4');});
   roads.forEach(({pts,t})=>{if(!isFoot(t)) stroke(pts,RW[t.highway],'#5d6166');});
-  roads.forEach(({pts,t})=>{if(['primary','secondary','tertiary','trunk'].includes(t.highway)){g.setLineDash([3*k,6*k]);stroke(pts,0.15,'#e9e4d6');g.setLineDash([]);}});
+  // divisão das mãos: avenida de mão dupla ganha linha amarela contínua; pista de mão única com 2 faixas, tracejado branco
+  roads.forEach(({pts,t})=>{
+    const av=['primary','secondary','tertiary','trunk'].includes(t.highway)||/^(avenida|av\.)/i.test(t.name||'');
+    if(!av||isFoot(t)||t.highway==='service') return;
+    const ow=['yes','1','true','-1'].includes(t.oneway)||t.junction==='roundabout';
+    if(!ow) stroke(pts,0.35,'#e2b93b');
+    else if(+t.lanes===2){g.setLineDash([3*k,6*k]);stroke(pts,0.15,'#ece8de');g.setLineDash([]);}
+  });
   roads.forEach(({pts,t})=>{if(isFoot(t)) stroke(pts,RW[t.highway],'#b8b2a6');});
   // terreno do condomínio (fica por baixo do modelo 3D)
   g.fillStyle='#8e959b';for(const Q of [SITE,ACCESS]){g.beginPath();Q.forEach((p,i)=>{const [u,v]=P(p);i?g.lineTo(u,v):g.moveTo(u,v);});g.closePath();g.fill();}

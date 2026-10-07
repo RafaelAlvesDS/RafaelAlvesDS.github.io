@@ -47,7 +47,7 @@ def osm():
             print('overpass', host, e)
     else:
         raise RuntimeError('Overpass indisponível')
-    keep = {'highway', 'name', 'building', 'height', 'building:levels', 'landuse', 'leisure', 'natural', 'lanes'}
+    keep = {'highway', 'name', 'building', 'height', 'building:levels', 'landuse', 'leisure', 'natural', 'lanes', 'oneway', 'junction'}
     els = []
     for el in raw.get('elements', []):
         tags = {k: v for k, v in (el.get('tags') or {}).items() if k in keep}
