@@ -122,8 +122,9 @@ function loadBar(text,kind){ // 'busy' | 'ok' | 'err'
 }
 
 // ======================================================================
-// Relevo: grade de 20 m. H(x,z) segue exatamente os triângulos da malha,
-// então carros e marcações ficam colados no chão desenhado.
+// Relevo: o satélite vem numa grade de 20 m com degraus de 1 m. Ao carregar, ele é suavizado, refinado para 10 m
+// e as ruas são "assadas" nele (planas de um lado ao outro, perfil suave ao longo). H(x,z) segue exatamente os
+// triângulos da malha de 10 m, então carros e marcações ficam colados no chão desenhado.
 // Coordenadas: x = leste, z = sul (norte = −z), y = altura em metros acima do ponto mais baixo.
 // ======================================================================
 let META=null,T=null;
@@ -225,28 +226,109 @@ let CHUNKS=[],CCOLS=0,CROWS=0;
 const placeholder=(()=>{const c=document.createElement('canvas');c.width=c.height=4;const g=c.getContext('2d');g.fillStyle=BASE;g.fillRect(0,0,4,4);return new THREE.CanvasTexture(c);})();
 const chunkAt=(x,z)=>{const i=Math.floor((x-META.x0)/META.chunk),j=Math.floor((z-META.z0)/META.chunk);return i>=0&&j>=0&&i<CCOLS&&j<CROWS?CHUNKS[j*CCOLS+i]:null;};
 
-function buildChunks(){
-  const C=META.chunk,S=Math.round(C/T.step),n=S+1;
-  CCOLS=Math.round(META.w/C);CROWS=Math.round(META.h/C);
-  const idx=[];for(let j=0;j<S;j++)for(let i=0;i<S;i++){const a=j*n+i,b=a+1,c=a+n,d=c+1;idx.push(a,c,b,b,c,d);}
-  const index=new THREE.Uint16BufferAttribute(idx,1);
-  const uv=new Float32Array(n*n*2);for(let j=0;j<n;j++)for(let i=0;i<n;i++){uv[2*(j*n+i)]=i/S;uv[2*(j*n+i)+1]=1-j/S;}
-  const uvA=new THREE.BufferAttribute(uv,2);
+// ---------------------------------------------------------------- preparo do relevo
+function gaussBlur(h,nx,nz,sig){ // desfoque gaussiano separável (sig em células), bordas repetidas
+  const r=Math.ceil(sig*3),K=new Float32Array(2*r+1);let s=0;for(let i=-r;i<=r;i++){K[i+r]=Math.exp(-i*i/(2*sig*sig));s+=K[i+r];}for(let i=0;i<K.length;i++)K[i]/=s;
+  const tmp=new Float32Array(h.length),out=new Float32Array(h.length);
+  for(let j=0;j<nz;j++){const o=j*nx;for(let i=0;i<nx;i++){let a=0;for(let k=-r;k<=r;k++){let ii=i+k;ii=ii<0?0:ii>=nx?nx-1:ii;a+=h[o+ii]*K[k+r];}tmp[o+i]=a;}}
+  const col=new Float32Array(nz);
+  for(let i=0;i<nx;i++){for(let j=0;j<nz;j++)col[j]=tmp[j*nx+i];
+    for(let j=0;j<nz;j++){let a=0;for(let k=-r;k<=r;k++){let jj=j+k;jj=jj<0?0:jj>=nz?nz-1:jj;a+=col[jj]*K[k+r];}out[j*nx+i]=a;}}
+  return out;
+}
+function upsample2(h,nx,nz){ // grade 2x mais fina por Catmull-Rom (passa pelos pontos originais, sem quinas)
+  const mx=2*nx-1,mz=2*nz-1,rows=new Float32Array(mx*nz),out=new Float32Array(mx*mz);
+  const cr=(a,b,c,d)=>(-a+9*b+9*c-d)/16;
+  for(let j=0;j<nz;j++){const o=j*nx,q=j*mx;for(let i=0;i<nx;i++){rows[q+2*i]=h[o+i];
+    if(i<nx-1)rows[q+2*i+1]=cr(h[o+Math.max(0,i-1)],h[o+i],h[o+i+1],h[o+Math.min(nx-1,i+2)]);}}
+  for(let i=0;i<mx;i++)for(let j=0;j<nz;j++){out[(2*j)*mx+i]=rows[j*mx+i];
+    if(j<nz-1)out[(2*j+1)*mx+i]=cr(rows[Math.max(0,j-1)*mx+i],rows[j*mx+i],rows[(j+1)*mx+i],rows[Math.min(nz-1,j+2)*mx+i]);}
+  return {h:out,nx:mx,nz:mz};
+}
+// Ruas assadas no relevo: cada trecho ganha um perfil (altura ao longo dele) suave e que bate com os cruzamentos;
+// a pista e a calçada ficam niveladas de um lado ao outro, e o terreno em volta faz a transição em BLEND metros.
+const CALC_R=2.8,BLEND=16;
+function bakeRoads(G){
+  const {nx,nz,step,x0,z0}=G,h=G.h;
+  const hb=(x,z)=>{const fx=clamp((x-x0)/step,0,nx-1.001),fz=clamp((z-z0)/step,0,nz-1.001),i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*nx+i;
+    return h[k]*(1-u)*(1-v)+h[k+1]*u*(1-v)+h[k+nx]*(1-u)*v+h[k+nx+1]*u*v;};
+  const NH=new Float32Array(NODES.length/2);for(let i=0;i<NH.length;i++)NH[i]=hb(NODES[2*i],NODES[2*i+1]);
+  const N=nx*nz,stamp=new Int32Array(N).fill(-1),locD=new Float32Array(N),locT=new Float32Array(N),sumW=new Float32Array(N),sumWT=new Float32Array(N);
+  const visit=[];
+  for(const e of EDGES){
+    const P=e.P,n=P.length/2,C=new Float32Array(n);for(let i=1;i<n;i++)C[i]=C[i-1]+Math.hypot(P[2*i]-P[2*i-2],P[2*i+1]-P[2*i-1]);
+    const L=C[n-1];if(L<0.5)continue;
+    // perfil: amostra a cada ~4 m, suaviza ao longo (σ ≈ 25 m) e corrige as pontas para as alturas dos cruzamentos
+    const m=Math.max(2,Math.ceil(L/4)+1),ds=L/(m-1),pr=new Float32Array(m);
+    for(let k=0,i=1;k<m;k++){const s=k*ds;while(i<n-1&&C[i]<s)i++;const f=clamp((s-C[i-1])/((C[i]-C[i-1])||1),0,1);
+      pr[k]=hb(P[2*i-2]+(P[2*i]-P[2*i-2])*f,P[2*i-1]+(P[2*i+1]-P[2*i-1])*f);}
+    const sg=25/ds,r=Math.min(m-1,Math.ceil(sg*2.5)),sm=new Float32Array(m);
+    for(let k=0;k<m;k++){let a=0,w=0;for(let q=-r;q<=r;q++){const kk=k+q;if(kk<0||kk>=m)continue;const ww=Math.exp(-q*q/(2*sg*sg));a+=pr[kk]*ww;w+=ww;}sm[k]=a/w;}
+    const da=NH[e.a]-sm[0],db=NH[e.b]-sm[m-1];for(let k=0;k<m;k++)sm[k]+=da+(db-da)*k/(m-1);
+    e.prof=sm;e.profDs=ds;
+    // rasteriza: distância de cada nó da grade até o eixo do trecho
+    const flat=e.w/2+CALC_R+0.3,R=flat+BLEND;visit.length=0;
+    for(let i=0;i<n-1;i++){const ax=P[2*i],az=P[2*i+1],dx=P[2*i+2]-ax,dz=P[2*i+3]-az,L2=dx*dx+dz*dz||1e-6,sl=Math.sqrt(L2);
+      const i0=Math.max(0,Math.floor((Math.min(ax,ax+dx)-R-x0)/step)),i1=Math.min(nx-1,Math.ceil((Math.max(ax,ax+dx)+R-x0)/step));
+      const j0=Math.max(0,Math.floor((Math.min(az,az+dz)-R-z0)/step)),j1=Math.min(nz-1,Math.ceil((Math.max(az,az+dz)+R-z0)/step));
+      for(let jj=j0;jj<=j1;jj++){const gz=z0+jj*step;for(let ii=i0;ii<=i1;ii++){const gx=x0+ii*step;
+        const t=clamp(((gx-ax)*dx+(gz-az)*dz)/L2,0,1),d=Math.hypot(gx-ax-dx*t,gz-az-dz*t);if(d>R)continue;
+        const k=jj*nx+ii;if(stamp[k]===e.i&&locD[k]<=d)continue;
+        const sf=(C[i]+t*sl)/ds,k0=Math.min(m-2,sf|0),fr=clamp(sf-k0,0,1);
+        if(stamp[k]!==e.i){stamp[k]=e.i;visit.push(k);}locD[k]=d;locT[k]=sm[k0]+(sm[k0+1]-sm[k0])*fr;}}}
+    for(const k of visit){const d=locD[k];let w=d<=flat?1:1-(d-flat)/BLEND;w=w*w*(3-2*w);
+      const w8=w*w*w*w*w*w*w*w;sumW[k]+=w8;sumWT[k]+=w8*locT[k];}
+  }
+  for(let k=0;k<N;k++)if(sumW[k]>0){const w=Math.min(1,Math.pow(sumW[k],1/8));h[k]+=(sumWT[k]/sumW[k]-h[k])*w;}
+}
+function prepareTerrain(raw,base){
+  let h=Float32Array.from(raw,v=>v/10-base);
+  h=gaussBlur(h,META.nx,META.nz,2);                                  // σ = 40 m: tira os degraus do satélite, mantém os morros
+  const U=upsample2(h,META.nx,META.nz);
+  const G={x0:META.x0,z0:META.z0,step:META.step/2,nx:U.nx,nz:U.nz,base,h:U.h};
+  bakeRoads(G);
+  return G;
+}
+
+// ---------------------------------------------------------------- malha do chão por bloco, com nível de detalhe
+// passo da malha: 10 m perto, 20 m no meio, 50 m longe; uma "saia" de 6 m nas bordas esconde frestas entre níveis
+const LODS=[1,2,5],LOD_DIST=MOBILE?[450,1300]:[650,1700];
+const lodIdx={};
+function lodIndex(st){
+  if(lodIdx[st])return lodIdx[st];
+  const S=Math.round(META.chunk/T.step/st),n=S+1,idx=[];
+  for(let j=0;j<S;j++)for(let i=0;i<S;i++){const a=j*n+i,b=a+1,c=a+n,d=c+1;idx.push(a,c,b,b,c,d);}
+  const per=[];for(let i=0;i<S;i++)per.push(i);for(let j=0;j<S;j++)per.push(j*n+S);for(let i=S;i>0;i--)per.push(S*n+i);for(let j=S;j>0;j--)per.push(j*n);
+  const P=per.length;for(let k=0;k<P;k++){const a=per[k],b=per[(k+1)%P],sa=n*n+k,sb=n*n+(k+1)%P;idx.push(a,b,sa,b,sb,sa);}   // face virada para fora do bloco
+  return lodIdx[st]={S,n,per,index:new THREE.Uint16BufferAttribute(idx,1)};
+}
+function chunkGeo(ch,st){
+  const L=lodIndex(st),{S,n,per}=L,nv=n*n+per.length,base=st*T.step;
+  const pos=new Float32Array(nv*3),nor=new Float32Array(nv*3),uv=new Float32Array(nv*2);
+  const gi0=Math.round((ch.x0-T.x0)/T.step),gj0=Math.round((ch.z0-T.z0)/T.step);
   const hAt=(gi,gj)=>T.h[clamp(gj,0,T.nz-1)*T.nx+clamp(gi,0,T.nx-1)];
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const gi=gi0+i*st,gj=gj0+j*st,v=j*n+i,k=3*v;
+    pos[k]=T.x0+gi*T.step;pos[k+1]=hAt(gi,gj);pos[k+2]=T.z0+gj*T.step;
+    const nx=-(hAt(gi+st,gj)-hAt(gi-st,gj))/(2*base),nz=-(hAt(gi,gj+st)-hAt(gi,gj-st))/(2*base),l=Math.hypot(nx,1,nz);
+    nor[k]=nx/l;nor[k+1]=1/l;nor[k+2]=nz/l;uv[2*v]=i/S;uv[2*v+1]=1-j/S;}
+  per.forEach((v,q)=>{const w=n*n+q;pos[3*w]=pos[3*v];pos[3*w+1]=pos[3*v+1]-6;pos[3*w+2]=pos[3*v+2];
+    nor[3*w]=nor[3*v];nor[3*w+1]=nor[3*v+1];nor[3*w+2]=nor[3*v+2];uv[2*w]=uv[2*v];uv[2*w+1]=uv[2*v+1];});
+  const g=new THREE.BufferGeometry();g.setIndex(L.index);g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.computeBoundingSphere();
+  return g;
+}
+function setLod(ch,st){if(ch.lod===st)return;const old=ch.mesh.geometry;ch.mesh.geometry=chunkGeo(ch,st);if(old)old.dispose();ch.lod=st;}
+
+function buildChunks(){
+  const C=META.chunk;
+  CCOLS=Math.round(META.w/C);CROWS=Math.round(META.h/C);
   for(let cj=0;cj<CROWS;cj++)for(let ci=0;ci<CCOLS;ci++){
-    const pos=new Float32Array(n*n*3),nor=new Float32Array(n*n*3);
-    for(let j=0;j<n;j++)for(let i=0;i<n;i++){
-      const gi=ci*S+i,gj=cj*S+j,k=3*(j*n+i);
-      pos[k]=T.x0+gi*T.step;pos[k+1]=hAt(gi,gj);pos[k+2]=T.z0+gj*T.step;
-      const nx=-(hAt(gi+1,gj)-hAt(gi-1,gj))/(2*T.step),nz=-(hAt(gi,gj+1)-hAt(gi,gj-1))/(2*T.step),l=Math.hypot(nx,1,nz);
-      nor[k]=nx/l;nor[k+1]=1/l;nor[k+2]=nz/l;
-    }
-    const g=new THREE.BufferGeometry();g.setIndex(index);g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-    g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('uv',uvA);g.computeBoundingSphere();
     const mat=new THREE.MeshLambertMaterial({map:placeholder});
-    const mesh=new THREE.Mesh(g,mat);mesh.matrixAutoUpdate=false;scene.add(mesh);
     const x0=META.x0+ci*C,z0=META.z0+cj*C;
-    CHUNKS.push({ci,cj,x0,z0,cx:x0+C/2,cz:z0+C/2,mesh,mat,size:0,want:64,edges:[],drive:[],paths:[],areas:[],rivers:[],dist:1e9});
+    const ch={ci,cj,x0,z0,cx:x0+C/2,cz:z0+C/2,mesh:null,mat,size:0,want:64,lod:0,edges:[],drive:[],paths:[],areas:[],rivers:[],dist:1e9};
+    ch.mesh=new THREE.Mesh(new THREE.BufferGeometry(),mat);ch.mesh.matrixAutoUpdate=false;scene.add(ch.mesh);
+    setLod(ch,LODS[LODS.length-1]);
+    CHUNKS.push(ch);
   }
   // índice: o que precisa ser desenhado em cada bloco
   const add=(bb,pad,key,v)=>{
@@ -310,7 +392,10 @@ function updateTiers(now){
     let want=TIERS[TIERS.length-1][1];for(const [dd,s] of TIERS) if(d<dd){want=s;break;}
     if(want<ch.size){let keep=TIERS[TIERS.length-1][1];for(const [dd,s] of TIERS) if(d<dd*1.2){keep=s;break;}want=Math.max(want,Math.min(keep,ch.size));}
     ch.want=want;
+    ch.wantLod=d<LOD_DIST[0]?LODS[0]:d<LOD_DIST[1]?LODS[1]:LODS[2];
   }
+  // troca o nível de detalhe da malha (no máximo 8 blocos por vez, os mais perto primeiro)
+  CHUNKS.filter(c=>c.wantLod!==c.lod).sort((a,b)=>a.dist-b.dist).slice(0,8).forEach(c=>setLod(c,c.wantLod));
   queue.length=0;for(const ch of CHUNKS) if(ch.want!==ch.size) queue.push(ch);
   queue.sort((a,b)=>(a.size?1:0)-(b.size?1:0)||a.dist-b.dist);   // primeiro os que ainda não têm mapa, depois os mais perto
 }
@@ -606,8 +691,10 @@ async function load(){
       getJSON('areas.json').then(v=>{st.areas=1;show();return v;})]);
     loadBar('Montando o mapa…','busy');await new Promise(r=>setTimeout(r,30));
     const raw=new Int16Array(rb),base=Math.floor(META.altMin);
-    T={x0:META.x0,z0:META.z0,step:META.step,nx:META.nx,nz:META.nz,base,h:Float32Array.from(raw,v=>v/10-base)};
-    buildGraph(V);buildAreas(A);buildChunks();
+    buildGraph(V);buildAreas(A);
+    loadBar('Suavizando o relevo e nivelando as ruas…','busy');await new Promise(r=>setTimeout(r,30));
+    T=prepareTerrain(raw,base);
+    buildChunks();
     {const out=new THREE.Mesh(new THREE.PlaneGeometry(240000,240000),new THREE.MeshLambertMaterial({color:BASE}));out.rotation.x=-Math.PI/2;out.position.y=-1.5;scene.add(out);}  // chão em volta do recorte
     const km2=(META.w*META.h/1e6).toFixed(0);let km=0;for(const e of EDGES)km+=e.len;
     const dl=$('stats');dl.hidden=false;

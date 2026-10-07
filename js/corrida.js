@@ -149,6 +149,7 @@ const audio={ctx:null,on:true,
 };
 
 // ---------------------------------------------------------------- carro do jogador (física arcade)
+const GRAV=12;                                  // gravidade um pouco acima da real: saltos curtos, sem flutuar
 const GEARS=[0,13,24,35,47,60,85];
 class PlayerCar{
   constructor(){Object.assign(this,{id:1e9,x:0,z:0,y:0,vy:0,h:0,vx:0,vz:0,yaw:0,len:4.4,wid:1.96,air:false,lastG:0,airT:0,
@@ -185,13 +186,17 @@ class PlayerCar{
     if(this.drift>0.4&&sp>14&&Math.abs(vl)>3) this.nitro=Math.min(1,this.nitro+dt*0.1);
     this.vx=fx*vf-fz*vl;this.vz=fz*vf+fx*vl;this.vf=vf;
     this.x+=this.vx*dt;this.z+=this.vz*dt;
-    // vertical: segue o chão, mas decola em lombadas quando rápido
-    const g=H(this.x,this.z);
-    if(this.air){this.vy-=13*dt;this.y+=this.vy*dt;this.airT+=dt;
-      if(this.y<=g){this.bump=Math.min(1,-this.vy/9);this.y=g;this.vy=0;this.air=false;this.airT=0;}}
-    else{const vg=(g-this.lastG)/Math.max(dt,1e-3);
-      if(sp>28&&vg<this.vy-13*dt-3.2){this.air=true;this.y+=this.vy*dt;}   // só decola em quebra forte do relevo
-      else{this.y=g;this.vy=this.vy+(vg-this.vy)*Math.min(1,dt*12);}}
+    // vertical: o carro acompanha o chão. Só decola quando a lombada é tão curva que, para segui-la, ele precisaria
+    // ser puxado para baixo com mais força que a gravidade (crista com raio menor que v²/g). Inclinação e curvatura
+    // são medidas na direção do movimento, numa base que cresce com a velocidade (ignora irregularidades miúdas).
+    const g=H(this.x,this.z),spd=Math.hypot(this.vx,this.vz);
+    let vyG=0,ayG=0;
+    if(spd>1){const ux=this.vx/spd,uz=this.vz/spd,Lb=Math.max(3,spd*0.15),ha=H(this.x-ux*Lb,this.z-uz*Lb),hf=H(this.x+ux*Lb,this.z+uz*Lb);
+      vyG=(hf-ha)/(2*Lb)*spd;ayG=(ha+hf-2*g)/(Lb*Lb)*spd*spd;}
+    if(this.air){this.vy-=GRAV*dt;this.y+=this.vy*dt;this.airT+=dt;
+      if(this.y<=g){this.bump=Math.min(1,Math.max(0,vyG-this.vy)/9);this.y=g;this.vy=vyG;this.air=false;this.airT=0;}}
+    else if(sp>22&&ayG<-GRAV*1.35){this.air=true;this.vy=vyG;this.y=g;}
+    else{this.y=g;this.vy=vyG;}
     this.lastG=g;
     // marchas e giro (som e painel)
     let gi=1;while(gi<6&&sp>GEARS[gi])gi++;this.gear=vf<-0.5?'R':gi;
