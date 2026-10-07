@@ -141,9 +141,13 @@ const AVENUE=new Set(['motorway','trunk','primary','secondary','tertiary']);
 let NODES=null,EDGES=[],ADJ=[],DEG=null,NAMES=[],PATHS=[],AREAS=[],RIVERS=[];
 
 function defaultLanes(cls,ow){
-  if(ow) return ['motorway','trunk','primary','secondary'].includes(cls)?2:1;
+  if(ow) return ['motorway','trunk','primary','secondary','tertiary'].includes(cls)?2:1;
   return ['motorway','trunk','primary'].includes(cls)?4:2;
 }
+// largura mínima de meio-fio a meio-fio [mão dupla, mão única], já contando estacionamento junto à calçada.
+// A rua mais apertada da cidade cabe 2 a 3 carros lado a lado (~7,5 m).
+const WMIN={motorway:[16,10],trunk:[15,10],primary:[14,10],secondary:[11,9],tertiary:[9.5,8.5],unclassified:[8,7.5],residential:[8,7.5],
+  living_street:[7,6.5],road:[7.5,7],service:[5.5,4.5],motorway_link:[7,6],trunk_link:[7,6],primary_link:[7,6],secondary_link:[7,6],tertiary_link:[7,6]};
 function buildGraph(V){
   NAMES=V.names;
   NODES=Float32Array.from(V.nodes,v=>v/10);
@@ -152,11 +156,13 @@ function buildGraph(V){
   EDGES=V.edges.map((r,i)=>{
     const [a,b,c,lanes,ow,ms,nm,fl,p]=r,cls=V.classes[c];
     const P=Float32Array.from(p,v=>v/10);
+    // no OSM, várias avenidas estão cadastradas como "rua residencial"; o nome manda: Avenida tem largura e faixas de avenida
+    const avName=nm>=0&&/^(avenida|av\.)\s/i.test(NAMES[nm]),minor=['residential','unclassified','living_street','road'].includes(cls);
     let len=0;for(let k=2;k<P.length;k+=2) len+=Math.hypot(P[k]-P[k-2],P[k+1]-P[k-1]);
-    const L=lanes>0?lanes:defaultLanes(cls,ow);
-    const lw=cls==='service'?2.4:cls==='residential'||cls==='living_street'?3.6:3.3;
+    const L=lanes>0?lanes:avName&&minor?2:defaultLanes(cls,ow);
+    const lw=cls==='service'?2.4:minor&&!avName?3.6:3.3;
     const pd=ow?L:Math.max(1,Math.floor(L/2));            // faixas por sentido
-    const w=Math.max(3,L*lw+(ow?0.4:0.6));
+    const w=Math.max((WMIN[cls]||[7,6])[ow?1:0],avName?(ow?9:10):0,L*lw+(ow?0.4:0.6));
     let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(let k=0;k<P.length;k+=2){x0=Math.min(x0,P[k]);x1=Math.max(x1,P[k]);z0=Math.min(z0,P[k+1]);z1=Math.max(z1,P[k+1]);}
     const e={i,a,b,cls,ow:!!ow,L,pd,lw,w,len,P,bb:[x0,x1,z0,z1],name:nm>=0?NAMES[nm]:'',
       vmax:(ms>0?ms:KMH[cls]||30)/3.6,rank:RANK[cls]||1,priv:!!(fl&4),aisle:!!(fl&16),bridge:!!(fl&1),
