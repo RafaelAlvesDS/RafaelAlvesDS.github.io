@@ -36,7 +36,7 @@ AREA_KINDS = {'grass', 'park', 'recreation_ground', 'meadow', 'forest', 'wood', 
               'golf_course', 'stadium', 'parking', 'basin', 'reservoir', 'village_green', 'military', 'quarry'}
 
 
-def fetch(url, data=None, tries=4, timeout=420):
+def fetch(url, data=None, tries=4, timeout=300):
     for k in range(tries):
         try:
             req = urllib.request.Request(url, data=data, headers=UA)
@@ -53,7 +53,7 @@ def overpass(q):
     for host in ('https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter',
                  'https://overpass.private.coffee/api/interpreter'):
         try:
-            raw = fetch(host, body, tries=2)
+            raw = fetch(host, body, tries=3)
             print('overpass', host, len(raw) // 1024, 'KB', flush=True)
             return json.loads(raw)
         except Exception as e:  # noqa: BLE001
@@ -102,15 +102,25 @@ def ring_area(pts):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    # a cidade inteira numa consulta só é recusada; baixa em 3 x 3 pedaços e junta (sem repetir elementos)
     s, w, n, e = BIG
-    bb = f'({s},{w},{n},{e})'
-    q = (f'[out:json][timeout:600][maxsize:2000000000];'
-         f'way[highway]{bb};out body geom;'
-         f'(way[landuse]{bb};way[leisure]{bb};way[natural~"^(water|wood|scrub|grassland|wetland)$"]{bb};'
-         f'way[amenity=parking]{bb};way[waterway~"^(river|stream|canal|drain)$"]{bb};'
-         f'relation[type=multipolygon][~"^(landuse|natural|leisure)$"~"."]{bb};);out geom;')
-    data = overpass(q)
-    els = data.get('elements', [])
+    seen, els = set(), []
+    K = 3
+    for a in range(K):
+        for b in range(K):
+            bb = f'({s + (n - s) * a / K},{w + (e - w) * b / K},{s + (n - s) * (a + 1) / K},{w + (e - w) * (b + 1) / K})'
+            for q in (f'[out:json][timeout:240];way[highway]{bb};out body geom;',
+                      f'[out:json][timeout:240];(way[landuse]{bb};way[leisure]{bb};'
+                      f'way[natural~"^(water|wood|scrub|grassland|wetland)$"]{bb};way[amenity=parking]{bb};'
+                      f'way[waterway~"^(river|stream|canal|drain)$"]{bb};'
+                      f'relation[type=multipolygon][~"^(landuse|natural|leisure)$"~"."]{bb};);out geom;'):
+                part = overpass(q)
+                for el in part.get('elements', []):
+                    key = (el['type'], el['id'])
+                    if key not in seen:
+                        seen.add(key); els.append(el)
+                time.sleep(2)
+            print(f'pedaço {a * K + b + 1}/{K * K}: {len(els)} elementos', flush=True)
     print(len(els), 'elementos', flush=True)
 
     # --- recorte: onde há ruas residenciais
