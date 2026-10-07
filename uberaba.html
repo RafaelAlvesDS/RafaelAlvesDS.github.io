@@ -288,7 +288,7 @@ function paintChunk(ch,size){
   for(const r of ch.rivers) strokeFlat(g,r.P,Math.max(r.kind==='river'?9:r.kind==='canal'?6:3,px),'#6aaed4');
   const fine=k>=0.5;
   if(fine) for(const p of ch.paths) if(p.cls==='track') strokeFlat(g,p.P,3,'#bca37a');
-  if(fine) for(const e of ch.edges) if(e.cls!=='motorway'&&e.cls!=='trunk'&&e.cls!=='service') strokeFlat(g,e.P,e.w+3.2,'#d3cfc6');   // calçada
+  if(fine) for(const e of ch.edges) if(e.cls!=='motorway'&&e.cls!=='trunk'&&e.cls!=='service') strokeFlat(g,e.P,e.w+5.6,'#d3cfc6');   // calçada até o alinhamento dos muros (2,8 m de cada lado)
   for(const e of ch.edges) strokeFlat(g,e.P,Math.max(e.w,1.15*px),ASPH[e.cls]||'#585c61');
   if(fine) for(const p of ch.paths) if(p.cls!=='track') strokeFlat(g,p.P,p.cls==='cycleway'?2.2:p.cls==='pedestrian'?4:1.8,p.cls==='cycleway'?'#b9604f':'#c8bfae');
   if(k>=0.9){
