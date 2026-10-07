@@ -1,0 +1,37 @@
+name: Atualizar prédios de Uberaba
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/fetch_predios.py
+      - .github/workflows/predios.yml
+  schedule:
+    - cron: '23 7 3 * *'   # todo dia 3, depois das vias
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dados-do-site
+  cancel-in-progress: false
+
+jobs:
+  predios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/fetch_predios.py
+      - name: Salvar no site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/uberaba/predios.json
+          git diff --cached --quiet && echo "sem mudanças" && exit 0
+          git commit -m "Atualiza prédios de Uberaba em cache"
+          for i in 1 2 3; do git pull --rebase -q && git push && exit 0; sleep 5; done
+          exit 1
