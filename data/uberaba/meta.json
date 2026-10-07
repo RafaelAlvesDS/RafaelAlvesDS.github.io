@@ -1,0 +1,28 @@
+{
+ "fonte": {
+  "vias": "OpenStreetMap (ODbL)",
+  "relevo": "SRTM via AWS Terrain Tiles (Terrarium)"
+ },
+ "atualizado": "2026-10-07",
+ "lat0": -19.764122993900003,
+ "lon0": -47.944961853,
+ "mLat": 110701.38024568274,
+ "mLon": 104802.06312084907,
+ "x0": -8750.0,
+ "z0": -7000.0,
+ "w": 17500,
+ "h": 14000,
+ "chunk": 500,
+ "step": 20,
+ "nx": 876,
+ "nz": 701,
+ "altMin": 620.1274155740429,
+ "altMax": 853.3057037960397,
+ "contagem": {
+  "nos": 15027,
+  "trechos": 22946,
+  "caminhos": 331,
+  "areas": 597,
+  "rios": 151
+ }
+}
