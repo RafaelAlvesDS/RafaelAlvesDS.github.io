@@ -155,7 +155,7 @@ class PlayerCar{
   constructor(){Object.assign(this,{id:1e9,x:0,z:0,y:0,vy:0,h:0,vx:0,vz:0,yaw:0,len:4.4,wid:1.96,air:false,lastG:0,airT:0,
     nitro:0.5,nitroOn:false,draft:0,draftT:0,drift:0,onRoad:true,rpm:900,gear:1,roll:0,pitch:0,vf:0,load:0,skid:0,steerVis:0,bump:0});}
   get v(){return Math.max(0,this.vf);}                            // velocidade para o trânsito enxergar
-  place(x,z,h){Object.assign(this,{x,z,h,vx:0,vz:0,yaw:0,vy:0,air:false,vf:0});this.y=this.lastG=H(x,z);}
+  place(x,z,h,hint){Object.assign(this,{x,z,h,vx:0,vz:0,yaw:0,vy:0,air:false,vf:0});this.y=this.lastG=HL(x,z,hint);}
   update(dt,inp,locked){
     const fx=Math.cos(this.h),fz=Math.sin(this.h);
     let vf=this.vx*fx+this.vz*fz,vl=-this.vx*fz+this.vz*fx;const sp=Math.abs(vf),on=this.onRoad;
@@ -189,15 +189,20 @@ class PlayerCar{
     // vertical: o carro acompanha o chão. Só decola quando a lombada é tão curva que, para segui-la, ele precisaria
     // ser puxado para baixo com mais força que a gravidade (crista com raio menor que v²/g). Inclinação e curvatura
     // são medidas na direção do movimento, numa base que cresce com a velocidade (ignora irregularidades miúdas).
-    const g=H(this.x,this.z),spd=Math.hypot(this.vx,this.vz);
+    const g=HL(this.x,this.z,this.y),spd=Math.hypot(this.vx,this.vz);       // HL: chão ou tabuleiro do viaduto, o que estiver no nível do carro
     let vyG=0,ayG=0;
-    if(spd>1){const ux=this.vx/spd,uz=this.vz/spd,Lb=Math.max(3,spd*0.15),ha=H(this.x-ux*Lb,this.z-uz*Lb),hf=H(this.x+ux*Lb,this.z+uz*Lb);
+    if(spd>1){const ux=this.vx/spd,uz=this.vz/spd,Lb=Math.max(3,spd*0.15),ha=HL(this.x-ux*Lb,this.z-uz*Lb,this.y),hf=HL(this.x+ux*Lb,this.z+uz*Lb,this.y);
       vyG=(hf-ha)/(2*Lb)*spd;ayG=(ha+hf-2*g)/(Lb*Lb)*spd*spd;}
     if(this.air){this.vy-=GRAV*dt;this.y+=this.vy*dt;this.airT+=dt;
       if(this.y<=g){this.bump=Math.min(1,Math.max(0,vyG-this.vy)/9);this.y=g;this.vy=vyG;this.air=false;this.airT=0;}}
     else if(sp>22&&ayG<-GRAV*1.35){this.air=true;this.vy=vyG;this.y=g;}
     else{this.y=g;this.vy=vyG;}
     this.lastG=g;
+    // mureta do viaduto: no nível do tabuleiro, não deixa o carro passar da borda
+    if(!this.air&&RIBBONS.length){const D=deckAt(this.x,this.z,3,this.y);
+      if(D&&D.span&&Math.abs(D.y-this.y)<1.5&&D.d>D.half-1.0){const ox=(this.x-D.px)/(D.d||1),oz=(this.z-D.pz)/(D.d||1),vn=this.vx*ox+this.vz*oz;
+        this.x=D.px+ox*(D.half-1.0);this.z=D.pz+oz*(D.half-1.0);
+        if(vn>0){this.vx-=1.4*vn*ox;this.vz-=1.4*vn*oz;this.vx*=0.95;this.vz*=0.95;this.wallHit=vn;}}}
     // marchas e giro (som e painel)
     let gi=1;while(gi<6&&sp>GEARS[gi])gi++;this.gear=vf<-0.5?'R':gi;
     const lo=GEARS[gi-1],hi=GEARS[gi],rt=clamp(1150+(sp-lo)/(hi-lo)*6100,900,7600);
@@ -362,7 +367,7 @@ function enter(){
   G.mesh.visible=true;if(!EXTRA.includes(G.car))EXTRA.push(G.car);
   // começa na rua mais próxima do centro da vista
   const t=controls.target,r=nearestRoad(t.x,t.z)||nearestRoad(0,0);
-  if(r){G.car.place(r.px,r.pz,Math.atan2(r.dz,r.dx));}else G.car.place(t.x,t.z,0);
+  if(r){G.car.place(r.px,r.pz,Math.atan2(r.dz,r.dx),r.e.bridge||r.e.lifted?1e9:-1e9);}else G.car.place(t.x,t.z,0);
   G.camH=G.car.h;camera.position.set(G.car.x-Math.cos(G.car.h)*9,G.car.y+4,G.car.z-Math.sin(G.car.h)*9);
   G.savedTiers=TIERS;TIERS=MOBILE?[[380,512],[1100,256],[2600,128],[1e9,64]]:[[380,1024],[1100,512],[2600,256],[1e9,64]];
   TRAFFIC.rMin=200;TRAFFIC.radius=1200;if(window.PREDIOS)PREDIOS.setRadius(MOBILE?650:1100);
@@ -379,7 +384,7 @@ function resetCar(){
   const c=G.car,r=nearestRoad(c.x,c.z);if(!r)return;
   let h=Math.atan2(r.dz,r.dx);if(Math.cos(angDiff(h,c.h))<0)h+=Math.PI;
   if(r.e.ow)h=Math.atan2(r.dz,r.dx);
-  c.place(r.px,r.pz,h);
+  c.place(r.px,r.pz,h,r.e.bridge||r.e.lifted?1e9:-1e9);
 }
 function togglePause(){
   if(G.paused){G.paused=false;ui.menu.hidden=true;audio.resume();return;}
@@ -419,7 +424,7 @@ function startRace(cps0){
   for(let k=0;k<=nR;k++){
     const [s,lat0]=slots[k],p=pathAt(race.path,s),half=Math.max(1.2,p.w/2-1.3),lat=clamp(lat0,-half,half);
     const x=p.x-p.dz*lat,z=p.z+p.dx*lat,h=Math.atan2(p.dz,p.dx);
-    if(k===meSlot){c.place(x,z,h);G.camH=h;continue;}
+    if(k===meSlot){c.place(x,z,h,-1e9);G.camH=h;continue;}
     const [name,color]=RIVALS[ri++];
     const veh=new Vehicle(5e8+ri,x,z,h);veh.v=0;veh.wb=2.7;veh.len=4.4;
     const d=new RacerDriver(veh,race,lat,0.93+Math.random()*0.12,name);d.pref=lat*0.4;veh.driver=d;
@@ -465,7 +470,7 @@ function collide(A,B){
   return rel;
 }
 function nearby(c,r,cb){const gx=Math.floor(c.x/GC),gz=Math.floor(c.z/GC),k=Math.ceil(r/GC);
-  for(let di=-k;di<=k;di++)for(let dj=-k;dj<=k;dj++){const arr=grid.get((gx+di+5000)*20000+(gz+dj+5000));if(arr)for(const B of arr)if(B!==c)cb(B);}}
+  for(let di=-k;di<=k;di++)for(let dj=-k;dj<=k;dj++){const arr=grid.get((gx+di+5000)*20000+(gz+dj+5000));if(arr)for(const B of arr)if(B!==c&&!(c.y!==undefined&&B.y!==undefined&&Math.abs(c.y-B.y)>3))cb(B);}}   // níveis diferentes (viaduto) não colidem
 
 // ---------------------------------------------------------------- paredes dos prédios
 function hitWalls(c){
@@ -532,14 +537,14 @@ function render3D(dt,now){
   const c=G.car,R=G.race,sp=Math.abs(c.vf);
   // carro do jogador
   const ch=Math.cos(c.h),sh=Math.sin(c.h);
-  const yl=H(c.x+sh*0.9,c.z-ch*0.9),yr=H(c.x-sh*0.9,c.z+ch*0.9),yf=H(c.x+ch*1.5,c.z+sh*1.5),yb=H(c.x-ch*1.5,c.z-sh*1.5);
+  const yl=HL(c.x+sh*0.9,c.z-ch*0.9,c.y),yr=HL(c.x-sh*0.9,c.z+ch*0.9,c.y),yf=HL(c.x+ch*1.5,c.z+sh*1.5,c.y),yb=HL(c.x-ch*1.5,c.z-sh*1.5,c.y);
   const m=G.mesh;m.position.set(c.x,c.y+0.02,c.z);
   m.rotation.set(Math.atan2(yl-yr,1.8)+c.roll,-c.h,(c.air?c.pitch-c.vy*0.015:Math.atan2(yf-yb,3))+c.pitch,'YZX');
   for(const w of m.userData.front)w.rotation.y=-c.steerVis;
   m.userData.tail.color.setHex(inp.brk&&c.vf>0.5?0xff2a2a:0x8a1010);
   // rivais
   if(R) for(const d of R.racers){const v=d.veh,cc=Math.cos(v.h),ss=Math.sin(v.h);
-    const f=H(v.x+cc*1.5,v.z+ss*1.5),b=H(v.x-cc*1.5,v.z-ss*1.5);d.mesh.position.set(v.x,(f+b)/2+0.02,v.z);
+    v.y=HL(v.x,v.z,v.y);const f=HL(v.x+cc*1.5,v.z+ss*1.5,v.y),b=HL(v.x-cc*1.5,v.z-ss*1.5,v.y);d.mesh.position.set(v.x,(f+b)/2+0.02,v.z);
     d.mesh.rotation.set(0,-v.h,Math.atan2(f-b,3),'YZX');for(const w of d.mesh.userData.front)w.rotation.y=-v.steer;}
   // feixes dos checkpoints: o próximo forte, o seguinte fraco, o resto escondido
   if(R) beams.forEach((b,i)=>{const k=i-PLAYER_RACER.cp,cp=R.cps[i];b.visible=k>=0&&k<2;if(!b.visible)return;

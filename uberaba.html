@@ -247,40 +247,213 @@ function upsample2(h,nx,nz){ // grade 2x mais fina por Catmull-Rom (passa pelos 
 }
 // Ruas assadas no relevo: cada trecho ganha um perfil (altura ao longo dele) suave e que bate com os cruzamentos;
 // a pista e a calçada ficam niveladas de um lado ao outro, e o terreno em volta faz a transição em BLEND metros.
+// Pontes e viadutos (marcados no OSM) não são assados: viram tabuleiros 3D acima do chão, e as cabeceiras sobem em rampa.
 const CALC_R=2.8,BLEND=16;
+function profAt(e,s){const pr=e.prof,m=pr.length,sf=clamp(s/e.profDs,0,m-1),k=Math.min(m-2,sf|0),f=sf-k;return pr[k]+(pr[k+1]-pr[k])*f;}
+function edgeAt(e,s){const C=e._C,P=e.P,n=C.length;let lo=0,hi=n-1;s=clamp(s,0,C[n-1]);while(hi-lo>1){const m=(lo+hi)>>1;if(C[m]<=s)lo=m;else hi=m;}
+  const L=(C[hi]-C[lo])||1e-6,f=(s-C[lo])/L,dx=(P[2*hi]-P[2*lo])/L,dz=(P[2*hi+1]-P[2*lo+1])/L;return [P[2*lo]+(P[2*hi]-P[2*lo])*f,P[2*lo+1]+(P[2*hi+1]-P[2*lo+1])*f,dx,dz];}
+function segX(ax,az,bx,bz,cx,cz,dx,dz){ // interseção de dois segmentos: [t,u] ou null
+  const rx=bx-ax,rz=bz-az,sx=dx-cx,sz=dz-cz,den=rx*sz-rz*sx;if(Math.abs(den)<1e-9)return null;
+  const t=((cx-ax)*sz-(cz-az)*sx)/den,u=((cx-ax)*rz-(cz-az)*rx)/den;return t>=0&&t<=1&&u>=0&&u<=1?[t,u]:null;}
+const UNDER=new Set();                         // trechos que passam por baixo de um viaduto
+let PROT=new Set();                            // ...e a continuação deles, que fica no chão
+let BRIDGE_INFO={viadutos:0,pontes:0};
+function liftBridges(hb,NH){
+  const BR=EDGES.filter(e=>e.bridge&&e.prof);if(!BR.length)return;
+  const adj=Array.from({length:NODES.length/2},()=>[]);for(const e of EDGES)if(e.prof){adj[e.a].push(e);if(e.b!==e.a)adj[e.b].push(e);}
+  const lifts=[];
+  const ov=(A,B,p)=>A.bb[0]-p<B[1]&&A.bb[1]+p>B[0]&&A.bb[2]-p<B[3]&&A.bb[3]+p>B[2];
+  for(const B of BR){const P=B.P,CB=B._C;let nv=0,np=0;
+    for(const E of EDGES){if(E===B||E.bridge||!E.prof||!ov(B,E.bb,1))continue;
+      if(E.a===B.a||E.a===B.b||E.b===B.a||E.b===B.b)continue;              // ligada ao viaduto: é rampa, não passa por baixo
+      const Q=E.P;
+      for(let i=0;i<P.length-2;i+=2)for(let j=0;j<Q.length-2;j+=2){const X=segX(P[i],P[i+1],P[i+2],P[i+3],Q[j],Q[j+1],Q[j+2],Q[j+3]);if(!X)continue;
+        const sB=CB[i/2]+X[0]*(CB[i/2+1]-CB[i/2]),sE=E._C[j/2]+X[1]*(E._C[j/2+1]-E._C[j/2]);
+        lifts.push({e:B,s:sB,H:profAt(E,sE)+7,flat:E.w/2+5});UNDER.add(E);nv++;}}
+    for(const r of RIVERS){const Q=r.P;let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(let j=0;j<Q.length;j+=2){x0=Math.min(x0,Q[j]);x1=Math.max(x1,Q[j]);z0=Math.min(z0,Q[j+1]);z1=Math.max(z1,Q[j+1]);}
+      if(!ov(B,[x0,x1,z0,z1],1))continue;
+      for(let i=0;i<P.length-2;i+=2)for(let j=0;j<Q.length-2;j+=2){const X=segX(P[i],P[i+1],P[i+2],P[i+3],Q[j],Q[j+1],Q[j+2],Q[j+3]);if(!X)continue;
+        const sB=CB[i/2]+X[0]*(CB[i/2+1]-CB[i/2]),px=P[i]+(P[i+2]-P[i])*X[0],pz=P[i+1]+(P[i+3]-P[i+1])*X[0];
+        lifts.push({e:B,s:sB,H:hb(px,pz)+(r.kind==='river'?4:2.5),flat:7});np++;}}
+    if(nv)BRIDGE_INFO.viadutos++;else if(np)BRIDGE_INFO.pontes++;
+  }
+  // a via de baixo e a continuação dela (mesmo nome, ou mesma classe e alinhada) ficam no chão, até 200 m de cada lado
+  PROT=new Set(UNDER);const bend=new Set();for(const B of BR){bend.add(B.a);bend.add(B.b);}
+  for(const U of UNDER){const stack=[[U,0]];
+    while(stack.length){const [E,acc]=stack.pop();if(acc>200)continue;
+      for(const n of [E.a,E.b])for(const F of adj[n]){if(PROT.has(F)||F.bridge||bend.has(F.a)||bend.has(F.b))continue;   // nunca prende a rampa de outra ponte
+        const same=E.name?F.name===E.name:(F.cls===E.cls&&(()=>{const [,,ax,az]=edgeAt(E,n===E.a?0:E.len),[,,bx,bz]=edgeAt(F,n===F.a?0:F.len);return Math.abs(ax*bx+az*bz)>0.8;})());
+        if(same){PROT.add(F);stack.push([F,acc+F.len]);}}}}
+  const protNode=new Set();for(const E of PROT){protNode.add(E.a);protNode.add(E.b);}
+  // rampa: a altura cai 6,5% por metro a partir do trecho plano, com curva vertical de 40 m no topo (sem quina para decolar)
+  const GR=0.065,LC=40,tOf=(d,lf)=>{const x=Math.max(0,d-lf.flat);return lf.H-GR*(x<LC?x*x/(2*LC):x-LC/2);};
+  for(const lf of lifts){
+    const B=lf.e,Rmax=lf.flat+LC/2+14/GR,dist=new Map(),pq=[[lf.s,B.a],[B.len-lf.s,B.b]];
+    const apply=(E,dfun)=>{const pr=E.prof,ds=E.profDs,L=E.len,pa=E!==B&&protNode.has(E.a)&&!bend.has(E.a),pb=E!==B&&protNode.has(E.b)&&!bend.has(E.b);
+      for(let k=0;k<pr.length;k++){const s=k*ds,d=dfun(s);if(d>Rmax)continue;let t=tOf(d,lf);
+        // rua que chega na via de baixo: desce até a altura dela no cruzamento
+        if(pa)t=Math.min(t,pr[k]+0.1*s);if(pb)t=Math.min(t,pr[k]+0.1*(L-s));          // alça de trevo pode chegar a 10%
+        if(t>pr[k]+0.05){pr[k]=t;E.lifted=true;}}};
+    apply(B,s=>Math.abs(s-lf.s));
+    while(pq.length){let mi=0;for(let k=1;k<pq.length;k++)if(pq[k][0]<pq[mi][0])mi=k;const [d,n]=pq.splice(mi,1)[0];
+      if(d>Rmax||(dist.has(n)&&dist.get(n)<=d))continue;dist.set(n,d);
+      for(const E of adj[n]){if(E===B||PROT.has(E))continue;const o=E.a===n?E.b:E.a,nd=d+E.len;if(nd<=Rmax+E.len&&!(dist.has(o)&&dist.get(o)<=nd))pq.push([nd,o]);}}
+    const done=new Set([B]);
+    for(const [n] of dist)for(const E of adj[n]){if(done.has(E)||PROT.has(E))continue;done.add(E);
+      const da=dist.has(E.a)?dist.get(E.a):1e9,db=dist.has(E.b)?dist.get(E.b):1e9,L=E.len;apply(E,s=>Math.min(da+s,db+L-s));}
+  }
+}
 function bakeRoads(G){
   const {nx,nz,step,x0,z0}=G,h=G.h;
   const hb=(x,z)=>{const fx=clamp((x-x0)/step,0,nx-1.001),fz=clamp((z-z0)/step,0,nz-1.001),i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*nx+i;
     return h[k]*(1-u)*(1-v)+h[k+1]*u*(1-v)+h[k+nx]*(1-u)*v+h[k+nx+1]*u*v;};
   const NH=new Float32Array(NODES.length/2);for(let i=0;i<NH.length;i++)NH[i]=hb(NODES[2*i],NODES[2*i+1]);
-  const N=nx*nz,stamp=new Int32Array(N).fill(-1),locD=new Float32Array(N),locT=new Float32Array(N),sumW=new Float32Array(N),sumWT=new Float32Array(N);
-  const visit=[];
+  // 1) perfis
   for(const e of EDGES){
     const P=e.P,n=P.length/2,C=new Float32Array(n);for(let i=1;i<n;i++)C[i]=C[i-1]+Math.hypot(P[2*i]-P[2*i-2],P[2*i+1]-P[2*i-1]);
-    const L=C[n-1];if(L<0.5)continue;
-    // perfil: amostra a cada ~4 m, suaviza ao longo (σ ≈ 25 m) e corrige as pontas para as alturas dos cruzamentos
+    e._C=C;const L=C[n-1];if(L<0.5){e.prof=null;continue;}
     const m=Math.max(2,Math.ceil(L/4)+1),ds=L/(m-1),pr=new Float32Array(m);
     for(let k=0,i=1;k<m;k++){const s=k*ds;while(i<n-1&&C[i]<s)i++;const f=clamp((s-C[i-1])/((C[i]-C[i-1])||1),0,1);
       pr[k]=hb(P[2*i-2]+(P[2*i]-P[2*i-2])*f,P[2*i-1]+(P[2*i+1]-P[2*i-1])*f);}
-    const sg=25/ds,r=Math.min(m-1,Math.ceil(sg*2.5)),sm=new Float32Array(m);
-    for(let k=0;k<m;k++){let a=0,w=0;for(let q=-r;q<=r;q++){const kk=k+q;if(kk<0||kk>=m)continue;const ww=Math.exp(-q*q/(2*sg*sg));a+=pr[kk]*ww;w+=ww;}sm[k]=a/w;}
-    const da=NH[e.a]-sm[0],db=NH[e.b]-sm[m-1];for(let k=0;k<m;k++)sm[k]+=da+(db-da)*k/(m-1);
+    let sm;
+    if(e.bridge){sm=new Float32Array(m);for(let k=0;k<m;k++){const c=0.3*Math.min(1,Math.min(k,m-1-k)*ds/10);sm[k]=Math.max(NH[e.a]+(NH[e.b]-NH[e.a])*k/(m-1),pr[k]+c);}}   // tabuleiro reto entre as cabeceiras (folga sobre o chão só no meio)
+    else{
+      // perfil: suaviza ao longo (σ ≈ 25 m) e corrige as pontas para as alturas dos cruzamentos
+      const sg=25/ds,r=Math.min(m-1,Math.ceil(sg*2.5));sm=new Float32Array(m);
+      for(let k=0;k<m;k++){let a=0,w=0;for(let q=-r;q<=r;q++){const kk=k+q;if(kk<0||kk>=m)continue;const ww=Math.exp(-q*q/(2*sg*sg));a+=pr[kk]*ww;w+=ww;}sm[k]=a/w;}
+      const da=NH[e.a]-sm[0],db=NH[e.b]-sm[m-1];for(let k=0;k<m;k++)sm[k]+=da+(db-da)*k/(m-1);
+    }
     e.prof=sm;e.profDs=ds;
-    // rasteriza: distância de cada nó da grade até o eixo do trecho
-    const flat=e.w/2+CALC_R+0.3,R=flat+BLEND;visit.length=0;
-    for(let i=0;i<n-1;i++){const ax=P[2*i],az=P[2*i+1],dx=P[2*i+2]-ax,dz=P[2*i+3]-az,L2=dx*dx+dz*dz||1e-6,sl=Math.sqrt(L2);
+  }
+  // 2) pontes e viadutos sobem; as rampas de acesso também
+  liftBridges(hb,NH);
+  // 3) rasteriza no relevo (menos os tabuleiros, que ficam no ar)
+  const N=nx*nz,stamp=new Int32Array(N).fill(-1),locD=new Float32Array(N),locT=new Float32Array(N),sumW=new Float32Array(N),sumWT=new Float32Array(N);
+  const visit=[];
+  const OVER=8,BEND=new Set();for(const e of EDGES)if(e.bridge){BEND.add(e.a);BEND.add(e.b);}       // pontas de tabuleiro
+  const raster=(e,R,cb)=>{const P=e.P,C=e._C,ns=P.length/2-1;visit.length=0;
+    const cutA=BEND.has(e.a)&&!e.bridge,cutB=BEND.has(e.b)&&!e.bridge;          // junto do tabuleiro, o aterro termina reto (sem "tampa" redonda)
+    for(let i=0;i<ns;i++){const ax=P[2*i],az=P[2*i+1],dx=P[2*i+2]-ax,dz=P[2*i+3]-az,L2=dx*dx+dz*dz||1e-6,sl=Math.sqrt(L2);
       const i0=Math.max(0,Math.floor((Math.min(ax,ax+dx)-R-x0)/step)),i1=Math.min(nx-1,Math.ceil((Math.max(ax,ax+dx)+R-x0)/step));
       const j0=Math.max(0,Math.floor((Math.min(az,az+dz)-R-z0)/step)),j1=Math.min(nz-1,Math.ceil((Math.max(az,az+dz)+R-z0)/step));
       for(let jj=j0;jj<=j1;jj++){const gz=z0+jj*step;for(let ii=i0;ii<=i1;ii++){const gx=x0+ii*step;
-        const t=clamp(((gx-ax)*dx+(gz-az)*dz)/L2,0,1),d=Math.hypot(gx-ax-dx*t,gz-az-dz*t);if(d>R)continue;
+        const tr=((gx-ax)*dx+(gz-az)*dz)/L2,exA=i===0&&cutA&&tr<0,exB=i===ns-1&&cutB&&tr>1;
+        if((exA&&-tr*sl>OVER)||(exB&&(tr-1)*sl>OVER))continue;
+        // junto do tabuleiro o aterro avança OVER metros por baixo dele, reto (distância perpendicular), como um encontro
+        const t=clamp(tr,0,1),d=exA||exB?Math.abs((gx-ax)*dz-(gz-az)*dx)/sl:Math.hypot(gx-ax-dx*t,gz-az-dz*t);if(d>R)continue;
         const k=jj*nx+ii;if(stamp[k]===e.i&&locD[k]<=d)continue;
-        const sf=(C[i]+t*sl)/ds,k0=Math.min(m-2,sf|0),fr=clamp(sf-k0,0,1);
-        if(stamp[k]!==e.i){stamp[k]=e.i;visit.push(k);}locD[k]=d;locT[k]=sm[k0]+(sm[k0+1]-sm[k0])*fr;}}}
-    for(const k of visit){const d=locD[k];let w=d<=flat?1:1-(d-flat)/BLEND;w=w*w*(3-2*w);
-      const w8=w*w*w*w*w*w*w*w;sumW[k]+=w8;sumWT[k]+=w8*locT[k];}
-  }
-  for(let k=0;k<N;k++)if(sumW[k]>0){const w=Math.min(1,Math.pow(sumW[k],1/8));h[k]+=(sumWT[k]/sumW[k]-h[k])*w;}
+        if(stamp[k]!==e.i){stamp[k]=e.i;visit.push(k);}locD[k]=d;locT[k]=profAt(e,C[i]+t*sl);}}}
+    for(const k of visit)cb(k,locD[k],locT[k]);};
+  const sumW0=new Float32Array(N);
+  for(const e of EDGES){if(!e.prof||e.bridge)continue;const flat=e.w/2+CALC_R+0.3,mul=e.lifted?1e4:1;   // aterro das rampas tem prioridade
+    raster(e,flat+BLEND,(k,d,t)=>{let w=d<=flat?1:1-(d-flat)/BLEND;w=w*w*(3-2*w);const w8=w*w*w*w*w*w*w*w;sumW0[k]+=w8;sumW[k]+=w8*mul;sumWT[k]+=w8*mul*t;});}
+  for(let k=0;k<N;k++)if(sumW[k]>0){const w=Math.min(1,Math.pow(sumW0[k],1/8));h[k]+=(sumWT[k]/sumW[k]-h[k])*w;}
+  // 4) quem passa por baixo de viaduto manda na própria faixa (o aterro das rampas não invade a via de baixo)
+  stamp.fill(-1);
+  // (faixa inteira: pista, calçada e mais uma célula da grade, senão o aterro vizinho entra pela interpolação)
+  // (cada ponto obedece à via protegida mais próxima: pistas paralelas de alturas diferentes não se sobrescrevem)
+  locD.fill(1e9);const pD=new Float32Array(N).fill(1e9),pT=new Float32Array(N);
+  for(const e of PROT){const flat=e.w/2+CALC_R+0.8*step;raster(e,flat,(k,d,t)=>{const dd=d-e.w/2;if(dd<pD[k]){pD[k]=dd;pT[k]=t;}});}
+  for(let k=0;k<N;k++)if(pD[k]<1e9)h[k]=pT[k];
 }
+
+// ---------------------------------------------------------------- pontes, viadutos e rampas em 3D
+// Nos trechos elevados (tabuleiros e rampas de acesso) a pista é uma faixa 3D na altura exata do perfil da rua,
+// e é nela que os carros andam. O relevo embaixo é só o aterro de apoio (a grade de 10 m não faz paredes finas).
+let RIBBONS=[];
+function buildRibbons(){
+  const isRib=e=>e.prof&&(e.bridge||e.lifted),at=new Map();
+  for(const e of EDGES)if(e.prof)for(const n of [e.a,e.b]){let l=at.get(n);if(!l)at.set(n,l=[]);l.push(e);}
+  const open=(e,n)=>(at.get(n)||[]).every(E=>E===e||!isRib(E));          // ponta que encosta só em ruas comuns
+  const pos=[],col=[],C3=c=>{const t=new THREE.Color(c);return [t.r,t.g,t.b];};
+  const ASF=C3('#585c61'),CAL=C3('#d3cfc6'),CAL2=C3('#b9b4aa'),CON=C3('#c9c4b8'),CON2=C3('#a9a397'),YEL=C3('#e2b93b'),WHT=C3('#ecebe6');
+  const quad=(a,b,c,d,k)=>{pos.push(...a,...b,...c,...a,...c,...d);for(let i=0;i<6;i++)col.push(...k);};
+  const box=(x,z,y0,y1,hx,hz,dx,dz,k)=>{const rx=-dz,rz=dx,P=(u,v,y)=>[x+dx*u+rx*v,y,z+dz*u+rz*v];
+    const c=[[-hx,-hz],[hx,-hz],[hx,hz],[-hx,hz]];
+    for(let i=0;i<4;i++){const [u0,v0]=c[i],[u1,v1]=c[(i+1)%4];quad(P(u0,v0,y0),P(u1,v1,y0),P(u1,v1,y1),P(u0,v0,y1),k);}
+    quad(P(-hx,-hz,y1),P(hx,-hz,y1),P(hx,hz,y1),P(-hx,hz,y1),k);};
+  const underClear=(px,pz,m)=>{for(const u of UNDER){if(px<u.bb[0]-u.w||px>u.bb[1]+u.w||pz<u.bb[2]-u.w||pz>u.bb[3]+u.w)continue;
+    const P=u.P;for(let i=0;i<P.length-2;i+=2){const ax=P[i],az=P[i+1],ex=P[i+2]-ax,ez=P[i+3]-az,L2=ex*ex+ez*ez||1,t=clamp(((px-ax)*ex+(pz-az)*ez)/L2,0,1);
+      if(Math.hypot(px-ax-ex*t,pz-az-ez*t)<u.w/2+m)return false;}}return true;};
+  for(const e of EDGES){if(!e.prof||!(e.bridge||e.lifted))continue;
+    const L=e.len,half=e.w/2,br=e.bridge,outer=br?half+0.6:half+CALC_R,m=Math.max(2,Math.ceil(L/3)+1),S=[];
+    for(let k=0;k<m;k++){const s=k*L/(m-1),[x,z,dx,dz]=edgeAt(e,s);S.push({s,x,z,dx,dz,y:profAt(e,s)+0.07});}
+    const at=(p,v,dy=0)=>[p.x-p.dz*v,p.y+dy,p.z+p.dx*v];
+    const mk=!e.ow&&e.cls!=='service';
+    for(let k=0;k<m-1;k++){const p=S[k],q=S[k+1];
+      quad(at(p,half),at(q,half),at(q,-half),at(p,-half),ASF);
+      if(mk)quad(at(p,0.16,0.02),at(q,0.16,0.02),at(q,-0.16,0.02),at(p,-0.16,0.02),YEL);
+      for(const v of [half-0.4,-half+0.4])quad(at(p,v+0.07,0.02),at(q,v+0.07,0.02),at(q,v-0.07,0.02),at(p,v-0.07,0.02),WHT);
+      for(const sg of [1,-1]){const o=sg*outer;
+        if(br){ // tabuleiro: faixa de 0,6 m, lateral de 1,2 m e mureta de concreto de 0,9 m
+          quad(at(p,sg*half),at(q,sg*half),at(q,o),at(p,o),ASF);
+          quad(at(p,o,-1.2),at(q,o,-1.2),at(q,o,0),at(p,o,0),CON2);
+          quad(at(p,o,0),at(q,o,0),at(q,o,0.9),at(p,o,0.9),CON);
+          quad(at(p,o-sg*0.45,0.9),at(q,o-sg*0.45,0.9),at(q,o,0.9),at(p,o,0.9),CON);
+          quad(at(p,o-sg*0.45,0),at(q,o-sg*0.45,0),at(q,o-sg*0.45,0.9),at(p,o-sg*0.45,0.9),CON);}
+        else{ // rampa: calçada e uma "saia" até o chão que esconde o aterro irregular
+          quad(at(p,sg*half,0.12),at(q,sg*half,0.12),at(q,o,0.12),at(p,o,0.12),CAL);
+          quad(at(p,sg*half),at(q,sg*half),at(q,sg*half,0.12),at(p,sg*half,0.12),CAL2);
+          quad(at(p,o,-4),at(q,o,-4),at(q,o,0.12),at(p,o,0.12),CAL2);}}
+      if(br)quad(at(p,-outer,-1.2),at(q,-outer,-1.2),at(q,outer,-1.2),at(p,outer,-1.2),CON2);
+    }
+    if(br){
+      // encontros de concreto nas pontas (se a ponta está alta e fora da pista de baixo) e pilares a cada ~20 m
+      for(const [s,sg] of [[0.5,1],[L-0.5,-1]]){const [x,z,dx,dz]=edgeAt(e,s),y=profAt(e,s),g=H(x+dx*sg*4,z+dz*sg*4);
+        if(y-g>1.2&&underClear(x,z,1.5))box(x,z,g-2,y-0.2,0.5,outer,dx,dz,CON);}
+      for(let s=10;s<L-6;s+=20){const [x,z,dx,dz]=edgeAt(e,s),y=profAt(e,s);if(y-H(x,z)<2.5)continue;
+        for(const v of [half*0.55,-half*0.55]){const px=x-dz*v,pz=z+dx*v;if(underClear(px,pz,1.5))box(px,pz,H(px,pz)-1,y-1.2,0.6,0.6,dx,dz,CON2);}}
+    }
+    let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const p of S){x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);z0=Math.min(z0,p.z);z1=Math.max(z1,p.z);}
+    const pad=outer+3,R={e,half,outer,openA:open(e,e.a),openB:open(e,e.b),bb:[x0-pad,x1+pad,z0-pad,z1+pad]};RIBBONS.push(R);
+    const C=META.chunk;for(let j=Math.max(0,Math.floor((R.bb[2]-META.z0)/C));j<=Math.min(CROWS-1,Math.floor((R.bb[3]-META.z0)/C));j++)
+      for(let i=Math.max(0,Math.floor((R.bb[0]-META.x0)/C));i<=Math.min(CCOLS-1,Math.floor((R.bb[1]-META.x0)/C));i++)(CHUNKS[j*CCOLS+i].ribbons||(CHUNKS[j*CCOLS+i].ribbons=[])).push(R);
+  }
+  if(!pos.length)return;
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));
+}
+// pista elevada sob (x,z): {y, d (distância ao eixo), half (borda da mureta), px, pz, e, span (é ponte)} ou null.
+// Com hint (altura do carro), entre as pistas que cobrem o ponto fica a do nível mais próximo; sem hint, a mais central.
+function ribbonsAt(x,z,tol=0.4){
+  const ch=chunkAt(x,z),out=[];if(!ch||!ch.ribbons)return out;
+  for(const R of ch.ribbons){const b=R.bb;if(x<b[0]||x>b[1]||z<b[2]||z>b[3])continue;
+    const e=R.e,P=e.P,C=e._C,ns=P.length/2-1;let bd=1e9,bs=0,bx=0,bz=0;
+    for(let i=0;i<ns;i++){const ax=P[2*i],az=P[2*i+1],dx=P[2*i+2]-ax,dz=P[2*i+3]-az,L2=dx*dx+dz*dz||1e-6,sl=Math.sqrt(L2),tr=((x-ax)*dx+(z-az)*dz)/L2;
+      if((i===0&&tr*sl<-1.5)||(i===ns-1&&(tr-1)*sl>1.5))continue;          // a pista termina quase reta na ponta
+      const t=clamp(tr,0,1),px=ax+dx*t,pz=az+dz*t,d=Math.hypot(x-px,z-pz);if(d<bd){bd=d;bs=C[i]+t*sl;bx=px;bz=pz;}}
+    const lim=e.bridge?R.outer:R.half+0.3;                                  // rampa: só na pista (a calçada pode encostar na pista do outro sentido)
+    if(bd<=lim+tol){
+      let y=profAt(e,bs)+0.07;
+      // ponta que encosta numa rua comum: desce suave até o chão nos últimos 6 m (sem degrau)
+      const fa=R.openA?clamp(bs/6,0,1):1,fb=R.openB?clamp((e.len-bs)/6,0,1):1,f=Math.min(fa,fb);if(f<1){const g=H(x,z);y=g+(y-g)*f;}
+      out.push({y,d:bd,half:R.half+0.6,outer:R.outer,lim,px:bx,pz:bz,e,span:e.bridge});}}
+  return out;
+}
+function deckAt(x,z,tol=0.4,hint){let best=null;
+  for(const c of ribbonsAt(x,z,tol))if(!best||(hint===undefined?c.d-c.lim<best.d-best.lim:Math.abs(c.y-hint)<Math.abs(best.y-hint)))best=c;
+  return best;}
+// altura do piso considerando os dois níveis: perto de uma altura de referência (hint), escolhe tabuleiro ou chão
+// Se no ponto só existe a pista elevada, o carro anda nela (a não ser que esteja bem abaixo, passando por baixo);
+// se também há uma rua comum (saída de trevo, via de baixo), fica na superfície mais próxima de onde já está.
+function plainRoadAt(x,z){const ch=chunkAt(x,z);if(!ch)return Infinity;let bn=Infinity;
+  if(!ch.plain)ch.plain=ch.edges.filter(e=>e.prof&&!e.bridge&&!e.lifted);
+  for(const e of ch.plain){const b=e.bb,r=e.w/2+0.3;if(x<b[0]-r||x>b[1]+r||z<b[2]-r||z>b[3]+r)continue;const P=e.P;
+    for(let i=0;i<P.length-2;i+=2){const ax=P[i],az=P[i+1],dx=P[i+2]-ax,dz=P[i+3]-az,L2=dx*dx+dz*dz||1e-6,tr=((x-ax)*dx+(z-az)*dz)/L2;
+      if((i===0&&tr<0)||(i===P.length-4&&tr>1))continue;                 // ponta reta: não invade o tabuleiro que começa ali
+      const t=clamp(tr,0,1),d=Math.hypot(x-ax-dx*t,z-az-dz*t);if(d<=r)bn=Math.min(bn,d/r);}}
+  return bn;}
+function HL(x,z,hint){const g=H(x,z);if(!RIBBONS.length)return g;if(hint===undefined)hint=g;
+  const C=ribbonsAt(x,z);if(!C.length)return g;
+  const cands=C.map(c=>({y:c.y,n:c.d/c.lim})),pn=plainRoadAt(x,z);
+  if(pn<Infinity)cands.push({y:g,n:pn});
+  else{let lo=1e9;for(const c of C)lo=Math.min(lo,c.y);if(hint<lo-2)return g;}    // bem abaixo de tudo: chão, passando por baixo
+  // entre as superfícies a até 1 m da altura do carro, a da via em que ele está mais centralizado; senão, a mais próxima
+  let best=null;for(const c of cands)if(Math.abs(c.y-hint)<1&&(!best||c.n<best.n))best=c;
+  if(!best)for(const c of cands)if(!best||Math.abs(c.y-hint)<Math.abs(best.y-hint))best=c;
+  return best.y;}
+
 function prepareTerrain(raw,base){
   let h=Float32Array.from(raw,v=>v/10-base);
   h=gaussBlur(h,META.nx,META.nz,2);                                  // σ = 40 m: tira os degraus do satélite, mantém os morros
@@ -370,11 +543,11 @@ function paintChunk(ch,size){
   for(const r of ch.rivers) strokeFlat(g,r.P,Math.max(r.kind==='river'?9:r.kind==='canal'?6:3,px),'#6aaed4');
   const fine=k>=0.5;
   if(fine) for(const p of ch.paths) if(p.cls==='track') strokeFlat(g,p.P,3,'#bca37a');
-  if(fine) for(const e of ch.edges) if(e.cls!=='motorway'&&e.cls!=='trunk'&&e.cls!=='service') strokeFlat(g,e.P,e.w+5.6,'#d3cfc6');   // calçada até o alinhamento dos muros (2,8 m de cada lado)
-  for(const e of ch.edges) strokeFlat(g,e.P,Math.max(e.w,1.15*px),ASPH[e.cls]||'#585c61');
+  if(fine) for(const e of ch.edges) if(!e.bridge&&e.cls!=='motorway'&&e.cls!=='trunk'&&e.cls!=='service') strokeFlat(g,e.P,e.w+5.6,'#d3cfc6');   // calçada até o alinhamento dos muros (2,8 m de cada lado)
+  for(const e of ch.edges) if(!e.bridge||k<0.25) strokeFlat(g,e.P,Math.max(e.w,1.15*px),ASPH[e.cls]||'#585c61');   // de longe, a ponte aparece no mapa
   if(fine) for(const p of ch.paths) if(p.cls!=='track') strokeFlat(g,p.P,p.cls==='cycleway'?2.2:p.cls==='pedestrian'?4:1.8,p.cls==='cycleway'?'#b9604f':'#c8bfae');
   if(k>=0.9){
-    for(const e of ch.edges) for(const m of marks(e)){g.setLineDash(m.dash||[]);g.strokeStyle=m.col;g.lineWidth=Math.max(m.w,0.7*px);
+    for(const e of ch.edges) if(!e.bridge) for(const m of marks(e)){g.setLineDash(m.dash||[]);g.strokeStyle=m.col;g.lineWidth=Math.max(m.w,0.7*px);
       g.beginPath();g.moveTo(m.P[0],m.P[1]);for(let i=2;i<m.P.length;i+=2)g.lineTo(m.P[i],m.P[i+1]);g.stroke();}
     g.setLineDash([]);
   }
@@ -549,7 +722,7 @@ function sense(A,ghost){ // carro ou obstáculo mais próximo à frente: {d (vã
   const fx=Math.cos(A.h),fz=Math.sin(A.h);let best=null;
   const gx=Math.floor(A.x/GC),gz=Math.floor(A.z/GC);
   for(let di=-2;di<=2;di++)for(let dj=-2;dj<=2;dj++){const arr=grid.get((gx+di+5000)*20000+(gz+dj+5000));if(!arr)continue;
-    for(const B of arr){if(B===A)continue;
+    for(const B of arr){if(B===A)continue;if(A.y!==undefined&&B.y!==undefined&&Math.abs(A.y-B.y)>3)continue;   // um em cima do viaduto, outro embaixo
       const rx=B.x-A.x,rz=B.z-A.z,f=rx*fx+rz*fz;if(f<=0.5||f>45)continue;
       const lat=Math.abs(-rx*fz+rz*fx),hb=fx*Math.cos(B.h)+fz*Math.sin(B.h);
       let hit=false;
@@ -577,7 +750,7 @@ function spawnCar(cx,cz,R,car){
     let ok=true;const k=Math.floor(veh.x/GC),m=Math.floor(veh.z/GC);
     for(let di=-1;di<=1&&ok;di++)for(let dj=-1;dj<=1&&ok;dj++){const arr=grid.get((k+di+5000)*20000+(m+dj+5000));if(arr)for(const B of arr)if(B!==veh&&Math.hypot(B.x-veh.x,B.z-veh.z)<9){ok=false;break;}}
     if(!ok)continue;
-    veh.driver=d;veh.color=(Math.random()*CAR_COLS.length)|0;
+    veh.driver=d;veh.color=(Math.random()*CAR_COLS.length)|0;veh.y=undefined;
     return veh;
   }
   return null;
@@ -599,7 +772,8 @@ function updateTraffic(dt,focus){
       else if(c.driver.dead&&c!==follow.car){cars.splice(i,1);i--;}}
   }
   for(let i=0;i<cars.length;i++){const c=cars[i],ch=Math.cos(c.h),sh=Math.sin(c.h);
-    const yf=H(c.x+ch*1.4,c.z+sh*1.4),yb=H(c.x-ch*1.4,c.z-sh*1.4),yl=H(c.x+sh*0.8,c.z-ch*0.8),yr=H(c.x-sh*0.8,c.z+ch*0.8);
+    const hint=c.y!==undefined?c.y:(EDGES[c.driver.route[0].e].bridge||EDGES[c.driver.route[0].e].lifted)?1e9:-1e9;c.y=HL(c.x,c.z,hint);
+    const yf=HL(c.x+ch*1.4,c.z+sh*1.4,c.y),yb=HL(c.x-ch*1.4,c.z-sh*1.4,c.y),yl=HL(c.x+sh*0.8,c.z-ch*0.8,c.y),yr=HL(c.x-sh*0.8,c.z+ch*0.8,c.y);
     dummy.position.set(c.x,(yf+yb)/2+0.02,c.z);dummy.rotation.set(Math.atan2(yl-yr,1.6),-c.h,Math.atan2(yf-yb,2.8),'YZX');
     dummy.updateMatrix();bodyMesh.setMatrixAt(i,dummy.matrix);darkMesh.setMatrixAt(i,dummy.matrix);}
   bodyMesh.count=darkMesh.count=cars.length;bodyMesh.instanceMatrix.needsUpdate=darkMesh.instanceMatrix.needsUpdate=true;
@@ -694,7 +868,7 @@ async function load(){
     buildGraph(V);buildAreas(A);
     loadBar('Suavizando o relevo e nivelando as ruas…','busy');await new Promise(r=>setTimeout(r,30));
     T=prepareTerrain(raw,base);
-    buildChunks();
+    buildChunks();buildRibbons();
     {const out=new THREE.Mesh(new THREE.PlaneGeometry(240000,240000),new THREE.MeshLambertMaterial({color:BASE}));out.rotation.x=-Math.PI/2;out.position.y=-1.5;scene.add(out);}  // chão em volta do recorte
     const km2=(META.w*META.h/1e6).toFixed(0);let km=0;for(const e of EDGES)km+=e.len;
     const dl=$('stats');dl.hidden=false;
