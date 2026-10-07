@@ -360,7 +360,7 @@ function enter(){
   if(r){G.car.place(r.px,r.pz,Math.atan2(r.dz,r.dx));}else G.car.place(t.x,t.z,0);
   G.camH=G.car.h;camera.position.set(G.car.x-Math.cos(G.car.h)*9,G.car.y+4,G.car.z-Math.sin(G.car.h)*9);
   G.savedTiers=TIERS;TIERS=MOBILE?[[380,512],[1100,256],[2600,128],[1e9,64]]:[[380,1024],[1100,512],[2600,256],[1e9,64]];
-  TRAFFIC.rMin=200;TRAFFIC.radius=1200;
+  TRAFFIC.rMin=200;TRAFFIC.radius=1200;if(window.PREDIOS)PREDIOS.setRadius(MOBILE?650:1100);
   audio.init();audio.resume();
   if(!MOBILE){ui.help.hidden=false;clearTimeout(G.helpT);G.helpT=setTimeout(()=>{ui.help.hidden=true;},15000);}
 }
@@ -368,7 +368,7 @@ function exit(){
   endRace();G.on=false;document.body.classList.remove('g-play');ui.hud.hidden=true;ui.menu.hidden=true;controls.enabled=true;
   G.mesh.visible=false;{const i=EXTRA.indexOf(G.car);if(i>=0)EXTRA.splice(i,1);}
   const c=G.car;controls.target.set(c.x,c.y,c.z);camera.position.set(c.x-Math.cos(c.h)*120,c.y+140,c.z-Math.sin(c.h)*120);camera.fov=55;camera.updateProjectionMatrix();
-  TIERS=G.savedTiers||TIERS;lastTier=0;TRAFFIC.rMin=0;TRAFFIC.radius=1400;audio.stop();
+  TIERS=G.savedTiers||TIERS;lastTier=0;TRAFFIC.rMin=0;TRAFFIC.radius=1400;audio.stop();if(window.PREDIOS)PREDIOS.setRadius(MOBILE?900:1500);
 }
 function resetCar(){
   const c=G.car,r=nearestRoad(c.x,c.z);if(!r)return;
@@ -462,6 +462,21 @@ function collide(A,B){
 function nearby(c,r,cb){const gx=Math.floor(c.x/GC),gz=Math.floor(c.z/GC),k=Math.ceil(r/GC);
   for(let di=-k;di<=k;di++)for(let dj=-k;dj<=k;dj++){const arr=grid.get((gx+di+5000)*20000+(gz+dj+5000));if(arr)for(const B of arr)if(B!==c)cb(B);}}
 
+// ---------------------------------------------------------------- paredes dos prédios
+function hitWalls(c){
+  const B=window.PREDIOS;if(!B||!B.ready) return 0;
+  const isP=c instanceof PlayerCar,fx=Math.cos(c.h),fz=Math.sin(c.h);let impact=0;
+  for(const k of [1.25,-1.25]){
+    const hit=B.pushOut(c.x+fx*k,c.z+fz*k,1.05);if(!hit)continue;
+    c.x+=hit.nx*hit.pen;c.z+=hit.nz*hit.pen;
+    if(isP){const vn=c.vx*hit.nx+c.vz*hit.nz;
+      if(vn<0){c.vx-=1.3*vn*hit.nx;c.vz-=1.3*vn*hit.nz;c.vx*=0.92;c.vz*=0.92;impact=Math.max(impact,-vn);
+        c.yaw+=clamp((fx*hit.nz-fz*hit.nx)*Math.sign(k)*-vn*0.06,-1.6,1.6);}}       // bater de quina faz o carro girar
+    else{const vn=(fx*hit.nx+fz*hit.nz)*c.v;if(vn<0)c.v*=0.6;}
+  }
+  return impact;
+}
+
 // ---------------------------------------------------------------- laço do jogo
 function update(dt,now){
   const c=G.car,R=G.race;
@@ -475,11 +490,14 @@ function update(dt,now){
   if(R&&R.state!=='countdown'&&ui.count.textContent==='JÁ!'&&R.t>0.8)ui.count.hidden=true;
   // asfalto ou terra?
   if(now-G.lastRoad>90){G.lastRoad=now;const r=nearestRoad(c.x,c.z);c.onRoad=!!r&&r.d<1.2;}
-  const steps=dt>0.025?2:1,h=dt/steps;
+  const steps=dt>0.025?2:1,h=dt/steps;let wallHit=0;
   for(let s=0;s<steps;s++){
     c.update(h,inp,locked);
     if(R) for(const d of R.racers){const ctl=d.control(h);d.veh.update(h,ctl);}
+    wallHit=Math.max(wallHit,hitWalls(c));
+    if(R) for(const d of R.racers) hitWalls(d.veh);
   }
+  if(wallHit>5){G.shake=Math.min(1,wallHit/12);if(wallHit>11)pop('NA PAREDE!');}
   // colisões e "quase!" com o trânsito
   let hit=0;
   nearby(c,8,B=>{const rel=collide(c,B);if(rel>2)hit=Math.max(hit,rel);
@@ -528,7 +546,10 @@ function render3D(dt,now){
   const velH=sp>4?Math.atan2(c.vz,c.vx)+(c.vf<0?Math.PI:0):c.h;
   G.camH+=angDiff(G.camH,c.h+angDiff(c.h,velH)*0.4)*Math.min(1,dt*4.5);       // segue o carro, puxando um pouco para onde ele desliza
   const ah=G.camH+look,dist=7.2+sp*0.045+(c.nitroOn?1.2:0),ht=2.5+sp*0.012;
-  const tx=c.x-Math.cos(ah)*dist,tz=c.z-Math.sin(ah)*dist;let ty=Math.max(c.y+ht,H(tx,tz)+1.3);
+  let cd=dist;
+  if(window.PREDIOS) for(let q=1;q<=8;q++){const f=q/8,px=c.x-Math.cos(ah)*dist*f,pz=c.z-Math.sin(ah)*dist*f;
+    if(PREDIOS.blocked(px,c.y+ht*f+0.5,pz)){cd=Math.max(2.2,dist*(q-1)/8-0.6);break;}}          // prédio no caminho: chega a câmera perto do carro
+  const tx=c.x-Math.cos(ah)*cd,tz=c.z-Math.sin(ah)*cd;let ty=Math.max(c.y+ht*(0.6+0.4*cd/dist),H(tx,tz)+1.3);
   camera.position.x+=(tx-camera.position.x)*Math.min(1,dt*12);camera.position.z+=(tz-camera.position.z)*Math.min(1,dt*12);
   camera.position.y+=(ty-camera.position.y)*Math.min(1,dt*8);
   if(c.bump>0){G.shake=Math.max(G.shake,c.bump*0.7);c.bump=0;}

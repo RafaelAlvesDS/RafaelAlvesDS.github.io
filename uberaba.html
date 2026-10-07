@@ -633,6 +633,7 @@ function frame(now){
     updateTiers(now);runQueue(queue.length&&queue[0].size===0?14:7);
     const playing=window.GAME&&GAME.on;
     const focus=playing?GAME.focus():follow.car||controls.target;
+    if(window.PREDIOS) PREDIOS.update(now,focus);
     if(TRAFFIC.target||TRAFFIC.cars.length) updateTraffic(dt,focus);
     if(playing) GAME.update(dt,now); else {updateCamera(dt);updateTip(now);}
   }
@@ -642,6 +643,7 @@ function frame(now){
 requestAnimationFrame(frame);
 load();
 </script>
+<script src="js/predios.js"></script>
 <script src="js/corrida.js"></script>
 </body>
 </html>
