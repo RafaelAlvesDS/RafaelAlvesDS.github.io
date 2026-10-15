@@ -117,6 +117,10 @@ li[data-sec].tem-coment { box-shadow: -18px 0 0 -14px var(--coment-borda); }
 .trecho { border: 1px solid var(--linha); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--fundo); }
 .trecho blockquote { margin: 0 0 10px; font-family: var(--serifa); font-size: 15.5px; line-height: 1.55; }
 .trecho blockquote mark { background: var(--cit); color: inherit; padding: 0 1px; }
+.traducao { font-family: var(--serifa); font-size: 15px; line-height: 1.5; background: var(--papel); border: 1px dashed var(--linha);
+  border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; color: var(--tinta); }
+.rot-trad { display: block; font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--tinta-3); font-weight: 600; margin-bottom: 3px; }
 .trecho .pag { font-size: 12.5px; color: var(--tinta-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .abrir { font-weight: 600; text-decoration: none; }
 .nota-cit { font-size: 13.5px; color: var(--tinta-2); background: var(--acento-suave); padding: 8px 10px; border-radius: 8px; }
@@ -247,7 +251,9 @@ dialog .linha-bt { display: flex; gap: 8px; justify-content: flex-end; margin-to
       const partes = t.texto.split('(...)').map(s => s.trim()).filter(Boolean);
       const bloco = partes.map(s => '<mark>' + esc(s) + '</mark>').join(' <span style="color:var(--tinta-3)">(…)</span> ');
       const rot = r.html && !t.sem_fragmento ? 'Abrir no trecho ↗' : (r.pdf && t.pdf ? 'Abrir na página ↗' : 'Abrir a fonte ↗');
-      return `<div class="trecho"><blockquote>“${bloco}”</blockquote><div class="pag"><span>${esc(t.pag)}</span>
+      const trad = t.traducao ? `<div class="traducao"><span class="rot-trad">Tradução livre</span>${
+        t.traducao.split('(...)').map(s => esc(s.trim())).filter(Boolean).join(' <span style="color:var(--tinta-3)">(…)</span> ')}</div>` : '';
+      return `<div class="trecho"><blockquote${t.traducao ? ' lang="en"' : ''}>“${bloco}”</blockquote>${trad}<div class="pag"><span>${esc(t.pag)}</span>
         <a class="abrir" href="${esc(t.link)}" target="_blank" rel="noopener">${rot}</a></div></div>`;
     }).join('');
     abrePainel(`Citação ${i + 1} de ${D.citacoes.length}`, `

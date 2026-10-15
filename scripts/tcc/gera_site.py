@@ -355,6 +355,12 @@ def fragmento(texto):
     return '#:~:text=' + enc(' '.join(pal[:5])) + ',' + enc(' '.join(pal[-5:]))
 
 
+# trecho em inglês precisa de tradução livre ('traducao') para quem não lê inglês
+INGLES = re.compile(r'\b(the|and|of|is|are|was|were|for|which|with)\b')
+sem_trad = [t['texto'][:60] for o in ocorrencias for t in o['trechos']
+            if len(INGLES.findall(t['texto'])) >= 2 and not t.get('traducao')]
+assert not sem_trad, ('trecho em inglês sem tradução', sem_trad)
+
 refs = {}
 for k, r in evid['refs'].items():
     refs[k] = dict(r, abnt=refs_abnt[k])

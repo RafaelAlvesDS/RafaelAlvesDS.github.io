@@ -1,129 +1,667 @@
 {
-  "_sobre": "Evidência de cada citação do artigo v8 para o site de revisão (gera_site.py). 'par' = início do parágrafo; 'cit' = texto da citação como aparece no artigo; 'n' = ordem dessa citação no parágrafo. Cada trecho: 'pag' = página na publicação; 'pdf' = página do PDF online (para abrir com #page=); 'texto' = trecho literal da fonte (conferido na planilha Verificacao_citacoes.xlsx). Na fonte em HTML, o link abre no trecho destacado (fragmento de texto).",
-  "refs": {
-    "AKERLOF1970": {"url": "https://doi.org/10.2307/1879431", "acesso": "restrito"},
-    "AMARAL2024": {"url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1169415", "acesso": "aberto", "obs": "Capítulo de livro (p. 647-656); o PDF da Embrapa é o livro inteiro."},
-    "AN2025": {"url": "https://link.springer.com/article/10.1186/s40854-025-00874-w", "acesso": "aberto", "html": true},
-    "BASSO2024": {"url": "https://www.frontiersin.org/journals/sustainable-food-systems/articles/10.3389/fsufs.2023.1296337/full", "acesso": "aberto", "html": true},
-    "BRAGA2023": {"url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1157483", "pdf": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1157483/1/27547.pdf", "acesso": "aberto"},
-    "BREIMAN2001": {"url": "https://doi.org/10.1023/A:1010933404324", "acesso": "restrito"},
-    "CARNEIRO2024": {"url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1163825", "pdf": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1163825/1/27753.pdf", "acesso": "aberto"},
-    "CARVALHO2022": {"url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0267109", "acesso": "aberto", "html": true},
-    "CNA2025": {"url": "https://cnabrasil.org.br/noticias/pib-do-agronegocio-fecha-2024-com-crescimento-de-1-81", "acesso": "aberto", "html": true},
-    "JOSEPH2024": {"url": "https://doi.org/10.1017/aae.2024.28", "acesso": "aberto", "html": true},
-    "LOPES2023": {"url": "https://doi.org/10.37496/rbz5220210227", "pdf": "https://rbz.org.br/wp-content/uploads/articles_xml/1806-9290-rbz-52-e20210227/1806-9290-rbz-52-e20210227.pdf", "acesso": "aberto", "html": true},
-    "MACKINNON1985": {"url": "https://doi.org/10.1016/0304-4076(85)90158-7", "acesso": "restrito"},
-    "PACHECO2023": {"url": "https://www.scielo.br/j/pab/a/CKjLQgKZFJ5xJXmknXx4fxK/?lang=en", "acesso": "aberto", "html": true},
-    "REPRODUCAO2025": {"url": "https://opresenterural.com.br/reproducao-programada-da-ancp-completa-30-anos-com-salto-de-192-na-produtividade-genetica-da-pecuaria/", "acesso": "aberto", "html": true},
-    "ROSEN1974": {"url": "https://doi.org/10.1086/260169", "acesso": "restrito", "obs": "PDF digitalizado sem texto: trecho conferido visualmente."},
-    "ROWAN2022": {"url": "https://bovine-ojs-tamu.tdl.org/AABP/article/view/8515", "acesso": "aberto"},
-    "SALES2024": {"url": "https://www.scielo.br/j/ar/a/qbvhD6N65s73jfyVHCff7xd/?lang=en", "acesso": "aberto", "html": true},
-    "SILVEIRA2022": {"url": "https://posgraduacao.ufms.br/portal/trabalho-arquivos/download/10143", "pdf": "https://posgraduacao.ufms.br/portal/trabalho-arquivos/download/10143", "acesso": "aberto"},
-    "THOMPSON2022": {"url": "https://doi.org/10.1017/aae.2022.36", "acesso": "aberto", "html": true},
-    "TVERSKY1974": {"url": "https://doi.org/10.1126/science.185.4157.1124", "acesso": "restrito"}
+ "_sobre": "Evidência de cada citação do artigo v8 para o site de revisão (gera_site.py). 'par' = início do parágrafo; 'cit' = texto da citação como aparece no artigo; 'n' = ordem dessa citação no parágrafo. Cada trecho: 'pag' = página na publicação; 'pdf' = página do PDF online (para abrir com #page=); 'texto' = trecho literal da fonte (conferido na planilha Verificacao_citacoes.xlsx). Na fonte em HTML, o link abre no trecho destacado (fragmento de texto).",
+ "refs": {
+  "AKERLOF1970": {
+   "url": "https://doi.org/10.2307/1879431",
+   "acesso": "restrito"
   },
-  "citacoes": [
-    {"par": "RESUMO:", "cit": "ROSEN, 1974", "n": 1, "trechos": [
-      {"pag": "p. 34", "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them."}]},
-    {"par": "RESUMO:", "cit": "BREIMAN, 2001", "n": 1, "trechos": [
-      {"pag": "p. 6", "texto": "A random forest is a classifier consisting of a collection of tree-structured classifiers (...) where the (...) are independent identically distributed random vectors and each tree casts a unit vote for the most popular class at input x."}]},
-    {"par": "O agronegócio respondeu por 23,2%", "cit": "CNA, 2025", "n": 1, "trechos": [
-      {"pag": "página web", "texto": "A participação do agronegócio na economia brasileira no período foi de 23,2%."}]},
-    {"par": "O agronegócio respondeu por 23,2%", "cit": "BASSO; NEVES; GROSSI-DE-SÁ, 2024", "n": 1, "trechos": [
-      {"pag": "p. 13 (Tabela 2)", "texto": "TABLE 2 World rankings of livestock and poultry (...) for the year 2022. (...) Beef and veal (...) Brazil 2,898 24.07 Brazil 10,350 17.44"}],
-     "nota": "Na tabela, o Brasil tem 17,44% da produção mundial de carne bovina (2º lugar) e 24,07% das exportações (1º lugar)."},
-    {"par": "O agronegócio respondeu por 23,2%", "cit": "SALES et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 2", "texto": "In 2002, the Brazilian market for AI traded approximately 7.0 million doses of semen, and only 5.8% of dairy and beef females were artificially inseminated. Twenty years later (2023), 24.7 million doses of semen were commercialized and 20 to 23% of the females of the total number of the national herd were inseminated"}]},
-    {"par": "A escolha do touro e, portanto,", "cit": "THOMPSON et al., 2022", "n": 1, "trechos": [
-      {"pag": "p. 713-714", "texto": "EPDs are statistical estimates of an animal’s genetic potential (...) enable more accurate selection decisions than phenotypic measurements alone because they remove variation around phenotype due to environmental factors."}]},
-    {"par": "A escolha do touro e, portanto,", "cit": "ROWAN, 2022", "n": 1, "trechos": [
-      {"pag": "p. 56", "texto": "Using expected progeny differences (EPDs) for selection allows producers to focus selection on an animal’s estimated genetic merit. This reduces risk and increases the rate of genetic progress. (...) Using an index well-aligned with the breeding goal allows producers to select for increased profitability using a single value."}]},
-    {"par": "A escolha do touro e, portanto,", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "p. 71", "pdf": 72, "texto": "foi instituído o Índice Bioeconômico, mais conhecido pela designação Mérito Genético Total Econômico (MGTe)."},
-      {"pag": "p. 69", "pdf": 70, "texto": "O percentil visa a evidenciação da representatividade da DEP do animal em relação a todos os outros animais avaliados"}]},
-    {"par": "Apesar da relevância técnica das DEPs", "cit": "ROSEN, 1974", "n": 1, "trechos": [
-      {"pag": "p. 34", "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them."}]},
-    {"par": "Apesar da relevância técnica das DEPs", "cit": "THOMPSON et al., 2022", "n": 1, "trechos": [
-      {"pag": "p. 714", "texto": "Recent studies indicate that EPD information is becoming more a key factor in determining bull sale price"},
-      {"pag": "p. 713 (resumo)", "texto": "Birth weight EPD, ribeye area EPD, sale weight, age, frame score, and other factors had a statistically significant impact on bull prices. GE-EPDs were not associated with a change in the bull sales prices expect for weaned calf value and birth weight EPDs."}],
-     "nota": "\"expect\" é erro de digitação do original (\"except\")."},
-    {"par": "Apesar da relevância técnica das DEPs", "cit": "CARVALHO et al., 2022", "n": 1, "trechos": [
-      {"pag": "p. 1 (resumo)", "texto": "From the characteristics obtained in the tests, there is a premium only for the Predicted Transmitting Ability–Milk (volume)."}]},
-    {"par": "Apesar da relevância técnica das DEPs", "cit": "LOPES et al., 2023", "n": 1, "trechos": [
-      {"pag": "p. 1 (resumo)", "texto": "the price behavior at different auctions was positively related to the operation time of the auction in this market and with the reputation of the seller."}]},
-    {"par": "Investigar essa relação exige", "cit": "AMARAL et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 648", "texto": "A ciência de dados consiste na tomada de decisão baseada em dados. Isso se dá a partir do tratamento de uma imensidão e diversidade de dados brutos, a fim de transformá-los em informações de valor"}]},
-    {"par": "Investigar essa relação exige", "cit": "Amaral et al. (2024)", "n": 1, "trechos": [
-      {"pag": "p. 652-653", "texto": "Os resultados indicaram que, para a maioria das características, o melhor modelo preditivo foi o RF. Em termos de importância variável, os modelos puderam identificar os principais fatores determinantes de variações na produção e qualidade"}],
-     "nota": "Amaral et al. relatam o estudo de Aiken et al. (2020)."},
-    {"par": "Investigar essa relação exige", "cit": "BREIMAN, 2001", "n": 1, "trechos": [
-      {"pag": "p. 10", "texto": "It gives useful internal estimates of error, strength, correlation and variable importance."}]},
-    {"par": "Investigar essa relação exige", "cit": "AN et al., 2025", "n": 1, "trechos": [
-      {"pag": "p. 24", "texto": "the RF model outperforms the HPMs in terms of predictive power regardless of the experimental conditions and scaling"},
-      {"pag": "p. 1", "texto": "the interpretable results retrieved from the SHAP method can be consolidated by the support of statistical evidence"}]},
-    {"par": "A análise fundamentou-se na Teoria", "cit": "ROSEN, 1974", "n": 1, "trechos": [
-      {"pag": "p. 34", "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them."}]},
-    {"par": "As 18 características cujos percentis", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "p. 69-71 (Quadro 05)", "pdf": 70, "texto": "Quadro 05 – Características Avaliadas pela ANCP (...) 1) Reprodução e Fertilidade (...) 2) Crescimento (...) 3) Produtividade e Qualidade da Carne"}],
-     "nota": "FPP e FRAME não estão no quadro: são DEPs da ANCP posteriores a esse agrupamento."},
-    {"par": "O SELO_RP_ANCP, que identificava", "cit": "REPRODUÇÃO [...], 2025", "n": 1, "trechos": [
-      {"pag": "página web", "texto": "Criado em 1995, o Programa de Reprodução Programada (RP) da Associação Nacional de Criadores e Pesquisadores (ANCP) (...) Cada touro passa por avaliação genética e vistoria técnica rigorosa."}]},
-    {"par": "Aplicou-se o algoritmo supervisionado", "cit": "BREIMAN, 2001", "n": 1, "trechos": [
-      {"pag": "p. 11", "texto": "In my experiments with random forests, bagging is used in tandem with random feature selection. Each new training set is drawn, with replacement, from the original training set. Then a tree is grown on the new training set using random feature selection."}]},
-    {"par": "Como o coeficiente de determinação", "cit": "BREIMAN, 2001", "n": 1, "trechos": [
-      {"pag": "p. 11", "texto": "For each y, x in the training set, aggregate the votes only over those classifiers for which Tk does not containing y, x. Call this the out-of-bag classifier."}]},
-    {"par": "Como o coeficiente de determinação", "cit": "BREIMAN, 2001", "n": 2, "trechos": [
-      {"pag": "p. 23", "texto": "the values of the mth variable in the out-of-bag examples are randomly permuted and the out-of-bag data is run down the corresponding tree."}]},
-    {"par": "Valores de VIF<5,0 foram adotados", "cit": "MACKINNON; WHITE, 1985", "n": 1, "trechos": [
-      {"pag": "p. 325 (conclusões)", "texto": "which is explicitly the jackknife covariance estimator, HC3, always performs better than the other two, which in turn always outperform the original."}]},
-    {"par": "A proximidade entre a média", "cit": "ROSEN, 1974", "n": 1, "trechos": [
-      {"pag": "p. 34", "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them."}]},
-    {"par": "O MGTe reúne características ponderais", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "p. 71", "pdf": 72, "texto": "Fazendo uso das informações de indicadores econômicos e produtivos de maneira a abarcar as estimativas de custos, receitas e lucros referentes a uma propriedade de pecuária de corte comercial de ciclo completo (cria, recria e engorda), foi instituído o Índice Bioeconômico, mais conhecido pela designação Mérito Genético Total Econômico (MGTe)."}],
-     "nota": "O Quadro 06 (p. 72) lista as características que compõem o MGTe: ponderais, reprodutivas e de carcaça."},
-    {"par": "O MGTe reúne características ponderais", "cit": "ROWAN, 2022", "n": 1, "trechos": [
-      {"pag": "p. 56", "texto": "Using an index well-aligned with the breeding goal allows producers to select for increased profitability using a single value."}]},
-    {"par": "Segundo a revisão de Pacheco", "cit": "Pacheco et al. (2023)", "n": 1, "trechos": [
-      {"pag": "p. 2", "texto": "Slaughterhouses have adopted the thickness of subcutaneous fat as a criterion to reward producers"},
-      {"pag": "p. 4", "texto": "values recommended by the Brazilian meatpacking industry (3–6 mm)"},
-      {"pag": "p. 5", "texto": "The shear force increased (p=0.0835) when the fat thickness was below the recommended threshold of 3 mm (...) In such carcasses, the chilling process is faster, leading to cold shortening, one of the factors responsible for the decreased tenderness of meat cuts"}]},
-    {"par": "Segundo a revisão de Pacheco", "cit": "THOMPSON et al., 2022", "n": 1, "trechos": [
-      {"pag": "p. 713 (resumo)", "texto": "Birth weight EPD, ribeye area EPD, sale weight, age, frame score, and other factors had a statistically significant impact on bull prices."}]},
-    {"par": "Na central CRV Lagoa, a maioria", "cit": "THOMPSON et al., 2022", "n": 1, "trechos": [
-      {"pag": "p. 721", "texto": "While weight and age had the largest impact on bull sale price, birth weight EPD had the next largest impact"}]},
-    {"par": "Na central CRV Lagoa, a maioria", "cit": "JOSEPH et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 621 (resumo)", "texto": "Attributes like calving ease direct Expected Progeny Differences (EPD), average daily gain, birth to yearling gain EPD, and rib-eye area consistently ranked higher and significantly influenced the bull’s sale price."}]},
-    {"par": "Apenas o CAR_TOP apresentou", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "p. 72 (Quadro 06)", "pdf": 73, "texto": "É possível perceber por meio do quadro que as variáveis peso aos 450 dias (DP450), stayability (DSTAY) e peso aos 210 dias (DP210), formam aproximadamente 62% do índice proposto como MGTe"}],
-     "nota": "O Quadro 06 tem como fonte a ANCP (2021)."},
-    {"par": "Esse resultado é coerente com a ideia", "cit": "AKERLOF, 1970", "n": 1, "trechos": [
-      {"pag": "p. 499-500", "texto": "Numerous institutions arise to counteract the effects of quality uncertainty. One obvious institution is guarantees. (...) A second example of an institution which counteracts the effects of quality uncertainty is the brand-name good. (...) Most skilled labor carries some certification"}]},
-    {"par": "Esse resultado é coerente com a ideia", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "p. 184", "pdf": 185, "texto": "Do outro lado da régua, encontra-se o comprador mais visual. Neste caso, o animal bem apresentado visualmente tem vantagem"}]},
-    {"par": "Esse resultado é coerente com a ideia", "cit": "LOPES et al., 2023", "n": 1, "trechos": [
-      {"pag": "p. 18", "pdf": 18, "sem_fragmento": true, "texto": "The low importance of genetic values in sales catalogs of Brangus bulls may be related to distrust of the data or the lack of genetic information presented in catalogs."}]},
-    {"par": "Esse resultado é coerente com a ideia", "cit": "TVERSKY; KAHNEMAN, 1974", "n": 1, "trechos": [
-      {"pag": "p. 1124", "texto": "people rely on a limited number of heuristic principles which reduce the complex tasks of assessing probabilities and predicting values to simpler judgmental operations."}]},
-    {"par": "Na amostra, os cinco touros da linhagem", "cit": "AKERLOF, 1970", "n": 1, "trechos": [
-      {"pag": "p. 500", "texto": "A second example of an institution which counteracts the effects of quality uncertainty is the brand-name good."}]},
-    {"par": "Na amostra, os cinco touros da linhagem", "cit": "LOPES et al., 2023", "n": 1, "trechos": [
-      {"pag": "p. 1 (resumo)", "texto": "the price behavior at different auctions was positively related to the operation time of the auction in this market and with the reputation of the seller."}]},
-    {"par": "Na amostra, os cinco touros da linhagem", "cit": "CARNEIRO JUNIOR et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 83", "pdf": 3, "texto": "O prestígio da fazenda é fator de relevância na comercialização do reprodutor"}]},
-    {"par": "Na amostra, os cinco touros da linhagem", "cit": "Silveira (2022)", "n": 1, "trechos": [
-      {"pag": "p. 184", "pdf": 185, "texto": "Ao final da entrevista com o leiloeiro, este apontou que a marca, na opinião dele, é o principal agregador de valor."}]},
-    {"par": "O baixo poder explicativo", "cit": "LOPES et al., 2023", "n": 1, "trechos": [
-      {"pag": "p. 1 (resumo)", "texto": "Regarding genetic variables of Brangus bulls, these had little or no influence on the selling price."}]},
-    {"par": "O baixo poder explicativo", "cit": "CARNEIRO JUNIOR et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 83", "pdf": 3, "texto": "Pode ser observado que a maioria dos leilões (77%) foi classificada no grupo 2, enquanto 23% foram classificados no grupo 1"}],
-     "nota": "Grupo 1 = leilões com correlação significativa entre o preço e o índice de seleção."},
-    {"par": "O baixo poder explicativo", "cit": "BRAGA et al., 2023", "n": 1, "trechos": [
-      {"pag": "p. 135 (resumo)", "pdf": 1, "texto": "Concluiu-se que as variáveis ano, mês e leilão influenciaram o preço final dos touros."},
-      {"pag": "p. 136", "pdf": 2, "texto": "A base de dados observacionais utilizada para esta pesquisa contou com registros provenientes de séries temporais de comercialização de touros da Correa da Costa Leilões Rurais, empresa leiloeira que atua em Campo Grande, MS, desde a década de 1990"}],
-     "nota": "\"Na mesma base de dados\" é inferência: Carneiro Junior et al. (2024) descrevem a fonte como uma empresa leiloeira do Centro-Oeste que atua desde a década de 1990, sem dar o nome."},
-    {"par": "O baixo poder explicativo", "cit": "SILVEIRA, 2022", "n": 1, "trechos": [
-      {"pag": "resumo", "pdf": 8, "texto": "os atributos extrínsecos relativos ao leilão se mostram mais representativos na formação de valor pelo cliente do que os atributos intrínsecos analisados."}]},
-    {"par": "O baixo poder explicativo", "cit": "JOSEPH et al., 2024", "n": 1, "trechos": [
-      {"pag": "p. 621 (resumo)", "texto": "distinct groups of buyers in the region who prioritized measured bull attributes and others who did not"}]}
-  ]
+  "AMARAL2024": {
+   "url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1169415",
+   "acesso": "aberto",
+   "obs": "Capítulo de livro (p. 647-656); o PDF da Embrapa é o livro inteiro."
+  },
+  "AN2025": {
+   "url": "https://link.springer.com/article/10.1186/s40854-025-00874-w",
+   "acesso": "aberto",
+   "html": true
+  },
+  "BASSO2024": {
+   "url": "https://www.frontiersin.org/journals/sustainable-food-systems/articles/10.3389/fsufs.2023.1296337/full",
+   "acesso": "aberto",
+   "html": true
+  },
+  "BRAGA2023": {
+   "url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1157483",
+   "pdf": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1157483/1/27547.pdf",
+   "acesso": "aberto"
+  },
+  "BREIMAN2001": {
+   "url": "https://doi.org/10.1023/A:1010933404324",
+   "acesso": "restrito"
+  },
+  "CARNEIRO2024": {
+   "url": "https://www.alice.cnptia.embrapa.br/alice/handle/doc/1163825",
+   "pdf": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1163825/1/27753.pdf",
+   "acesso": "aberto"
+  },
+  "CARVALHO2022": {
+   "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0267109",
+   "acesso": "aberto",
+   "html": true
+  },
+  "CNA2025": {
+   "url": "https://cnabrasil.org.br/noticias/pib-do-agronegocio-fecha-2024-com-crescimento-de-1-81",
+   "acesso": "aberto",
+   "html": true
+  },
+  "JOSEPH2024": {
+   "url": "https://doi.org/10.1017/aae.2024.28",
+   "acesso": "aberto",
+   "html": true
+  },
+  "LOPES2023": {
+   "url": "https://doi.org/10.37496/rbz5220210227",
+   "pdf": "https://rbz.org.br/wp-content/uploads/articles_xml/1806-9290-rbz-52-e20210227/1806-9290-rbz-52-e20210227.pdf",
+   "acesso": "aberto",
+   "html": true
+  },
+  "MACKINNON1985": {
+   "url": "https://doi.org/10.1016/0304-4076(85)90158-7",
+   "acesso": "restrito"
+  },
+  "PACHECO2023": {
+   "url": "https://www.scielo.br/j/pab/a/CKjLQgKZFJ5xJXmknXx4fxK/?lang=en",
+   "acesso": "aberto",
+   "html": true
+  },
+  "REPRODUCAO2025": {
+   "url": "https://opresenterural.com.br/reproducao-programada-da-ancp-completa-30-anos-com-salto-de-192-na-produtividade-genetica-da-pecuaria/",
+   "acesso": "aberto",
+   "html": true
+  },
+  "ROSEN1974": {
+   "url": "https://doi.org/10.1086/260169",
+   "acesso": "restrito",
+   "obs": "PDF digitalizado sem texto: trecho conferido visualmente."
+  },
+  "ROWAN2022": {
+   "url": "https://bovine-ojs-tamu.tdl.org/AABP/article/view/8515",
+   "acesso": "aberto"
+  },
+  "SALES2024": {
+   "url": "https://www.scielo.br/j/ar/a/qbvhD6N65s73jfyVHCff7xd/?lang=en",
+   "acesso": "aberto",
+   "html": true
+  },
+  "SILVEIRA2022": {
+   "url": "https://posgraduacao.ufms.br/portal/trabalho-arquivos/download/10143",
+   "pdf": "https://posgraduacao.ufms.br/portal/trabalho-arquivos/download/10143",
+   "acesso": "aberto"
+  },
+  "THOMPSON2022": {
+   "url": "https://doi.org/10.1017/aae.2022.36",
+   "acesso": "aberto",
+   "html": true
+  },
+  "TVERSKY1974": {
+   "url": "https://doi.org/10.1126/science.185.4157.1124",
+   "acesso": "restrito"
+  }
+ },
+ "citacoes": [
+  {
+   "par": "RESUMO:",
+   "cit": "ROSEN, 1974",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 34",
+     "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them.",
+     "traducao": "Preços hedônicos são definidos como os preços implícitos dos atributos e são revelados aos agentes econômicos a partir dos preços observados de produtos diferenciados e das quantidades específicas de características associadas a eles."
+    }
+   ]
+  },
+  {
+   "par": "RESUMO:",
+   "cit": "BREIMAN, 2001",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 6",
+     "texto": "A random forest is a classifier consisting of a collection of tree-structured classifiers (...) where the (...) are independent identically distributed random vectors and each tree casts a unit vote for the most popular class at input x.",
+     "traducao": "Uma floresta aleatória é um classificador formado por um conjunto de classificadores com estrutura de árvore (...) em que os (...) são vetores aleatórios independentes e identicamente distribuídos, e cada árvore dá um voto para a classe mais votada para a entrada x."
+    }
+   ]
+  },
+  {
+   "par": "O agronegócio respondeu por 23,2%",
+   "cit": "CNA, 2025",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "página web",
+     "texto": "A participação do agronegócio na economia brasileira no período foi de 23,2%."
+    }
+   ]
+  },
+  {
+   "par": "O agronegócio respondeu por 23,2%",
+   "cit": "BASSO; NEVES; GROSSI-DE-SÁ, 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 13 (Tabela 2)",
+     "texto": "TABLE 2 World rankings of livestock and poultry (...) for the year 2022. (...) Beef and veal (...) Brazil 2,898 24.07 Brazil 10,350 17.44",
+     "traducao": "TABELA 2 Classificação mundial da pecuária e da avicultura (...) no ano de 2022. (...) Carne bovina e de vitela (...) Brasil 2.898 24,07 Brasil 10.350 17,44"
+    }
+   ],
+   "nota": "Na tabela, o Brasil tem 17,44% da produção mundial de carne bovina (2º lugar) e 24,07% das exportações (1º lugar)."
+  },
+  {
+   "par": "O agronegócio respondeu por 23,2%",
+   "cit": "SALES et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 2",
+     "texto": "In 2002, the Brazilian market for AI traded approximately 7.0 million doses of semen, and only 5.8% of dairy and beef females were artificially inseminated. Twenty years later (2023), 24.7 million doses of semen were commercialized and 20 to 23% of the females of the total number of the national herd were inseminated",
+     "traducao": "Em 2002, o mercado brasileiro de IA comercializou cerca de 7,0 milhões de doses de sêmen, e apenas 5,8% das fêmeas de leite e de corte eram inseminadas artificialmente. Vinte anos depois (2023), foram comercializadas 24,7 milhões de doses de sêmen, e de 20% a 23% das fêmeas do rebanho nacional foram inseminadas"
+    }
+   ]
+  },
+  {
+   "par": "A escolha do touro e, portanto,",
+   "cit": "THOMPSON et al., 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 713-714",
+     "texto": "EPDs are statistical estimates of an animal’s genetic potential (...) enable more accurate selection decisions than phenotypic measurements alone because they remove variation around phenotype due to environmental factors.",
+     "traducao": "As DEPs são estimativas estatísticas do potencial genético de um animal (...) permitem decisões de seleção mais precisas do que as medidas fenotípicas isoladas, porque removem a variação do fenótipo devida a fatores ambientais."
+    }
+   ]
+  },
+  {
+   "par": "A escolha do touro e, portanto,",
+   "cit": "ROWAN, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 56",
+     "texto": "Using expected progeny differences (EPDs) for selection allows producers to focus selection on an animal’s estimated genetic merit. This reduces risk and increases the rate of genetic progress. (...) Using an index well-aligned with the breeding goal allows producers to select for increased profitability using a single value.",
+     "traducao": "Usar as diferenças esperadas na progênie (DEPs) na seleção permite aos produtores concentrar a seleção no mérito genético estimado do animal. Isso reduz o risco e aumenta a velocidade do progresso genético. (...) Usar um índice bem alinhado ao objetivo de melhoramento permite aos produtores selecionar para maior lucratividade com um único valor."
+    }
+   ]
+  },
+  {
+   "par": "A escolha do touro e, portanto,",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 71",
+     "pdf": 72,
+     "texto": "foi instituído o Índice Bioeconômico, mais conhecido pela designação Mérito Genético Total Econômico (MGTe)."
+    },
+    {
+     "pag": "p. 69",
+     "pdf": 70,
+     "texto": "O percentil visa a evidenciação da representatividade da DEP do animal em relação a todos os outros animais avaliados"
+    }
+   ]
+  },
+  {
+   "par": "Apesar da relevância técnica das DEPs",
+   "cit": "ROSEN, 1974",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 34",
+     "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them.",
+     "traducao": "Preços hedônicos são definidos como os preços implícitos dos atributos e são revelados aos agentes econômicos a partir dos preços observados de produtos diferenciados e das quantidades específicas de características associadas a eles."
+    }
+   ]
+  },
+  {
+   "par": "Apesar da relevância técnica das DEPs",
+   "cit": "THOMPSON et al., 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 714",
+     "texto": "Recent studies indicate that EPD information is becoming more a key factor in determining bull sale price",
+     "traducao": "Estudos recentes indicam que a informação das DEPs está se tornando um fator cada vez mais importante na determinação do preço de venda dos touros"
+    },
+    {
+     "pag": "p. 713 (resumo)",
+     "texto": "Birth weight EPD, ribeye area EPD, sale weight, age, frame score, and other factors had a statistically significant impact on bull prices. GE-EPDs were not associated with a change in the bull sales prices expect for weaned calf value and birth weight EPDs.",
+     "traducao": "A DEP de peso ao nascer, a DEP de área de olho de lombo, o peso de venda, a idade, o escore de frame e outros fatores tiveram efeito estatisticamente significativo sobre o preço dos touros. As DEPs genômicas não se associaram a mudança no preço de venda dos touros, exceto as de valor do bezerro desmamado e de peso ao nascer."
+    }
+   ],
+   "nota": "\"expect\" é erro de digitação do original (\"except\")."
+  },
+  {
+   "par": "Apesar da relevância técnica das DEPs",
+   "cit": "CARVALHO et al., 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 1 (resumo)",
+     "texto": "From the characteristics obtained in the tests, there is a premium only for the Predicted Transmitting Ability–Milk (volume).",
+     "traducao": "Entre as características obtidas nas provas, há ágio apenas para a Capacidade Prevista de Transmissão para Leite (volume)."
+    }
+   ]
+  },
+  {
+   "par": "Apesar da relevância técnica das DEPs",
+   "cit": "LOPES et al., 2023",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 1 (resumo)",
+     "texto": "the price behavior at different auctions was positively related to the operation time of the auction in this market and with the reputation of the seller.",
+     "traducao": "o comportamento do preço nos diferentes leilões teve relação positiva com o tempo de atuação do leilão nesse mercado e com a reputação do vendedor."
+    }
+   ]
+  },
+  {
+   "par": "Investigar essa relação exige",
+   "cit": "AMARAL et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 648",
+     "texto": "A ciência de dados consiste na tomada de decisão baseada em dados. Isso se dá a partir do tratamento de uma imensidão e diversidade de dados brutos, a fim de transformá-los em informações de valor"
+    }
+   ]
+  },
+  {
+   "par": "Investigar essa relação exige",
+   "cit": "Amaral et al. (2024)",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 652-653",
+     "texto": "Os resultados indicaram que, para a maioria das características, o melhor modelo preditivo foi o RF. Em termos de importância variável, os modelos puderam identificar os principais fatores determinantes de variações na produção e qualidade"
+    }
+   ],
+   "nota": "Amaral et al. relatam o estudo de Aiken et al. (2020)."
+  },
+  {
+   "par": "Investigar essa relação exige",
+   "cit": "BREIMAN, 2001",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 10",
+     "texto": "It gives useful internal estimates of error, strength, correlation and variable importance.",
+     "traducao": "Ele fornece estimativas internas úteis do erro, da força, da correlação e da importância das variáveis."
+    }
+   ]
+  },
+  {
+   "par": "Investigar essa relação exige",
+   "cit": "AN et al., 2025",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 24",
+     "texto": "the RF model outperforms the HPMs in terms of predictive power regardless of the experimental conditions and scaling",
+     "traducao": "o modelo de Random Forest supera os modelos de preços hedônicos em poder preditivo, independentemente das condições experimentais e da escala"
+    },
+    {
+     "pag": "p. 1",
+     "texto": "the interpretable results retrieved from the SHAP method can be consolidated by the support of statistical evidence",
+     "traducao": "os resultados interpretáveis obtidos com o método SHAP podem ser consolidados com o apoio da evidência estatística"
+    }
+   ]
+  },
+  {
+   "par": "A análise fundamentou-se na Teoria",
+   "cit": "ROSEN, 1974",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 34",
+     "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them.",
+     "traducao": "Preços hedônicos são definidos como os preços implícitos dos atributos e são revelados aos agentes econômicos a partir dos preços observados de produtos diferenciados e das quantidades específicas de características associadas a eles."
+    }
+   ]
+  },
+  {
+   "par": "As 18 características cujos percentis",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 69-71 (Quadro 05)",
+     "pdf": 70,
+     "texto": "Quadro 05 – Características Avaliadas pela ANCP (...) 1) Reprodução e Fertilidade (...) 2) Crescimento (...) 3) Produtividade e Qualidade da Carne"
+    }
+   ],
+   "nota": "FPP e FRAME não estão no quadro: são DEPs da ANCP posteriores a esse agrupamento."
+  },
+  {
+   "par": "O SELO_RP_ANCP, que identificava",
+   "cit": "REPRODUÇÃO [...], 2025",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "página web",
+     "texto": "Criado em 1995, o Programa de Reprodução Programada (RP) da Associação Nacional de Criadores e Pesquisadores (ANCP) (...) Cada touro passa por avaliação genética e vistoria técnica rigorosa."
+    }
+   ]
+  },
+  {
+   "par": "Aplicou-se o algoritmo supervisionado",
+   "cit": "BREIMAN, 2001",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 11",
+     "texto": "In my experiments with random forests, bagging is used in tandem with random feature selection. Each new training set is drawn, with replacement, from the original training set. Then a tree is grown on the new training set using random feature selection.",
+     "traducao": "Nos meus experimentos com florestas aleatórias, o bagging é usado em conjunto com a seleção aleatória de variáveis. Cada novo conjunto de treino é sorteado, com reposição, a partir do conjunto de treino original. Em seguida, uma árvore é construída nesse novo conjunto de treino, usando a seleção aleatória de variáveis."
+    }
+   ]
+  },
+  {
+   "par": "Como o coeficiente de determinação",
+   "cit": "BREIMAN, 2001",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 11",
+     "texto": "For each y, x in the training set, aggregate the votes only over those classifiers for which Tk does not containing y, x. Call this the out-of-bag classifier.",
+     "traducao": "Para cada y, x do conjunto de treino, agregue os votos apenas dos classificadores cujo Tk não contém y, x. Chame-o de classificador out-of-bag (fora da amostra usada no treino)."
+    }
+   ]
+  },
+  {
+   "par": "Como o coeficiente de determinação",
+   "cit": "BREIMAN, 2001",
+   "n": 2,
+   "trechos": [
+    {
+     "pag": "p. 23",
+     "texto": "the values of the mth variable in the out-of-bag examples are randomly permuted and the out-of-bag data is run down the corresponding tree.",
+     "traducao": "os valores da m-ésima variável nos exemplos out-of-bag (não usados no treino) são permutados aleatoriamente, e esses dados são passados de novo pela árvore correspondente."
+    }
+   ]
+  },
+  {
+   "par": "Valores de VIF<5,0 foram adotados",
+   "cit": "MACKINNON; WHITE, 1985",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 325 (conclusões)",
+     "texto": "which is explicitly the jackknife covariance estimator, HC3, always performs better than the other two, which in turn always outperform the original.",
+     "traducao": "que é explicitamente o estimador de covariância jackknife, o HC3, sempre tem desempenho melhor que os outros dois, que, por sua vez, sempre superam o original."
+    }
+   ]
+  },
+  {
+   "par": "A proximidade entre a média",
+   "cit": "ROSEN, 1974",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 34",
+     "texto": "Hedonic prices are defined as the implicit prices of attributes and are revealed to economic agents from observed prices of differentiated products and the specific amounts of characteristics associated with them.",
+     "traducao": "Preços hedônicos são definidos como os preços implícitos dos atributos e são revelados aos agentes econômicos a partir dos preços observados de produtos diferenciados e das quantidades específicas de características associadas a eles."
+    }
+   ]
+  },
+  {
+   "par": "O MGTe reúne características ponderais",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 71",
+     "pdf": 72,
+     "texto": "Fazendo uso das informações de indicadores econômicos e produtivos de maneira a abarcar as estimativas de custos, receitas e lucros referentes a uma propriedade de pecuária de corte comercial de ciclo completo (cria, recria e engorda), foi instituído o Índice Bioeconômico, mais conhecido pela designação Mérito Genético Total Econômico (MGTe)."
+    }
+   ],
+   "nota": "O Quadro 06 (p. 72) lista as características que compõem o MGTe: ponderais, reprodutivas e de carcaça."
+  },
+  {
+   "par": "O MGTe reúne características ponderais",
+   "cit": "ROWAN, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 56",
+     "texto": "Using an index well-aligned with the breeding goal allows producers to select for increased profitability using a single value.",
+     "traducao": "Usar um índice bem alinhado ao objetivo de melhoramento permite aos produtores selecionar para maior lucratividade com um único valor."
+    }
+   ]
+  },
+  {
+   "par": "Segundo a revisão de Pacheco",
+   "cit": "Pacheco et al. (2023)",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 2",
+     "texto": "Slaughterhouses have adopted the thickness of subcutaneous fat as a criterion to reward producers",
+     "traducao": "Os frigoríficos adotaram a espessura de gordura subcutânea como critério para bonificar os produtores"
+    },
+    {
+     "pag": "p. 4",
+     "texto": "values recommended by the Brazilian meatpacking industry (3–6 mm)",
+     "traducao": "valores recomendados pela indústria frigorífica brasileira (3–6 mm)"
+    },
+    {
+     "pag": "p. 5",
+     "texto": "The shear force increased (p=0.0835) when the fat thickness was below the recommended threshold of 3 mm (...) In such carcasses, the chilling process is faster, leading to cold shortening, one of the factors responsible for the decreased tenderness of meat cuts",
+     "traducao": "A força de cisalhamento aumentou (p=0,0835) quando a espessura de gordura ficou abaixo do limite recomendado de 3 mm (...) Nessas carcaças, o resfriamento é mais rápido, o que leva ao encurtamento das fibras pelo frio (cold shortening), um dos fatores responsáveis pela menor maciez dos cortes"
+    }
+   ]
+  },
+  {
+   "par": "Segundo a revisão de Pacheco",
+   "cit": "THOMPSON et al., 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 713 (resumo)",
+     "texto": "Birth weight EPD, ribeye area EPD, sale weight, age, frame score, and other factors had a statistically significant impact on bull prices.",
+     "traducao": "A DEP de peso ao nascer, a DEP de área de olho de lombo, o peso de venda, a idade, o escore de frame e outros fatores tiveram efeito estatisticamente significativo sobre o preço dos touros."
+    }
+   ]
+  },
+  {
+   "par": "Na central CRV Lagoa, a maioria",
+   "cit": "THOMPSON et al., 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 721",
+     "texto": "While weight and age had the largest impact on bull sale price, birth weight EPD had the next largest impact",
+     "traducao": "Embora o peso e a idade tenham tido o maior efeito sobre o preço de venda dos touros, a DEP de peso ao nascer teve o segundo maior efeito"
+    }
+   ]
+  },
+  {
+   "par": "Na central CRV Lagoa, a maioria",
+   "cit": "JOSEPH et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 621 (resumo)",
+     "texto": "Attributes like calving ease direct Expected Progeny Differences (EPD), average daily gain, birth to yearling gain EPD, and rib-eye area consistently ranked higher and significantly influenced the bull’s sale price.",
+     "traducao": "Atributos como a DEP de facilidade de parto direta, o ganho médio diário, a DEP de ganho do nascimento ao sobreano e a área de olho de lombo ficaram consistentemente entre os mais bem classificados e influenciaram significativamente o preço de venda do touro."
+    }
+   ]
+  },
+  {
+   "par": "Apenas o CAR_TOP apresentou",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 72 (Quadro 06)",
+     "pdf": 73,
+     "texto": "É possível perceber por meio do quadro que as variáveis peso aos 450 dias (DP450), stayability (DSTAY) e peso aos 210 dias (DP210), formam aproximadamente 62% do índice proposto como MGTe"
+    }
+   ],
+   "nota": "O Quadro 06 tem como fonte a ANCP (2021)."
+  },
+  {
+   "par": "Esse resultado é coerente com a ideia",
+   "cit": "AKERLOF, 1970",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 499-500",
+     "texto": "Numerous institutions arise to counteract the effects of quality uncertainty. One obvious institution is guarantees. (...) A second example of an institution which counteracts the effects of quality uncertainty is the brand-name good. (...) Most skilled labor carries some certification",
+     "traducao": "Surgem numerosas instituições para contrabalançar os efeitos da incerteza sobre a qualidade. Uma instituição óbvia são as garantias. (...) Um segundo exemplo de instituição que contrabalança os efeitos da incerteza sobre a qualidade é o produto de marca. (...) A maior parte do trabalho qualificado tem alguma certificação"
+    }
+   ]
+  },
+  {
+   "par": "Esse resultado é coerente com a ideia",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 184",
+     "pdf": 185,
+     "texto": "Do outro lado da régua, encontra-se o comprador mais visual. Neste caso, o animal bem apresentado visualmente tem vantagem"
+    }
+   ]
+  },
+  {
+   "par": "Esse resultado é coerente com a ideia",
+   "cit": "LOPES et al., 2023",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 18",
+     "pdf": 18,
+     "sem_fragmento": true,
+     "texto": "The low importance of genetic values in sales catalogs of Brangus bulls may be related to distrust of the data or the lack of genetic information presented in catalogs.",
+     "traducao": "A baixa importância dos valores genéticos nos catálogos de venda de touros Brangus pode estar relacionada à desconfiança nos dados ou à falta de informação genética nos catálogos."
+    }
+   ]
+  },
+  {
+   "par": "Esse resultado é coerente com a ideia",
+   "cit": "TVERSKY; KAHNEMAN, 1974",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 1124",
+     "texto": "people rely on a limited number of heuristic principles which reduce the complex tasks of assessing probabilities and predicting values to simpler judgmental operations.",
+     "traducao": "as pessoas se apoiam em um número limitado de princípios heurísticos, que reduzem as tarefas complexas de avaliar probabilidades e prever valores a operações de julgamento mais simples."
+    }
+   ]
+  },
+  {
+   "par": "Na amostra, os cinco touros da linhagem",
+   "cit": "AKERLOF, 1970",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 500",
+     "texto": "A second example of an institution which counteracts the effects of quality uncertainty is the brand-name good.",
+     "traducao": "Um segundo exemplo de instituição que contrabalança os efeitos da incerteza sobre a qualidade é o produto de marca."
+    }
+   ]
+  },
+  {
+   "par": "Na amostra, os cinco touros da linhagem",
+   "cit": "LOPES et al., 2023",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 1 (resumo)",
+     "texto": "the price behavior at different auctions was positively related to the operation time of the auction in this market and with the reputation of the seller.",
+     "traducao": "o comportamento do preço nos diferentes leilões teve relação positiva com o tempo de atuação do leilão nesse mercado e com a reputação do vendedor."
+    }
+   ]
+  },
+  {
+   "par": "Na amostra, os cinco touros da linhagem",
+   "cit": "CARNEIRO JUNIOR et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 83",
+     "pdf": 3,
+     "texto": "O prestígio da fazenda é fator de relevância na comercialização do reprodutor"
+    }
+   ]
+  },
+  {
+   "par": "Na amostra, os cinco touros da linhagem",
+   "cit": "Silveira (2022)",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 184",
+     "pdf": 185,
+     "texto": "Ao final da entrevista com o leiloeiro, este apontou que a marca, na opinião dele, é o principal agregador de valor."
+    }
+   ]
+  },
+  {
+   "par": "O baixo poder explicativo",
+   "cit": "LOPES et al., 2023",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 1 (resumo)",
+     "texto": "Regarding genetic variables of Brangus bulls, these had little or no influence on the selling price.",
+     "traducao": "Quanto às variáveis genéticas dos touros Brangus, elas tiveram pouca ou nenhuma influência sobre o preço de venda."
+    }
+   ]
+  },
+  {
+   "par": "O baixo poder explicativo",
+   "cit": "CARNEIRO JUNIOR et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 83",
+     "pdf": 3,
+     "texto": "Pode ser observado que a maioria dos leilões (77%) foi classificada no grupo 2, enquanto 23% foram classificados no grupo 1"
+    }
+   ],
+   "nota": "Grupo 1 = leilões com correlação significativa entre o preço e o índice de seleção."
+  },
+  {
+   "par": "O baixo poder explicativo",
+   "cit": "BRAGA et al., 2023",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 135 (resumo)",
+     "pdf": 1,
+     "texto": "Concluiu-se que as variáveis ano, mês e leilão influenciaram o preço final dos touros."
+    },
+    {
+     "pag": "p. 136",
+     "pdf": 2,
+     "texto": "A base de dados observacionais utilizada para esta pesquisa contou com registros provenientes de séries temporais de comercialização de touros da Correa da Costa Leilões Rurais, empresa leiloeira que atua em Campo Grande, MS, desde a década de 1990"
+    }
+   ],
+   "nota": "\"Na mesma base de dados\" é inferência: Carneiro Junior et al. (2024) descrevem a fonte como uma empresa leiloeira do Centro-Oeste que atua desde a década de 1990, sem dar o nome."
+  },
+  {
+   "par": "O baixo poder explicativo",
+   "cit": "SILVEIRA, 2022",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "resumo",
+     "pdf": 8,
+     "texto": "os atributos extrínsecos relativos ao leilão se mostram mais representativos na formação de valor pelo cliente do que os atributos intrínsecos analisados."
+    }
+   ]
+  },
+  {
+   "par": "O baixo poder explicativo",
+   "cit": "JOSEPH et al., 2024",
+   "n": 1,
+   "trechos": [
+    {
+     "pag": "p. 621 (resumo)",
+     "texto": "distinct groups of buyers in the region who prioritized measured bull attributes and others who did not",
+     "traducao": "grupos distintos de compradores na região: os que priorizavam os atributos medidos dos touros e os que não o faziam"
+    }
+   ]
+  }
+ ]
 }
