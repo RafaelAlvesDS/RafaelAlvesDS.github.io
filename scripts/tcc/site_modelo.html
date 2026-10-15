@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Revisão do artigo · SIMPÓS 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root {
+  --fundo: #faf8f4; --papel: #ffffff; --tinta: #1d1b18; --tinta-2: #5a554d; --tinta-3: #8a8378;
+  --linha: #e6e1d8; --acento: #1c5cab; --acento-suave: #e8f0fb;
+  --cit: #fff1b8; --cit-borda: #e2b93b; --cit-ativa: #ffd75e;
+  --coment: rgba(255, 140, 120, .28); --coment-borda: #d9583b;
+  --sombra: 0 10px 30px rgba(30, 25, 15, .12);
+  --serifa: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, Cambria, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #171614; --papel: #1f1d1a; --tinta: #ece7de; --tinta-2: #b9b2a6; --tinta-3: #8c857a;
+    --linha: #34312c; --acento: #7fb0f0; --acento-suave: #1d2a3b;
+    --cit: #4a3d12; --cit-borda: #a8862a; --cit-ativa: #6b5718;
+    --coment: rgba(217, 88, 59, .35); --coment-borda: #f08a6e; --sombra: 0 10px 30px rgba(0, 0, 0, .5);
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #171614; --papel: #1f1d1a; --tinta: #ece7de; --tinta-2: #b9b2a6; --tinta-3: #8c857a;
+  --linha: #34312c; --acento: #7fb0f0; --acento-suave: #1d2a3b;
+  --cit: #4a3d12; --cit-borda: #a8862a; --cit-ativa: #6b5718;
+  --coment: rgba(217, 88, 59, .35); --coment-borda: #f08a6e; --sombra: 0 10px 30px rgba(0, 0, 0, .5);
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 72px; }
+body { margin: 0; background: var(--fundo); color: var(--tinta); font-family: var(--serifa); font-size: 18px; line-height: 1.65;
+  font-variant-numeric: lining-nums; }
+a { color: var(--acento); }
+
+/* barra superior */
+.barra { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--fundo) 92%, transparent);
+  backdrop-filter: blur(6px); border-bottom: 1px solid var(--linha); font-family: var(--sans); font-size: 14px; }
+.barra-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.barra .marca { font-weight: 600; margin-right: auto; color: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barra .marca small { color: var(--tinta-3); font-weight: 400; margin-left: 6px; }
+.bt { font: inherit; border: 1px solid var(--linha); background: var(--papel); color: var(--tinta); border-radius: 8px;
+  padding: 6px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.bt:hover { border-color: var(--tinta-3); }
+.bt[aria-pressed="true"] { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
+.bt.primario { background: var(--acento); border-color: var(--acento); color: #fff; }
+.contador { background: var(--coment-borda); color: #fff; border-radius: 999px; font-size: 12px; padding: 0 7px; min-width: 20px; text-align: center; }
+
+/* artigo */
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 120px; }
+.aviso { font-family: var(--sans); font-size: 14px; line-height: 1.5; background: var(--acento-suave); border: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 28px; color: var(--tinta); position: relative; }
+.aviso b { color: var(--acento); }
+.aviso button { position: absolute; top: 6px; right: 8px; border: 0; background: none; color: var(--tinta-2); font-size: 18px; cursor: pointer; }
+h1 { font-size: 30px; line-height: 1.25; text-align: center; margin: 8px 0 18px; letter-spacing: .01em; }
+.autores { text-align: center; font-family: var(--sans); font-size: 15px; margin-bottom: 4px; }
+.afil { text-align: center; font-family: var(--sans); font-size: 12.5px; color: var(--tinta-2); line-height: 1.5; }
+.afil p { margin: 2px 0; }
+h2 { font-size: 23px; margin: 46px 0 10px; padding-top: 8px; border-top: 1px solid var(--linha); }
+h3 { font-size: 19px; margin: 30px 0 6px; }
+h4 { font-size: 18px; font-style: italic; margin: 24px 0 4px; font-weight: 600; }
+p, li { text-align: justify; hyphens: auto; }
+main p { margin: 0 0 14px; }
+.resumo { background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 4px 22px 14px; margin-top: 28px; }
+.resumo h2 { border: 0; margin-top: 16px; font-size: 18px; font-family: var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-2); }
+.chave { font-size: 16px; color: var(--tinta-2); }
+.nota { font-size: 14px; color: var(--tinta-2); line-height: 1.5; }
+ul { padding-left: 22px; }
+figure { margin: 26px 0; }
+figure img { width: 100%; height: auto; display: block; background: #fff; border-radius: 6px; border: 1px solid var(--linha); }
+figcaption { font-size: 15px; line-height: 1.5; color: var(--tinta-2); margin-top: 8px; text-align: left; }
+.fonte { display: block; font-size: 13.5px; margin-top: 4px; color: var(--tinta-3); }
+.leg-tab { font-size: 15.5px; margin: 26px 0 6px; color: var(--tinta-2); text-align: left; }
+.tabela { overflow-x: auto; margin: 0 0 18px; }
+.tabela + .nota { margin-top: -10px; }
+table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: 13.5px; line-height: 1.35; background: var(--papel); }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--linha); text-align: left; vertical-align: top; }
+th { font-weight: 600; border-bottom: 1.5px solid var(--tinta-3); }
+tr:first-child th { border-top: 1.5px solid var(--tinta-3); }
+td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eq { margin: 16px 0; overflow-x: auto; text-align: center; }
+.referencias { padding-left: 0; list-style: none; font-size: 15.5px; }
+.referencias li { text-align: left; margin-bottom: 10px; padding-left: 1.4em; text-indent: -1.4em; overflow-wrap: anywhere; }
+.referencias li:target { background: var(--cit); border-radius: 6px; }
+
+/* citações */
+a.cit { color: inherit; text-decoration: none; background: var(--cit); border-bottom: 2px solid var(--cit-borda);
+  border-radius: 3px; padding: 0 2px; cursor: pointer; transition: background .15s; }
+a.cit:hover, a.cit:focus-visible { background: var(--cit-ativa); outline: none; }
+a.cit.ativa { background: var(--cit-ativa); box-shadow: 0 0 0 2px var(--cit-borda); }
+body.sem-destaque a.cit { background: none; border-bottom: 1px dotted var(--tinta-3); }
+
+/* comentários */
+::highlight(comentarios) { background-color: var(--coment); }
+[data-sec].tem-coment { box-shadow: -4px 0 0 var(--coment-borda); }
+li[data-sec].tem-coment { box-shadow: -18px 0 0 -14px var(--coment-borda); }
+.flutuante { position: absolute; z-index: 30; font-family: var(--sans); font-size: 13px; }
+.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0% { background: var(--coment); } 100% { background: transparent; } }
+
+/* painel lateral */
+.painel { position: fixed; top: 0; right: 0; height: 100vh; width: min(440px, 100vw); background: var(--papel);
+  border-left: 1px solid var(--linha); box-shadow: var(--sombra); z-index: 40; transform: translateX(105%);
+  transition: transform .22s ease; display: flex; flex-direction: column; font-family: var(--sans); font-size: 14.5px; line-height: 1.5; }
+.painel.aberto { transform: none; }
+.painel-cab { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--linha); }
+.painel-cab h3 { margin: 0; font-family: var(--sans); font-size: 14px; color: var(--tinta-2); font-weight: 600; margin-right: auto; }
+.painel-corpo { overflow-y: auto; padding: 16px 18px 28px; }
+.fechar { border: 0; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--tinta-2); padding: 4px 8px; }
+.rotulo { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--tinta-3); margin: 18px 0 6px; font-weight: 600; }
+.cit-titulo { font-family: var(--serifa); font-size: 20px; margin: 2px 0 4px; }
+.frase { font-family: var(--serifa); font-size: 15.5px; color: var(--tinta-2); border-left: 3px solid var(--linha); padding-left: 10px; margin: 0; }
+.trecho { border: 1px solid var(--linha); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--fundo); }
+.trecho blockquote { margin: 0 0 10px; font-family: var(--serifa); font-size: 15.5px; line-height: 1.55; }
+.trecho blockquote mark { background: var(--cit); color: inherit; padding: 0 1px; }
+.trecho .pag { font-size: 12.5px; color: var(--tinta-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.abrir { font-weight: 600; text-decoration: none; }
+.nota-cit { font-size: 13.5px; color: var(--tinta-2); background: var(--acento-suave); padding: 8px 10px; border-radius: 8px; }
+.ref-abnt { font-size: 13px; color: var(--tinta-2); overflow-wrap: anywhere; }
+.acesso { display: inline-block; font-size: 11.5px; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--linha); color: var(--tinta-2); }
+.acesso.aberto { border-color: #4b9b6b; color: #2f7a4d; }
+.nav-cit { display: flex; gap: 8px; margin-top: 20px; }
+.nav-cit .bt { flex: 1; justify-content: center; }
+.coment-item { border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.coment-item q { display: block; font-family: var(--serifa); color: var(--tinta-2); font-size: 14.5px; margin-bottom: 6px; }
+.coment-item .txt { white-space: pre-wrap; }
+.coment-item .acoes { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.coment-item .acoes .bt { padding: 3px 9px; font-size: 12.5px; }
+.coment-item .onde { font-size: 12px; color: var(--tinta-3); margin-bottom: 4px; }
+.vazio { color: var(--tinta-3); }
+dialog { border: 1px solid var(--linha); border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); background: var(--papel); color: var(--tinta); box-shadow: var(--sombra); font-family: var(--sans); }
+dialog::backdrop { background: rgba(0, 0, 0, .35); }
+dialog form { padding: 18px; }
+dialog q { display: block; font-family: var(--serifa); color: var(--tinta-2); border-left: 3px solid var(--coment-borda); padding-left: 10px; margin: 6px 0 12px; max-height: 120px; overflow: auto; }
+dialog textarea { width: 100%; min-height: 120px; font: 15px/1.5 var(--sans); padding: 10px; border-radius: 8px; border: 1px solid var(--linha); background: var(--fundo); color: var(--tinta); resize: vertical; }
+dialog .linha-bt { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.math.display { display: block; }
+.math:empty::after { content: attr(data-tex); font-family: monospace; font-size: 14px; color: var(--tinta-2); }
+
+@media (max-width: 720px) {
+  body { font-size: 17px; }
+  h1 { font-size: 24px; }
+  .painel { top: auto; bottom: 0; height: 78vh; width: 100vw; border-left: 0; border-top: 1px solid var(--linha);
+    border-radius: 16px 16px 0 0; transform: translateY(105%); }
+  .barra .marca small { display: none; }
+  p, li { text-align: left; }
+}
+@media print { .barra, .painel, .aviso, .flutuante { display: none !important; } a.cit { background: none; border: 0; } }
+</style>
+</head>
+<body>
+<div class="barra"><div class="barra-in">
+  <span class="marca">Revisão do artigo <small>v8 · 15/10/2026 · XII SIMPÓS/IFTM</small></span>
+  <button class="bt" id="bt-destaque" aria-pressed="true" title="Mostrar ou esconder o destaque das citações">Citações destacadas</button>
+  <button class="bt" id="bt-coment" title="Ver os comentários de revisão">Comentários <span class="contador" id="n-coment">0</span></button>
+  <button class="bt" id="bt-tema" title="Alternar tema claro/escuro" aria-label="Alternar tema">◐</button>
+</div></div>
+
+<main id="artigo">
+  <div class="aviso" id="aviso">
+    <button type="button" aria-label="Fechar aviso" id="fecha-aviso">×</button>
+    <b>Como usar.</b> As {{N_CIT}} citações estão destacadas em amarelo: clique numa delas para ver a página e o trecho da
+    fonte que a sustenta e abrir a fonte. Para corrigir, <b>selecione um trecho do texto</b> e clique em
+    <b>Comentar</b>. Os comentários ficam salvos neste navegador; ao terminar, abra <b>Comentários</b> e use
+    <b>Baixar</b> ou <b>Copiar</b> para enviar.
+  </div>
+  <h1>{{TITULO}}</h1>
+  <div class="autores">{{AUTORES}}</div>
+  <div class="afil">{{AFILIACOES}}</div>
+{{CORPO}}
+</main>
+
+<aside class="painel" id="painel" aria-hidden="true">
+  <div class="painel-cab"><h3 id="painel-titulo">Citação</h3><button class="fechar" id="fecha-painel" aria-label="Fechar">×</button></div>
+  <div class="painel-corpo" id="painel-corpo"></div>
+</aside>
+
+<button class="bt primario flutuante" id="bt-comentar" hidden>Comentar</button>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlg-form">
+    <div class="rotulo" style="margin-top:0">Trecho selecionado</div>
+    <q id="dlg-trecho"></q>
+    <label class="rotulo" for="dlg-texto" style="display:block">Comentário ou correção</label>
+    <textarea id="dlg-texto" placeholder="Ex.: trocar &quot;foi&quot; por &quot;foram&quot;; frase longa, dividir em duas…"></textarea>
+    <div class="linha-bt"><button class="bt" value="cancelar" type="submit">Cancelar</button><button class="bt primario" value="salvar" type="submit">Salvar</button></div>
+  </form>
+</dialog>
+
+<script type="application/json" id="dados">{{DADOS}}</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById('dados').textContent);
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const guarda = {
+    ler(k, pad) { try { const v = localStorage.getItem(k); return v === null ? pad : JSON.parse(v); } catch { return pad; } },
+    gravar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+  };
+
+  /* equações */
+  function renderizaMath() {
+    if (!window.katex) return;
+    document.querySelectorAll('.math[data-tex]').forEach(el => {
+      try { katex.render(el.dataset.tex, el, {displayMode: el.classList.contains('display'), throwOnError: false}); } catch {}
+    });
+  }
+  if (window.katex) renderizaMath(); else window.addEventListener('load', renderizaMath);
+
+  /* tema e aviso */
+  const tema = guarda.ler('tcc-tema', null);
+  if (tema) document.documentElement.dataset.theme = tema;
+  $('#bt-tema').onclick = () => {
+    const escuro = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.dataset.theme = escuro ? 'light' : 'dark';
+    guarda.gravar('tcc-tema', document.documentElement.dataset.theme);
+  };
+  if (guarda.ler('tcc-aviso-fechado', false)) $('#aviso').remove();
+  $('#fecha-aviso')?.addEventListener('click', () => { $('#aviso').remove(); guarda.gravar('tcc-aviso-fechado', true); });
+
+  /* painel */
+  const painel = $('#painel'), corpo = $('#painel-corpo');
+  function abrePainel(titulo, html) {
+    $('#painel-titulo').textContent = titulo; corpo.innerHTML = html; corpo.scrollTop = 0;
+    painel.classList.add('aberto'); painel.setAttribute('aria-hidden', 'false');
+  }
+  function fechaPainel() {
+    painel.classList.remove('aberto'); painel.setAttribute('aria-hidden', 'true');
+    document.querySelectorAll('a.cit.ativa').forEach(a => a.classList.remove('ativa'));
+    modoPainel = null;
+  }
+  $('#fecha-painel').onclick = fechaPainel;
+  let modoPainel = null;
+
+  /* citações */
+  const cits = [...document.querySelectorAll('a.cit')];
+  function mostraCitacao(i) {
+    const c = D.citacoes[i], r = D.refs[c.ref];
+    cits.forEach(a => a.classList.toggle('ativa', +a.dataset.c === i));
+    const aberto = r.acesso === 'aberto';
+    const trechos = c.trechos.map(t => {
+      const partes = t.texto.split('(...)').map(s => s.trim()).filter(Boolean);
+      const bloco = partes.map(s => '<mark>' + esc(s) + '</mark>').join(' <span style="color:var(--tinta-3)">(…)</span> ');
+      const rot = r.html && !t.sem_fragmento ? 'Abrir no trecho ↗' : (r.pdf && t.pdf ? 'Abrir na página ↗' : 'Abrir a fonte ↗');
+      return `<div class="trecho"><blockquote>“${bloco}”</blockquote><div class="pag"><span>${esc(t.pag)}</span>
+        <a class="abrir" href="${esc(t.link)}" target="_blank" rel="noopener">${rot}</a></div></div>`;
+    }).join('');
+    abrePainel(`Citação ${i + 1} de ${D.citacoes.length}`, `
+      <p class="cit-titulo">${esc(c.cit)}</p>
+      <span class="acesso ${aberto ? 'aberto' : ''}">${aberto ? 'Acesso aberto' : 'Acesso restrito (pode exigir assinatura)'}</span>
+      <div class="rotulo">No artigo</div><p class="frase">${esc(c.frase)}</p>
+      <div class="rotulo">Na fonte · trecho literal</div>${trechos}
+      ${c.nota ? `<p class="nota-cit">${esc(c.nota)}</p>` : ''}
+      ${r.obs ? `<p class="nota-cit">${esc(r.obs)}</p>` : ''}
+      <div class="rotulo">Referência</div><p class="ref-abnt">${esc(r.abnt)}</p>
+      <div class="nav-cit"><button class="bt" data-ir="${i - 1}" ${i === 0 ? 'disabled' : ''}>← Anterior</button>
+        <button class="bt" data-ir="${i + 1}" ${i === D.citacoes.length - 1 ? 'disabled' : ''}>Próxima →</button></div>`);
+    modoPainel = 'cit';
+    corpo.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => {
+      const j = +b.dataset.ir; mostraCitacao(j);
+      cits[j].scrollIntoView({block: 'center', behavior: 'smooth'});
+    });
+  }
+  cits.forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); mostraCitacao(+a.dataset.c); }));
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && !$('#dlg').open) fechaPainel();
+  });
+  const btDest = $('#bt-destaque');
+  btDest.onclick = () => {
+    const on = btDest.getAttribute('aria-pressed') !== 'true';
+    btDest.setAttribute('aria-pressed', on); document.body.classList.toggle('sem-destaque', !on);
+    btDest.textContent = on ? 'Citações destacadas' : 'Destacar citações';
+  };
+
+  /* comentários */
+  const CHAVE = 'tcc-v8-comentarios';
+  let coments = guarda.ler(CHAVE, []);
+  const blocos = () => [...document.querySelectorAll('#artigo [data-sec]')];
+  const blocoDe = n => { const el = n?.nodeType === 1 ? n : n?.parentElement; return el?.closest('#artigo [data-sec]'); };
+
+  function rangeDoTrecho(el, trecho) {
+    const nos = []; let total = '';
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) { nos.push([w.currentNode, total.length]); total += w.currentNode.nodeValue; }
+    const ini = total.indexOf(trecho); if (ini < 0) return null;
+    const fim = ini + trecho.length, r = document.createRange();
+    const acha = pos => { for (let k = nos.length - 1; k >= 0; k--) if (nos[k][1] <= pos) return [nos[k][0], pos - nos[k][1]]; };
+    r.setStart(...acha(ini)); r.setEnd(...acha(fim)); return r;
+  }
+  function salva() {
+    if (!guarda.gravar(CHAVE, coments)) alertaSalvar();
+    pinta(); $('#n-coment').textContent = coments.length;
+    if (modoPainel === 'coment') mostraComentarios();
+  }
+  let avisou = false;
+  function alertaSalvar() {
+    if (avisou) return; avisou = true;
+    const a = document.createElement('div'); a.className = 'aviso';
+    a.innerHTML = '<b>Atenção:</b> este navegador não está deixando salvar os comentários (janela anônima?). Eles ficam só até fechar a página — use <b>Baixar</b> antes de sair.';
+    $('#artigo').prepend(a);
+  }
+  function pinta() {
+    blocos().forEach(b => b.classList.remove('tem-coment'));
+    const ranges = [];
+    coments.forEach(c => {
+      const el = document.getElementById(c.pid); if (!el) return;
+      el.classList.add('tem-coment');
+      const r = c.trecho && rangeDoTrecho(el, c.trecho); if (r) ranges.push(r);
+    });
+    if (window.CSS && CSS.highlights && window.Highlight) CSS.highlights.set('comentarios', new Highlight(...ranges));
+  }
+  const ondeTexto = c => {
+    const el = document.getElementById(c.pid); const sec = el?.dataset.sec || '';
+    const n = blocos().filter(b => b.dataset.sec === sec).indexOf(el) + 1;
+    return `${sec}${n ? `, § ${n}` : ''}`;
+  };
+  function mostraComentarios() {
+    const ordem = blocos().map(b => b.id);
+    const lista = [...coments].sort((a, b) => ordem.indexOf(a.pid) - ordem.indexOf(b.pid));
+    abrePainel(`Comentários (${coments.length})`, `
+      <div class="nav-cit" style="margin-top:0"><button class="bt primario" id="c-baixar">Baixar (.md)</button><button class="bt" id="c-copiar">Copiar</button></div>
+      <p class="vazio" style="font-size:13px">Selecione um trecho do artigo e clique em <b>Comentar</b>. Os comentários ficam neste navegador.</p>
+      ${lista.length ? lista.map(c => `<div class="coment-item"><div class="onde">${esc(ondeTexto(c))}</div>
+        ${c.trecho ? `<q>${esc(c.trecho)}</q>` : ''}<div class="txt">${esc(c.texto)}</div>
+        <div class="acoes"><button class="bt" data-ir="${c.id}">Ir ao trecho</button><button class="bt" data-edita="${c.id}">Editar</button>
+        <button class="bt" data-apaga="${c.id}">Apagar</button></div></div>`).join('') : '<p class="vazio">Nenhum comentário ainda.</p>'}
+      ${coments.length ? '<div class="nav-cit"><button class="bt" id="c-limpa">Apagar todos</button></div>' : ''}`);
+    modoPainel = 'coment';
+    $('#c-baixar').onclick = baixar; $('#c-copiar').onclick = copiar;
+    $('#c-limpa')?.addEventListener('click', ev => {
+      if (ev.currentTarget.dataset.conf) { coments = []; salva(); return; }
+      ev.currentTarget.dataset.conf = 1; ev.currentTarget.textContent = 'Clique de novo para confirmar';
+    });
+    corpo.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => {
+      const c = coments.find(x => x.id === b.dataset.ir), el = document.getElementById(c.pid);
+      el.scrollIntoView({block: 'center', behavior: 'smooth'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+      if (matchMedia('(max-width: 720px)').matches) fechaPainel();
+    });
+    corpo.querySelectorAll('[data-edita]').forEach(b => b.onclick = () => editor(coments.find(x => x.id === b.dataset.edita)));
+    corpo.querySelectorAll('[data-apaga]').forEach(b => b.onclick = () => { coments = coments.filter(x => x.id !== b.dataset.apaga); salva(); });
+  }
+  $('#bt-coment').onclick = () => modoPainel === 'coment' ? fechaPainel() : mostraComentarios();
+
+  function markdown() {
+    const ordem = blocos().map(b => b.id);
+    const lista = [...coments].sort((a, b) => ordem.indexOf(a.pid) - ordem.indexOf(b.pid));
+    let md = `# Correções do artigo (v8, 15/10/2026)\n\n${lista.length} comentário(s), exportados em ${new Date().toLocaleString('pt-BR')}.\n`;
+    lista.forEach((c, k) => { md += `\n## ${k + 1}. ${ondeTexto(c)}\n\n` + (c.trecho ? `> ${c.trecho.replace(/\n/g, ' ')}\n\n` : '') + `${c.texto}\n`; });
+    return md;
+  }
+  function baixar() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([markdown()], {type: 'text/markdown;charset=utf-8'}));
+    a.download = 'correcoes_artigo_v8.md'; document.body.append(a); a.click(); a.remove();
+  }
+  async function copiar(ev) {
+    const b = ev.currentTarget;
+    try { await navigator.clipboard.writeText(markdown()); b.textContent = 'Copiado!'; }
+    catch { b.textContent = 'Não foi possível copiar'; }
+    setTimeout(() => b.textContent = 'Copiar', 1800);
+  }
+
+  const dlg = $('#dlg'); let editando = null;
+  function editor(c) {
+    editando = c; $('#dlg-trecho').textContent = c.trecho || '(parágrafo inteiro)'; $('#dlg-texto').value = c.texto || '';
+    dlg.showModal(); $('#dlg-texto').focus();
+  }
+  dlg.addEventListener('close', () => {
+    if (dlg.returnValue === 'salvar' && editando && $('#dlg-texto').value.trim()) {
+      editando.texto = $('#dlg-texto').value.trim();
+      if (!coments.includes(editando)) coments.push(editando);
+      salva();
+    }
+    editando = null; dlg.returnValue = '';
+  });
+
+  const btC = $('#bt-comentar'); let selAtual = null;
+  function avaliaSelecao() {
+    const s = getSelection();
+    if (!s || s.isCollapsed || !s.rangeCount) { btC.hidden = true; selAtual = null; return; }
+    const r = s.getRangeAt(0), b1 = blocoDe(r.startContainer), b2 = blocoDe(r.endContainer);
+    const txt = s.toString().trim();
+    if (!b1 || !txt) { btC.hidden = true; selAtual = null; return; }
+    // seleção que atravessa parágrafos: fica só a parte do primeiro
+    const trecho = b1 === b2 ? txt : (() => { const rr = r.cloneRange(); rr.setEndAfter(b1.lastChild); return rr.toString().trim(); })();
+    selAtual = {pid: b1.id, trecho};
+    const box = r.getBoundingClientRect();
+    btC.style.top = (scrollY + box.bottom + 8) + 'px';
+    btC.style.left = Math.max(8, Math.min(innerWidth - 120, scrollX + box.left + box.width / 2 - 50)) + 'px';
+    btC.hidden = false;
+  }
+  document.addEventListener('mouseup', () => setTimeout(avaliaSelecao, 10));
+  document.addEventListener('touchend', () => setTimeout(avaliaSelecao, 250));
+  document.addEventListener('selectionchange', () => { if (getSelection().isCollapsed) btC.hidden = true; });
+  btC.addEventListener('mousedown', ev => ev.preventDefault());
+  btC.onclick = () => {
+    if (!selAtual) return;
+    btC.hidden = true;
+    editor({id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pid: selAtual.pid, trecho: selAtual.trecho, texto: '', criado: new Date().toISOString()});
+    getSelection().removeAllRanges();
+  };
+
+  $('#n-coment').textContent = coments.length;
+  pinta();
+  if (location.hash.startsWith('#cit-')) { const k = +location.hash.slice(5) - 1; if (D.citacoes[k]) mostraCitacao(k); }
+})();
+</script>
+</body>
+</html>
