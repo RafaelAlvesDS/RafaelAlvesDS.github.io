@@ -2129,7 +2129,7 @@ function dimLine(g,x0,z0,x1,z1,y,text){
     const g=w.parent===lower?DIM_L:w.parent===U?DIM_U:null;if(!g)continue;
     for(const o of w.openings){
       const mid=(o.a+o.b)/2,wd=o.b-o.a,door=o.lo<=0.01;
-      const txt=o.hi>=H-0.01?'vão livre '+fmtM(wd):door?(o.glass?'porta de correr ':'porta ')+fmtM(wd):'janela '+fmtM(wd)+' × '+fmtM(o.hi-o.lo)+' · peitoril '+fmtM(o.lo);
+      const txt=o.hi>=H-0.01?'vão livre '+fmtM(wd):door?(o.glass?'porta de correr ':'porta ')+fmtM(wd):'jan. ≈'+fmtM(wd)+' × '+fmtM(o.hi-o.lo)+' · peit. ≈'+fmtM(o.lo);
       const x=w.axis==='x'?mid:w.c,z=w.axis==='x'?w.c:mid,ang=w.axis==='x'?0:Math.PI/2;
       flatLabel(g,txt,x,1.24,z,ang,0.16,{bg:door?'#1f6f6a':'#2f6f9f',fg:'#ffffff'});
     }
@@ -2137,6 +2137,7 @@ function dimLine(g,x0,z0,x1,z1,y,text){
   // espessura das paredes e pé-direito
   flatLabel(DIM_L,'parede externa 0,20 · interna 0,12–0,15',4.4,Y,2.6,0,0.13,{fg:'#3b3f45'});
   flatLabel(DIM_L,'pé-direito 2,65',4.4,Y,4.6,0,0.16,{fg:'#3b3f45'});
+  [DIM_L,DIM_U].forEach(g=>flatLabel(g,'≈ janelas: medidas estimadas',4.4,Y,5.0,0,0.14,{fg:'#2f6f9f'}));
   flatLabel(DIM_U,'pé-direito 2,65',3.6,Y,5.1,0,0.16,{fg:'#3b3f45'});
   flatLabel(DIM_U,'muro 2,65',5.2,1.24,1.4,Math.PI/2,0.13,{fg:'#3b3f45'});
   flatLabel(DIM_U,'guarda-corpo 1,10',2.8,1.24,-0.12,0,0.13,{fg:'#3b3f45'});
@@ -2148,6 +2149,7 @@ function setDims(on){
   if(!on)return;
   if(state.mode==='ctx') setMode('apt');
   setFurn(false);
+  if(state.tags){state.tags=false;press('b-tag',false);tagsEl.hidden=true;}   // nomes dos cômodos encobrem as cotas
   if(!state.cut){state.cut=true;press('b-cut',true);applyCut();}
   state.explode=false;press('b-exp',false);
   if(state.view==='both'){state.view='low';applyView();}
@@ -2156,6 +2158,7 @@ function setDims(on){
 state.furn=true;state.dims=false;
 $('b-furn').onclick=()=>setFurn(!state.furn);
 $('b-dims').onclick=()=>setDims(!state.dims);
+setDims(true);                                      // abre na planta com medidas, sem móveis
 
 // ---------- loop
 function resize(){
