@@ -42,12 +42,28 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .card dt{color:var(--muted)} .card dd{margin:0;text-align:right}
 .dock{position:absolute;left:16px;right:16px;bottom:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;pointer-events:none}
 .grp{pointer-events:auto;display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:3px}
+@media (max-width:640px){.grp{flex-wrap:wrap;justify-content:center;max-width:100%} .grp button{padding:6px 8px;font-size:12px}}
 .grp .lbl{font-family:var(--f-display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 8px 0 6px}
 button{font:500 12.5px var(--f-body);color:var(--ink);background:transparent;border:0;border-radius:3px;padding:7px 11px;cursor:pointer}
 button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .fail{position:absolute;left:16px;right:16px;top:45%;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px;text-align:center;font-size:14px}
+.areas{position:absolute;right:16px;top:16px;bottom:16px;width:min(380px,calc(100% - 32px));overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:14px 16px 16px;box-shadow:0 4px 18px #0002;z-index:3;-webkit-overflow-scrolling:touch}
+.areas header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:sticky;top:-14px;background:var(--panel);padding:2px 0 8px;margin-top:-2px}
+.areas h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:700;text-wrap:balance}
+.areas header p{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+.areas h3{margin:16px 0 6px;font-family:var(--f-display);font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.areas table{width:100%;border-collapse:collapse;font-size:13px}
+.areas td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.areas td small{display:block;color:var(--muted);font-size:11.5px;font-family:var(--f-mono)}
+.areas td.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px}
+.areas tr.tot td{font-weight:600;border-bottom:0;border-top:1.5px solid var(--ink)}
+.areas .note{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 0 0}
+.areas .x{background:transparent;border:1px solid var(--line);padding:5px 10px;flex:none}
+.walking .areas{display:none}
+@media (max-width:640px){.areas{left:12px;right:12px;width:auto;top:auto;bottom:12px;max-height:72%;border-radius:8px}}
 .walkhud{position:absolute;inset:0;pointer-events:none}
 .walkhud .bar{position:absolute;left:16px;right:16px;top:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .walkhud .info{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:8px 11px;font-size:12.5px;line-height:1.45;max-width:min(420px,70vw)}
@@ -85,13 +101,56 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
     <p>Modelo 3D montado a partir das plantas. Medidas internas aproximadas, pé-direito estimado em 2,65 m.</p>
     <p id="osm" hidden></p>
     <dl>
-      <dt>Pavimento inferior</dt><dd>≈ 33 m²</dd>
+      <dt>Pavimento inferior</dt><dd>≈ 34,5 m²</dd>
       <dt>Pavimento superior</dt><dd>≈ 20 m²</dd>
-      <dt>Terraço descoberto</dt><dd>≈ 15 m²</dd>
+      <dt>Terraço descoberto</dt><dd>≈ 15,3 m²</dd>
       <dt>Projeção</dt><dd>5,60 × 6,50 m</dd>
       <dt>Andares</dt><dd>16º e 17º</dd>
     </dl>
   </div>
+  <section class="areas" id="areas" hidden aria-labelledby="areas-t">
+    <header><div><h2 id="areas-t">Metragem</h2><p>Medidas internas do modelo, de face a face das paredes. Valores aproximados: confira na planta ou no local antes de comprar.</p></div>
+      <button class="x" id="areas-x">Fechar</button></header>
+    <h3>Piso · pavimento inferior</h3>
+    <table>
+      <tr><td>Quarto 1<small>3,05 × 2,57</small></td><td class="n">7,8 m²</td></tr>
+      <tr><td>Quarto 2<small>3,05 × 2,47</small></td><td class="n">7,5 m²</td></tr>
+      <tr><td>Banheiro<small>2,11 × 1,22</small></td><td class="n">2,6 m²</td></tr>
+      <tr><td>Circulação<small>0,82 × 1,22</small></td><td class="n">1,0 m²</td></tr>
+      <tr><td>Cozinha + área de serviço<small>2,40 × 2,20</small></td><td class="n">5,3 m²</td></tr>
+      <tr><td>Sala<small>2,40 × 4,30</small></td><td class="n">10,3 m²</td></tr>
+      <tr class="tot"><td>Total</td><td class="n">34,5 m²</td></tr>
+    </table>
+    <p class="note">Cozinha e sala são um espaço só: para comprar piso, use 15,6 m².</p>
+    <h3>Piso · pavimento superior</h3>
+    <table>
+      <tr><td>Banheiro<small>2,11 × 1,22</small></td><td class="n">2,6 m²</td></tr>
+      <tr><td>Sala<small>em L: 5,60 × 2,47 + 3,37 × 1,06</small></td><td class="n">17,4 m²</td></tr>
+      <tr><td>Terraço descoberto<small>5,60 × 2,85, menos o canto do banheiro</small></td><td class="n">15,3 m²</td></tr>
+      <tr class="tot"><td>Total coberto (banheiro + sala)</td><td class="n">20,0 m²</td></tr>
+      <tr class="tot"><td>Total com terraço</td><td class="n">35,3 m²</td></tr>
+    </table>
+    <p class="note">A abertura da escada ocupa cerca de 1,7 m²: com piso em volta dela, a sala de cima fica com 15,7 m². Some 10% a 15% de perda nos cortes.</p>
+    <h3>Paredes para pintura · sem banheiros</h3>
+    <table>
+      <tr><td>Quarto 1<small>descontadas janela e porta</small></td><td class="n">26,8 m²</td></tr>
+      <tr><td>Quarto 2<small>descontadas janela e porta</small></td><td class="n">25,8 m²</td></tr>
+      <tr><td>Circulação<small>descontadas 3 portas e o vão livre</small></td><td class="n">3,0 m²</td></tr>
+      <tr><td>Cozinha + sala inferior<small>descontadas janela, porta e vão livre</small></td><td class="n">40,9 m²</td></tr>
+      <tr><td>Sala superior<small>descontadas janela, 2 portas e porta de correr</small></td><td class="n">40,9 m²</td></tr>
+      <tr class="tot"><td>Total de paredes</td><td class="n">137,5 m²</td></tr>
+      <tr><td>Tetos<small>sem banheiros e sem o vão da escada</small></td><td class="n">48 m²</td></tr>
+      <tr><td>Terraço<small>face interna; tinta para área externa</small></td><td class="n">30 m²</td></tr>
+    </table>
+    <p class="note">Paredes com pé-direito de 2,65 m. As faces das paredes dos banheiros voltadas para os outros cômodos estão incluídas. As janelas têm medida estimada.</p>
+    <h3>Tinta estimada · 2 demãos + 10%</h3>
+    <table>
+      <tr><td>Paredes</td><td class="n">≈ 30 L</td></tr>
+      <tr><td>Tetos</td><td class="n">≈ 11 L</td></tr>
+      <tr><td>Terraço (externa)</td><td class="n">≈ 7 L</td></tr>
+    </table>
+    <p class="note">Supondo rendimento de 10 m² por litro por demão. Confira o rendimento da tinta escolhida.</p>
+  </section>
   <div class="loadbar" id="loadbar" hidden role="status" aria-live="polite"><span class="spin" id="lb-spin"></span><span id="lb-text"></span><button id="lb-retry" hidden>Tentar de novo</button></div>
   <div class="hint">Arraste para girar · role para zoom · botão direito move</div>
   <div class="walkhud" id="walkhud" hidden>
@@ -133,6 +192,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
       <button id="b-cut" aria-pressed="false">Paredes baixas</button>
       <button id="b-furn" aria-pressed="true">Móveis</button>
       <button id="b-dims" aria-pressed="false">Planta com medidas</button>
+      <button id="b-areas" aria-pressed="false" aria-controls="areas">Metragem</button>
       <button id="b-tag" aria-pressed="true">Nomes</button>
       <button id="b-walk">Andar (1ª pessoa)</button>
       <button id="b-tour">Passeio a pé</button>
@@ -2158,6 +2218,7 @@ function setDims(on){
 state.furn=true;state.dims=false;
 $('b-furn').onclick=()=>setFurn(!state.furn);
 $('b-dims').onclick=()=>setDims(!state.dims);
+{const setAreas=on=>{$('areas').hidden=!on;press('b-areas',on);};$('b-areas').onclick=()=>setAreas($('areas').hidden);$('areas-x').onclick=()=>setAreas(false);}
 setDims(true);                                      // abre na planta com medidas, sem móveis
 
 // ---------- loop
