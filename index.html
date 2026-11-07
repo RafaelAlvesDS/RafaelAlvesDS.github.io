@@ -42,7 +42,15 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .card dt{color:var(--muted)} .card dd{margin:0;text-align:right}
 .dock{position:absolute;left:16px;right:16px;bottom:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;pointer-events:none}
 .grp{pointer-events:auto;display:flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:3px}
-@media (max-width:640px){.grp{flex-wrap:wrap;justify-content:center;max-width:100%} .grp button{padding:6px 8px;font-size:12px}}
+button{white-space:nowrap}
+#app{overflow:hidden}
+@media (max-width:640px){
+  .dock{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));gap:6px}
+  .grp{flex-wrap:wrap;justify-content:center;max-width:100%;min-width:0}
+  .grp button{padding:6px 9px;font-size:12.5px}
+  .grp .lbl{display:none}
+  .card{left:8px;top:8px;padding:8px 11px}.card p{display:none}
+}
 .grp .lbl{font-family:var(--f-display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 8px 0 6px}
 button{font:500 12.5px var(--f-body);color:var(--ink);background:transparent;border:0;border-radius:3px;padding:7px 11px;cursor:pointer}
 button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -1296,7 +1304,13 @@ $('b-cut').onclick=()=>{state.cut=!state.cut;press('b-cut',state.cut);applyCut()
 $('b-reset').onclick=homeView;
 $('b-top').onclick=()=>{
   if(state.mode==='ctx'){camera.position.set(CX,300,CZ+1);controls.target.set(CX,0,CZ);}
-  else{camera.position.set(CENTER.x+0.01,22,CENTER.z+0.6);controls.target.copy(CENTER);}
+  else{   // altura que enquadra a planta inteira (6,0 × 7,0 m com folga) em qualquer tela, inclusive celular em pé
+    // área livre da tela: entre o cartão do topo e a barra de botões
+    const H0=canvas.clientHeight||1,top=document.querySelector('.card').getBoundingClientRect().bottom+8,bot=document.querySelector('.dock').getBoundingClientRect().top-8;
+    const fr=Math.max(0.35,Math.min(1,(bot-top)/H0)),mid=((top+bot)/2)/H0-0.5;
+    const vf=camera.fov*Math.PI/360,hf=Math.atan(Math.tan(vf)*camera.aspect);
+    const d=Math.min(22,Math.max(3.4/Math.tan(hf),3.9/(Math.tan(vf)*fr))+3),sh=-mid*2*(d-3)*Math.tan(vf);
+    controls.target.set(CENTER.x,CENTER.y,CENTER.z+sh);camera.position.set(CENTER.x+0.01,d,CENTER.z+sh+0.6);}
   controls.update();};
 function setMode(m){
   state.mode=m;press('m-apt',m==='apt');press('m-ctx',m==='ctx');
