@@ -479,28 +479,28 @@ function deskChair(g,x,z,mat=FM.leather){const c=new THREE.Group();c.position.se
   [-0.29,0.29].forEach(x=>{fb(c,x-0.03,x+0.03,0.52,0.66,-0.05,0.05,FM.black);fb(c,x-0.04,x+0.04,0.66,0.7,-0.2,0.15,mat);});}
 function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,FM.black);fc(g,x,y,z,0.04,0.16,mat,24,0.2);fc(g,x,y-0.005,z,0.15,0.01,FM.led,20);}
 
-// quarto do casal (quarto 1, x 0–3,05, z 0–2,57): armário de correr na fachada; cama sob a janela com painel estofado
-// de parede a parede, criados-mudos suspensos, pendentes no lugar de abajur e cortina de linho do teto ao chão
+// quarto do casal (quarto 1, x 0–3,05, z 0–2,57): as roupas ficam no closet do escritório, então o quarto fica livre.
+// Cama centralizada com a janela, painel estofado de parede a parede, criados-mudos suspensos, pendentes e cortina de linho
 (function(){const g=FURN_L;
-  wardrobe(g,0,0.58,0.06,2.5,'z');solid(0,0,0.6,0,2.52);
-  fb(g,0.6,3.05,0.0,1.0,0,0.05,FM.boucle);fb(g,0.6,3.05,1.0,1.03,0,0.08,FM.freijo);fb(g,0.6,3.05,0.985,1.0,0.05,0.075,FM.led);
-  doubleBed(g,'z',0.05,1.99,1.9);solid(0,1.12,2.68,0,2.0);
-  [[0.66,1.08],[2.71,3.03]].forEach(([a,b])=>{fb(g,a,b,0.42,0.58,0.05,0.42,FM.freijo);fb(g,a+0.01,b-0.01,0.44,0.46,0.42,0.425,FM.walnut);
+  fb(g,0,3.05,0.0,1.0,0,0.05,FM.boucle);fb(g,0,3.05,1.0,1.03,0,0.08,FM.freijo);fb(g,0,3.05,0.985,1.0,0.05,0.075,FM.led);
+  doubleBed(g,'z',0.05,1.99,1.575);solid(0,0.79,2.36,0,2.0);
+  [[0.3,0.76],[2.39,2.85]].forEach(([a,b])=>{fb(g,a,b,0.42,0.58,0.05,0.42,FM.freijo);fb(g,a+0.01,b-0.01,0.44,0.46,0.42,0.425,FM.walnut);
     pendant(g,(a+b)/2,0.24,0.95,FM.terra);});
-  fb(g,0.62,3.03,2.58,2.61,0.03,0.09,FM.black);                                       // trilho da cortina
-  [[0.62,0.98],[2.17,2.55]].forEach(([a,b])=>fb(g,a,b,1.03,2.58,0.03,0.11,FM.linen));    // cortina aberta (dois panos)
-  fb(g,0.9,2.9,0.008,0.018,1.25,2.45,FM.sisal);
+  fb(g,0.03,3.03,2.58,2.61,0.03,0.09,FM.black);                                       // trilho da cortina
+  [[0.6,0.98],[2.17,2.55]].forEach(([a,b])=>fb(g,a,b,1.03,2.58,0.03,0.11,FM.linen));    // cortina aberta (dois panos)
+  fb(g,0.55,2.6,0.008,0.018,1.3,2.45,FM.sisal);
 })();
 // escritório + closet (quarto 2, x 0–3,05, z 4,03–6,50)
-// bancada para dois na parede de baixo, com painel ripado; closet até o teto com portas de vidro fumê na parede da sala;
-// penteadeira com espelho orgânico e sapateira na parede do banheiro.
+// bancada para dois na parede de baixo, com painel ripado e armários aéreos; closet do casal até o teto com portas de vidro fumê
+// na parede da sala e um segundo módulo na parede do banheiro, com penteadeira junto da janela. Entrada da porta livre.
 // O PC fica na ponta da bancada, colado no closet: o cabo HDMI 2.1 sobe pelo fundo do closet e atravessa a laje
-// num furo de ≈ 32 mm (x 2,75 · z 6,30) que, em cima, cai dentro do rack da TV.
+// num furo de ≈ 32 mm (x 2,75 · z 6,30) que, em cima, cai dentro da base fechada da estante, ao lado do rack da TV.
 (function(){const g=FURN_L;
   ripado(g,0.03,2.43,0.76,2.62,6.5,-1);
   fb(g,0.03,2.43,0.72,0.76,5.9,6.465,FM.freijo);fb(g,1.0,1.4,0,0.72,5.95,6.44,FM.lacq);fb(g,2.38,2.42,0,0.72,5.92,6.44,FM.freijo);fb(g,0.05,0.09,0,0.72,5.92,6.44,FM.freijo);
   [0.3,0.5].forEach(y=>fb(g,1.05,1.35,y-0.01,y+0.01,5.94,5.95,FM.chrome));
-  fb(g,0.03,2.43,1.58,1.61,6.2,6.465,FM.freijo);fb(g,0.03,2.43,1.565,1.58,6.22,6.45,FM.led);   // prateleira com LED
+  fb(g,0.03,2.43,1.75,2.62,6.1,6.465,FM.lacq);fb(g,0.03,2.43,1.735,1.75,6.12,6.45,FM.led);    // aéreos com LED embaixo
+  [0.63,1.23,1.83].forEach(x=>fb(g,x-0.004,x+0.004,1.77,2.6,6.095,6.1,FM.walnut));
   monitor(g,1.45,6.28,0.12);monitor(g,2.1,6.28,-0.12);
   fb(g,1.54,2.02,0.76,0.78,5.95,6.1,FM.black);fb(g,2.08,2.14,0.76,0.78,5.98,6.06,FM.black);
   fb(g,2.15,2.37,0,0.46,5.98,6.43,FM.black);fb(g,2.145,2.15,0.05,0.42,6.0,6.03,new THREE.MeshStandardMaterial({color:0x2266ff,emissive:0x3355ff,emissiveIntensity:1.2}));
@@ -517,13 +517,17 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,2.95,2.97,0.1,2.55,4.83,4.85,FM.led);fb(g,2.95,2.97,0.1,2.55,6.43,6.45,FM.led);
   fb(g,CX0-0.01,CX0,0.08,2.56,4.82,6.46,FM.smoke);[4.81,5.65,6.47].forEach(z=>fb(g,CX0-0.015,CX0+0.005,0.08,2.56,z-0.012,z+0.012,FM.black));
   solid(0,2.42,3.05,4.78,6.5);
-  // penteadeira (com vão para as pernas) + espelho orgânico com LED, puff, sapateira alta
-  fb(g,0.03,1.45,0.72,0.76,4.03,4.48,FM.freijo);fb(g,0.03,0.5,0.1,0.72,4.04,4.46,FM.lacq);fb(g,0.98,1.45,0.1,0.72,4.04,4.46,FM.lacq);
-  {const r=fc(g,0,0,0,0.36,0.01,FM.led,40);r.rotation.x=Math.PI/2;r.scale.set(0.8,1,1.15);r.position.set(0.74,1.42,4.036);
-   const m=fc(g,0,0,0,0.34,0.012,FM.mirror,40);m.rotation.x=Math.PI/2;m.scale.set(0.8,1,1.15);m.position.set(0.74,1.42,4.045);}
-  fc(g,0.74,0,4.85,0.2,0.42,FM.boucle,24);
-  fb(g,1.55,2.2,0,2.1,4.03,4.43,FM.lacq);fb(g,1.874,1.876,0.05,2.05,4.43,4.435,FM.walnut);[1.83,1.92].forEach(x=>fb(g,x-0.01,x+0.01,0.9,1.3,4.43,4.445,FM.chrome));
-  solid(0,0,1.47,4.0,4.5);solid(0,1.53,2.22,4.0,4.45);
+  // penteadeira junto da janela + espelho orgânico com LED e puff; módulo de closet (cabideiro) ao lado
+  fb(g,0.03,0.78,0.72,0.76,4.03,4.48,FM.freijo);fb(g,0.03,0.2,0.1,0.72,4.04,4.46,FM.lacq);fb(g,0.61,0.78,0.1,0.72,4.04,4.46,FM.lacq);
+  {const r=fc(g,0,0,0,0.3,0.01,FM.led,40);r.rotation.x=Math.PI/2;r.scale.set(0.8,1,1.15);r.position.set(0.4,1.35,4.036);
+   const m=fc(g,0,0,0,0.28,0.012,FM.mirror,40);m.rotation.x=Math.PI/2;m.scale.set(0.8,1,1.15);m.position.set(0.4,1.35,4.045);}
+  fc(g,0.4,0,4.85,0.19,0.42,FM.boucle,24);
+  fb(g,0.8,1.6,0,2.62,4.03,4.06,FM.lacq);fb(g,0.8,1.6,2.56,2.62,4.03,4.55,FM.lacq);fb(g,0.8,1.6,0,0.08,4.03,4.55,FM.lacq);
+  [[0.8,0.82],[1.58,1.6]].forEach(([a,b])=>fb(g,a,b,0,2.62,4.03,4.55,FM.lacq));
+  fb(g,0.83,1.57,1.9,1.92,4.28,4.3,FM.chrome);
+  [[0.86,0.97,FM.fabricD],[0.97,1.08,FM.olive],[1.08,1.2,FM.linen],[1.2,1.3,FM.terra],[1.3,1.43,FM.boucle],[1.43,1.54,FM.fabricD]].forEach(([a,b,m])=>fb(g,a+0.005,b-0.005,0.9,1.88,4.08,4.5,m));
+  fb(g,0.82,1.58,0.08,2.56,4.55,4.56,FM.smoke);[0.81,1.2,1.59].forEach(x=>fb(g,x-0.012,x+0.012,0.08,2.56,4.545,4.565,FM.black));
+  solid(0,0,0.8,4.0,4.5);solid(0,0.78,1.62,4.0,4.58);
   fb(g,0.35,2.2,0.008,0.018,4.75,5.85,FM.sisal);
 })();
 // cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
@@ -552,9 +556,12 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   {const d=fc(g,5.29,0.42,0.6,0.2,0.02,FM.screen,28);d.rotation.x=Math.PI/2;d.position.set(5.29,0.42,0.605);
    const r=fc(g,5.29,0.42,0.6,0.23,0.015,FM.chrome,28);r.rotation.x=Math.PI/2;r.position.set(5.29,0.42,0.6);}
   // aéreos: perna 1 com depurador sobre o cooktop; um módulo sobre a lava e seca
-  fb(g,3.2,3.55,1.55,2.2,0,1.0,FM.lacq);fb(g,3.2,3.55,1.55,2.2,1.6,1.97,FM.lacq);
+  fb(g,3.2,3.55,1.9,2.2,0,1.0,FM.lacq);fb(g,3.2,3.55,1.55,2.2,1.6,1.97,FM.lacq);
+  // adega: nicho no aéreo do canto com 33 garrafas deitadas (3 fileiras de 11) e LED
+  fb(g,3.2,3.22,1.55,1.9,0,1.0,FM.freijo);fb(g,3.2,3.55,1.55,1.57,0,1.0,FM.freijo);fb(g,3.2,3.55,1.55,1.9,0.98,1.0,FM.lacq);fb(g,3.22,3.53,1.875,1.89,0.02,0.98,FM.led);
+  {const BM=[FM.walnut,FM.olive,FM.black,FM.terra];
+   [1.61,1.69,1.77].forEach((y,r)=>{for(let i=0;i<11;i++){const b=fc(g,0,0,0,0.036,0.3,BM[(i+r)%4],10);b.rotation.z=Math.PI/2;b.position.set(3.38,y,0.06+i*0.087);}});}
   fb(g,3.2,3.72,1.6,1.68,1.0,1.6,FM.inox);fb(g,3.2,3.45,1.68,2.2,1.05,1.55,FM.inox);           // depurador
-  [0.5].forEach(z=>fb(g,3.55,3.555,1.57,2.18,z-0.004,z+0.004,FM.walnut));
   fb(g,5.0,5.6,1.55,2.2,0,0.35,FM.lacq);
   solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);
 })();
@@ -584,26 +591,42 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,0.55,2.1,0.008,0.018,5.0,6.0,FM.sisal);
   fc(g,1.55,0,5.6,0.27,0.4,FM.terra,28);                                   // puff (sai do caminho quando o sofá abre)
   fc(g,2.5,0,4.55,0.2,0.55,FM.freijo,28);fc(g,2.5,0.55,4.55,0.06,0.2,FM.white,14,0.05);fc(g,2.5,0.75,4.55,0.12,0.15,FM.linen,18,0.09);
-  // painel ripado do chão ao teto, rack longo com base recuada (o furo do cabo do PC fica escondido dentro dele) e TV de 65"
-  ripado(g,0.1,3.05,0,2.65,6.5,-1);
-  fb(g,0.2,3.0,0.14,0.52,6.08,6.465,FM.freijo);fb(g,0.32,2.88,0,0.14,6.15,6.44,FM.black);fb(g,0.2,3.0,0.125,0.14,6.1,6.46,FM.led);
-  [0.9,1.6,2.3].forEach(x=>fb(g,x-0.004,x+0.004,0.16,0.5,6.075,6.08,FM.walnut));
+  // painel ripado do chão ao teto, rack com base recuada e TV de 65"
+  ripado(g,0.1,2.25,0,2.65,6.5,-1);
+  fb(g,0.2,2.2,0.14,0.52,6.08,6.465,FM.freijo);fb(g,0.32,2.08,0,0.14,6.15,6.44,FM.black);fb(g,0.2,2.2,0.125,0.14,6.1,6.46,FM.led);
+  [0.87,1.53].forEach(x=>fb(g,x-0.004,x+0.004,0.16,0.5,6.075,6.08,FM.walnut));
   fb(g,0.48,1.92,0.95,1.77,6.42,6.465,FM.black);fb(g,0.5,1.9,0.97,1.75,6.415,6.42,FM.screen);
   fb(g,0.75,1.65,0.52,0.59,6.2,6.3,FM.black);
-  solid(1,0.15,3.05,6.04,6.5);
-  // poltrona de leitura com luminária de piso
-  {const c=new THREE.Group();c.position.set(2.85,0,5.25);c.rotation.y=-0.7;g.add(c);
-   fb(c,-0.38,0.38,0.08,0.42,-0.36,0.36,FM.olive);fb(c,-0.38,0.38,0.42,0.95,0.26,0.4,FM.olive);
-   [-0.38,0.3].forEach(x=>fb(c,x,x+0.08,0.42,0.62,-0.36,0.4,FM.olive));
-   [[-0.33,-0.31],[0.33,-0.31],[-0.33,0.35],[0.33,0.35]].forEach(([x,z])=>fb(c,x-0.02,x+0.02,0,0.08,z-0.02,z+0.02,FM.freijo));}
-  solid(1,2.4,3.3,4.8,5.7);
-  fc(g,3.3,0,5.75,0.13,0.02,FM.black,20);fc(g,3.3,0.02,5.75,0.012,1.5,FM.black,8);fc(g,3.3,1.52,5.75,0.07,0.2,FM.linen,20,0.17);
-  // bar com adega climatizada perto da porta do elevador
-  fb(g,3.4,4.5,0.1,0.9,6.1,6.5,FM.walnut);fb(g,3.4,4.5,0.9,0.93,6.08,6.5,FM.freijo);fb(g,3.45,3.95,0.15,0.85,6.095,6.1,FM.smoke);
-  fb(g,3.47,3.93,0.18,0.82,6.15,6.4,FM.led);
-  fb(g,3.4,4.5,1.45,1.48,6.25,6.5,FM.freijo);fb(g,3.4,4.5,1.43,1.45,6.27,6.48,FM.led);
-  [3.6,3.75,3.9,4.2,4.3].forEach((x,i)=>fc(g,x,1.48,6.37,0.035,0.28,[FM.olive,FM.walnut,FM.terra,FM.black,FM.olive][i],12,0.04));
-  solid(1,3.35,4.55,6.05,6.5);
+  solid(1,0.15,2.25,6.04,6.5);
+  // estante do chão ao teto (2,45 m) ao lado da TV: base fechada para controles e cabos (o furo do cabo do PC cai aqui dentro),
+  // nichos dos consoles com LED e 5 prateleiras para livros e jogos (≈ 12 m de prateleira; 100 jogos ocupam ≈ 1,5 m)
+  {const X0=2.3,X1=4.75,Z0=6.12,Z1=6.5,BAYS=[[2.33,3.105],[3.135,3.915],[3.945,4.72]];
+   fb(g,X0,X1,0,0.5,Z0-0.03,Z1,FM.freijo);[2.9,3.52,4.13].forEach(x=>fb(g,x-0.004,x+0.004,0.03,0.48,Z0-0.035,Z0-0.03,FM.walnut));
+   fb(g,X0,X0+0.03,0.5,2.62,Z0,Z1,FM.freijo);fb(g,X1-0.03,X1,0.5,2.62,Z0,Z1,FM.freijo);fb(g,X0,X1,2.59,2.62,Z0,Z1,FM.freijo);
+   fb(g,X0+0.03,X1-0.03,0.5,2.59,Z1-0.015,Z1,FM.walnut);[3.12,3.93].forEach(x=>fb(g,x-0.015,x+0.015,0.5,2.59,Z0,Z1,FM.freijo));
+   const SH=[0.92,1.25,1.57,1.89,2.21];
+   SH.forEach(y=>{fb(g,X0,X1,y,y+0.025,Z0,Z1,FM.freijo);fb(g,X0+0.03,X1-0.03,y-0.008,y,Z0+0.01,Z0+0.03,FM.led);});
+   fb(g,X0+0.03,X1-0.03,0.492,0.5,Z0+0.01,Z0+0.03,FM.led);
+   const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6});
+   const C={wh:mat(0xeef0f2),bk:mat(0x1a1b1d),gl:mat(0xb7babf),gd:mat(0x5d5f63),pu:mat(0x4b3f8a),ps:mat(0x1f4fa8),xb:mat(0x2f7d32),sw:mat(0xd0312d)};
+   // consoles (de várias gerações) nos nichos de baixo
+   fb(g,2.4,2.5,0.5,0.89,6.2,6.45,C.wh);fb(g,2.43,2.47,0.5,0.89,6.195,6.2,C.bk);          // PS5 em pé
+   fb(g,2.58,2.73,0.5,0.8,6.25,6.4,C.bk);                                                  // Xbox Series X
+   fb(g,2.82,3.0,0.5,0.6,6.3,6.36,C.bk);fb(g,2.84,2.98,0.6,0.7,6.31,6.33,FM.screen);         // Switch na base
+   fb(g,3.18,3.48,0.5,0.58,6.17,6.45,C.bk);fb(g,3.2,3.47,0.58,0.64,6.2,6.44,C.gl);          // PS2 com PS1 em cima
+   fb(g,3.55,3.81,0.5,0.59,6.2,6.4,C.gd);fb(g,3.6,3.75,0.59,0.7,6.25,6.4,C.pu);             // N64 com GameCube em cima
+   fb(g,3.99,4.2,0.5,0.57,6.2,6.44,C.gl);fb(g,4.0,4.19,0.57,0.58,6.3,6.38,C.pu);           // Super Nintendo
+   fb(g,4.26,4.54,0.5,0.56,6.22,6.43,C.bk);fb(g,4.6,4.7,0.5,0.53,6.25,6.4,C.bk);           // Mega Drive e Master System
+   // jogos (caixinhas de 1,4 cm): duas prateleiras inteiras
+   let sd=11;const rnd=()=>(sd=(sd*9301+49297)%233280)/233280;
+   const GM=[C.ps,C.ps,C.xb,C.sw,C.bk,C.ps],BK=[FM.terra,FM.olive,FM.linen,FM.walnut,FM.fabricD,FM.boucle,C.bk,FM.freijo];
+   [[SH[0],1],[SH[1],1],[SH[2],0],[SH[3],0]].forEach(([y,games])=>BAYS.forEach(([a,b])=>{
+     let x=a+0.02;while(x<b-0.06){
+       const w=games?0.08+rnd()*0.2:0.05+rnd()*0.22,h=games?0.172:0.16+rnd()*0.1,x2=Math.min(b-0.02,x+w);
+       if(!games&&rnd()<0.18){fc(g,(x+x2)/2,y+0.025,6.32,0.05,0.13,FM.terra,14,0.04);x=x2+0.05;continue;}   // respiros com vasinhos
+       fb(g,x,x2,y+0.025,y+0.025+h,games?6.33:6.26,6.48,(games?GM:BK)[Math.floor(rnd()*(games?GM:BK).length)]);x=x2+0.006;}}));
+   [[2.4,3.05],[3.2,3.85],[4.0,4.65]].forEach(([a,b],i)=>fb(g,a,b,2.235,2.5,6.2,6.47,[FM.linen,FM.sisal,FM.linen][i]));   // caixas organizadoras
+   solid(1,X0-0.05,X1,Z0-0.05,Z1);}
   plant(g,0.3,5.6,0.95);solid(1,0.12,0.5,5.4,5.8);
   // terraço: churrasqueira e pia de série, mesa sextavada e chaise redonda
   fb(g,4.95,5.6,0,0.9,2.06,2.78,FM.brick);fb(g,4.93,5.6,0.9,0.95,2.04,2.8,FM.granite);
