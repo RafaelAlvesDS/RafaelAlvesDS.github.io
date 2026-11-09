@@ -422,12 +422,20 @@ const ROOF=(function(){
   m.material=M.wall.clone();m.material.side=THREE.DoubleSide;U.add(m);return m;})();
 function roofVis(){ROOF.visible=state.mode==='ctx'||walk.on||tour.on;}
 const FURN_L=new THREE.Group(),FURN_U=new THREE.Group();lower.add(FURN_L);U.add(FURN_U);
-const PLANTS=[];let SOFA_BOX=null;                    // peças que os modelos 3D substituem quando carregam
+const PLANTS=[];                    // peças que os modelos 3D substituem quando carregam
 const FURNCOL=[[],[]];                                  // obstáculos para quem anda (por pavimento)
 function metricUV(geo,w,h,d){const uv=geo.attributes.uv,S=[[d,h],[d,h],[w,d],[w,d],[w,h],[w,h]];   // UV em metros: textura não estica
   for(let f=0;f<6;f++)for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*S[f][0],uv.getY(i)*S[f][1]);}}
 function fb(g,x0,x1,y0,y1,z0,z1,mat){const geo=new THREE.BoxGeometry(x1-x0,y1-y0,z1-z0);if(mat.userData.metric)metricUV(geo,x1-x0,y1-y0,z1-z0);const m=new THREE.Mesh(geo,mat);
   m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
+function rbox(g,x0,x1,y0,y1,z0,z1,mat,r=0.05){        // caixa com cantos arredondados (estofados), UV em metros
+  const w=x1-x0,h=y1-y0,d=z1-z0;r=Math.min(r,w/2,h/2,d/2);const geo=new THREE.BoxGeometry(w,h,d,6,6,6),P=geo.attributes.position,N=geo.attributes.normal,UV=geo.attributes.uv;
+  const iw=w/2-r,ih=h/2-r,id=d/2-r,v=new THREE.Vector3(),c=new THREE.Vector3();
+  for(let i=0;i<P.count;i++){v.fromBufferAttribute(P,i);const nx=Math.abs(N.getX(i)),ny=Math.abs(N.getY(i));
+    UV.setXY(i,nx>0.5?v.z:v.x,nx>0.5||ny<0.5?v.y:v.z);
+    c.set(Math.max(-iw,Math.min(iw,v.x)),Math.max(-ih,Math.min(ih,v.y)),Math.max(-id,Math.min(id,v.z)));
+    v.sub(c);if(v.lengthSq()>1e-12){v.setLength(r);N.setXYZ(i,v.x/r,v.y/r,v.z/r);}v.add(c);P.setXYZ(i,v.x,v.y,v.z);}
+const m=new THREE.Mesh(geo,mat);m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=m.receiveShadow=true;g.add(m);return m;}
 function fc(g,x,y,z,r,h,mat,seg=20,r2){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r2===undefined?r:r2,h,seg),mat);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function solid(f,x0,x1,z0,z1){const k=0.08;FURNCOL[f].push([x0+k,x1-k,z0+k,z1-k]);}   // folga para chegar perto dos móveis
 function plant(g0,x,z,s=1){const g=new THREE.Group();g0.add(g);PLANTS.push({p:g,g:g0,x,z,s});fc(g,x,0,z,0.17*s,0.42*s,FM.pot,16,0.13*s);
@@ -614,13 +622,19 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
 
 // ===== pavimento superior =====
 (function(){const g=FURN_U;
-  // sala de TV: sofá retrátil e reclinável de 2,20 m em bouclé off-white, almofadas oliva e terracota
-  const SB=new THREE.Group();g.add(SB);SOFA_BOX=SB;
-  fb(SB,0.1,2.3,0.08,0.44,4.03,5.05,FM.boucle);fb(SB,0.1,2.3,0.44,0.9,4.03,4.28,FM.boucle);
-  fb(SB,0.1,0.28,0.44,0.64,4.03,5.05,FM.boucle);fb(SB,2.12,2.3,0.44,0.64,4.03,5.05,FM.boucle);
-  [[0.29,1.19],[1.21,2.11]].forEach(([a,b])=>{fb(SB,a,b,0.44,0.56,4.3,5.04,FM.linen);const k=fb(SB,a+0.02,b-0.02,0.5,0.92,4.28,4.48,FM.linen);k.rotation.x=-0.18;});
-  [[0.5,FM.olive],[0.8,FM.terra],[1.9,FM.olive]].forEach(([x,m])=>{const c=fb(SB,x-0.2,x+0.2,0.56,0.94,4.48,4.6,m);c.rotation.x=-0.25;});
-  [[0.15,4.08],[2.25,4.08],[0.15,5.0],[2.25,5.0]].forEach(([x,z])=>fb(SB,x-0.02,x+0.02,0,0.08,z-0.02,z+0.02,FM.black));
+  // sala de TV: sofá retrátil e reclinável "sem caixa" de 2,04 m em linho bege (referência: Soberano 2,04 m):
+  // braços e encosto sobre pés baixos, vão livre embaixo; 2 assentos que deslizam e 2 encostos reclináveis com pillow top
+  const LB=FM.linen.clone();LB.color.setHex(0xcdbfa6);const LBd=FM.linen.clone();LBd.color.setHex(0xb3a58c);
+  const X0=0.18,X1=2.22,ZB=4.05,ZF=5.06;
+  rbox(g,X0,X0+0.2,0.1,0.62,ZB,ZF,LB,0.07);rbox(g,X1-0.2,X1,0.1,0.62,ZB,ZF,LB,0.07);          // braços
+  rbox(g,X0+0.2,X1-0.2,0.1,0.58,ZB,ZB+0.24,LB,0.05);                                         // costas
+  rbox(g,X0+0.2,X1-0.2,0.12,0.27,ZB+0.2,ZF-0.08,LBd,0.03);                                   // estrutura do assento (sem caixa)
+  [[X0+0.21,1.195],[1.205,X1-0.21]].forEach(([a,b])=>{
+    rbox(g,a,b,0.26,0.47,ZB+0.22,ZF,LB,0.06);                                                // assento retrátil
+    const k=rbox(g,a+0.01,b-0.01,0.46,1.0,ZB+0.02,ZB+0.3,LB,0.09);k.rotation.x=-0.13;         // encosto reclinável
+    const t=rbox(g,a+0.03,b-0.03,0.86,0.99,ZB+0.06,ZB+0.36,LB,0.06);t.rotation.x=-0.13;});   // pillow top
+  [[0.6,FM.olive],[1.85,FM.terra]].forEach(([x,m])=>{const c=rbox(g,x-0.2,x+0.2,0.47,0.85,ZB+0.3,ZB+0.44,m,0.06);c.rotation.x=-0.22;});
+  [[X0+0.06,ZB+0.06],[X1-0.06,ZB+0.06],[X0+0.06,ZF-0.06],[X1-0.06,ZF-0.06],[1.2,ZB+0.06],[1.2,ZF-0.12]].forEach(([x,z])=>fc(g,x,0,z,0.025,0.1,FM.walnut,10,0.018));
   solid(1,0.05,2.35,3.98,5.08);
   fb(g,0.55,2.1,0.008,0.018,5.0,6.0,FM.sisal);
   fc(g,1.55,0,5.6,0.27,0.4,FM.terra,28);                                   // puff (sai do caminho quando o sofá abre)
@@ -685,7 +699,7 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
 
 
 // ---------- modelos 3D gratuitos (glTF) que substituem as peças feitas de caixas assim que carregam
-// Sofá: "Glam Velvet Sofa" © 2021 Wayfair, LLC, por Eric Chadwick (CC BY 4.0). Planta: "Diffuse Transmission Plant" © 2024
+// Planta: "Diffuse Transmission Plant" © 2024
 // Darmstadt Graphics Group, por Eric Chadwick (CC BY 4.0), sobre asset CC0 de Rico Cilliers. Vaso com flores: "Glass Vase Flowers" (CC0).
 // Todos do Khronos glTF Sample Assets (github.com/KhronosGroup/glTF-Sample-Assets), com texturas reduzidas para a web.
 if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
@@ -693,7 +707,6 @@ if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
       o.traverse(m=>{if(!m.isMesh)return;m.castShadow=m.receiveShadow=true;
       [].concat(m.material).forEach(mt=>{if(mt.map)mt.map.encoding=THREE.LinearEncoding;mt.emissiveMap=null;mt.emissive&&mt.emissive.setHex(0);mt.needsUpdate=true;});});cb(o);},
     undefined,e=>console.warn('modelo 3D não carregou:',f,e));
-  load('sofa.glb',o=>{o.traverse(m=>{if(m.isMesh&&!/leg/i.test(m.name+m.material.name)){m.material.color.setHex(0xd6cdbd);m.material.roughness=0.95;m.material.metalness=0;}});o.position.set(1.22,0,4.68);FURN_U.add(o);SOFA_BOX.visible=false;});
   load('planta.glb',o=>{o.traverse(m=>{if(m.isMesh)m.material.color.multiplyScalar(0.75);});PLANTS.forEach(({p,g,x,z,s})=>{const c=o.clone();c.scale.setScalar(1.25*s);c.position.set(x+0.06*s,0,z+0.11*s);g.add(c);p.visible=false;});});
   load('vaso-flores.glb',o=>{o.scale.setScalar(1.6);o.position.set(3.99,0.76,5.6);FURN_L.add(o);});
 }
