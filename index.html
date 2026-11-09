@@ -465,7 +465,7 @@ nightstand(FURN_L,0.06,0.46,4.1,4.48);nightstand(FURN_L,0.06,0.46,6.1,6.46);soli
 wardrobe(FURN_L,2.47,3.03,4.85,6.46,'x');solid(0,2.45,3.05,4.83,6.48);
 fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
 // cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
-// perna 2 sob a janela (lava-louça, pia, lava e seca junto da hidráulica da área de serviço)
+// perna 2 sob a janela (lava-louça, pia, lava e seca); tanque na parede da área de serviço
 (function(){const g=FURN_L;
   // bases e tampo contínuo (prof. 60, altura 90)
   fb(g,3.2,3.79,0.1,0.86,0,1.97,FM.white);fb(g,3.79,5.6,0.1,0.86,0,0.59,FM.white);
@@ -494,7 +494,10 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
   fb(g,3.2,3.72,1.6,1.68,1.0,1.6,FM.inox);fb(g,3.2,3.45,1.68,2.2,1.05,1.55,FM.inox);           // depurador
   [0.5].forEach(z=>fb(g,3.55,3.555,1.57,2.18,z-0.004,z+0.004,FM.walnut));
   fb(g,5.0,5.6,1.55,2.2,0,0.35,FM.lacq);
-  solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);
+  // tanque separado da pia de alimentos, na parede da área de serviço (aproveita a hidráulica do tanque atual)
+  fb(g,5.04,5.6,0,0.86,0.66,1.21,FM.white);fb(g,5.1,5.5,0.8,0.87,0.72,1.15,FM.inox);fc(g,5.55,0.86,0.935,0.015,0.25,FM.chrome,10);
+  fb(g,5.5,5.6,0.86,1.4,0.64,1.23,FM.lacq);
+  solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);solid(0,5.0,5.6,0.6,1.23);
 })();
 // sala inferior: mesa de jantar para 4 entre a escada e o quarto 2
 (function(){const g=FURN_L;
