@@ -465,7 +465,7 @@ nightstand(FURN_L,0.06,0.46,4.1,4.48);nightstand(FURN_L,0.06,0.46,6.1,6.46);soli
 wardrobe(FURN_L,2.47,3.03,4.85,6.46,'x');solid(0,2.45,3.05,4.83,6.48);
 fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
 // cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
-// perna 2 sob a janela (lava-louça, pia, lava e seca); tanque na parede da área de serviço
+// perna 2 sob a janela (lava-louça, pia, lava e seca); tanque fica no terraço, ao lado da pia de lá
 (function(){const g=FURN_L;
   // bases e tampo contínuo (prof. 60, altura 90)
   fb(g,3.2,3.79,0.1,0.86,0,1.97,FM.white);fb(g,3.79,5.6,0.1,0.86,0,0.59,FM.white);
@@ -494,10 +494,7 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
   fb(g,3.2,3.72,1.6,1.68,1.0,1.6,FM.inox);fb(g,3.2,3.45,1.68,2.2,1.05,1.55,FM.inox);           // depurador
   [0.5].forEach(z=>fb(g,3.55,3.555,1.57,2.18,z-0.004,z+0.004,FM.walnut));
   fb(g,5.0,5.6,1.55,2.2,0,0.35,FM.lacq);
-  // tanque separado da pia de alimentos, na parede da área de serviço (aproveita a hidráulica do tanque atual)
-  fb(g,5.04,5.6,0,0.86,0.66,1.21,FM.white);fb(g,5.1,5.5,0.8,0.87,0.72,1.15,FM.inox);fc(g,5.55,0.86,0.935,0.015,0.25,FM.chrome,10);
-  fb(g,5.5,5.6,0.86,1.4,0.64,1.23,FM.lacq);
-  solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);solid(0,5.0,5.6,0.6,1.23);
+  solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);
 })();
 // sala inferior: mesa de jantar para 4 entre a escada e o quarto 2
 (function(){const g=FURN_L;
@@ -550,7 +547,10 @@ fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
   fb(g,5.05,5.6,0,0.86,0.9,2.0,FM.white);fb(g,5.02,5.6,0.86,0.9,0.88,2.02,FM.granite);
   fb(g,5.15,5.5,0.885,0.905,1.25,1.7,FM.inox);fc(g,5.55,0.9,1.47,0.018,0.3,FM.chrome,10);fb(g,5.38,5.56,1.18,1.21,1.455,1.485,FM.chrome);
   solid(1,5.0,5.6,0.86,2.04);
-  plant(g,5.3,0.45,1.1);solid(1,5.05,5.55,0.2,0.7);
+  // tanque ao lado da pia do terraço, ligado no mesmo ponto de água e esgoto por dentro do gabinete
+  fb(g,5.04,5.6,0,0.86,0.3,0.86,FM.white);fb(g,5.1,5.5,0.8,0.87,0.36,0.8,FM.inox);fc(g,5.55,0.86,0.58,0.015,0.25,FM.chrome,10);
+  solid(1,5.0,5.6,0.26,0.9);
+  plant(g,4.6,0.4,1.1);solid(1,4.4,4.8,0.2,0.6);
   fc(g,3.45,0.72,1.2,0.66,0.04,FM.white,6);fc(g,3.45,0,1.2,0.06,0.72,FM.black,12);fc(g,3.45,0,1.2,0.3,0.03,FM.black,6);
   for(let i=0;i<6;i++){const a=i/6*Math.PI*2+Math.PI/6,x=3.45+Math.cos(a)*0.9,z=1.2+Math.sin(a)*0.9;fc(g,x,0.42,z,0.2,0.05,FM.oak,16);fc(g,x,0,z,0.02,0.42,FM.black,8);}
   solid(1,2.8,4.1,0.55,1.85);
