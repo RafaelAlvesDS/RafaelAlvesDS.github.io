@@ -532,8 +532,8 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,0.55,2.6,0.008,0.018,1.3,2.45,FM.sisal);
 })();
 // escritório + closet (quarto 2, x 0–3,05, z 4,03–6,50) — versão econômica:
-// bancada = tampo de MDF 2,40 × 0,60 sobre gaveteiro e pés; closet aberto com araras de metal, caixas organizadoras e
-// cortina de linho na frente; penteadeira solta junto da janela com espelho apoiado.
+// bancada = tampo de MDF 2,40 × 0,60 sobre gaveteiro e pés; closet com guarda-roupas modulares (de loja, com cara de
+// planejado); penteadeira solta junto da janela com espelho apoiado.
 // Cabo HDMI 2.1 do PC: sobe por uma canaleta adesiva no canto (sem furar parede) e atravessa a laje num furo de ≈ 32 mm
 // (x 2,85 · z 6,35), que em cima fica escondido atrás da estante de nichos da sala.
 (function(){const g=FURN_L;
@@ -547,20 +547,20 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   deskChair(g,1.78,5.4);deskChair(g,0.62,5.42,FM.boucle);
   fb(g,2.85,3.05,2.62,2.65,6.34,6.36,FM.white);fb(g,3.03,3.05,0.46,2.65,6.34,6.38,FM.white);   // canaleta do cabo
   solid(0,0,2.75,5.88,6.5);
-  // araras de metal (cabideiro aberto) com prateleira de baixo, roupas e caixas organizadoras
-  const ARARA=(x0,x1,z0,z1,alongX)=>{const P=alongX?[[x0+0.02,(z0+z1)/2],[x1-0.02,(z0+z1)/2]]:[[(x0+x1)/2,z0+0.02],[(x0+x1)/2,z1-0.02]];
-    P.forEach(([x,z])=>{fb(g,x-0.012,x+0.012,0,1.8,z-0.012,z+0.012,FM.black);alongX?fb(g,x-0.012,x+0.012,0,0.02,z0,z1,FM.black):fb(g,x0,x1,0,0.02,z-0.012,z+0.012,FM.black);});
-    alongX?fb(g,x0,x1,1.78,1.8,(z0+z1)/2-0.01,(z0+z1)/2+0.01,FM.black):fb(g,(x0+x1)/2-0.01,(x0+x1)/2+0.01,1.78,1.8,z0,z1,FM.black);
-    alongX?fb(g,x0,x1,0.3,0.32,z0,z1,FM.black):fb(g,x0,x1,0.3,0.32,z0,z1,FM.black);
-    const C=[FM.linen,FM.olive,FM.fabricD,FM.boucle,FM.terra,FM.duvet];let k=0;
-    for(let t=(alongX?x0:z0)+0.08;t<(alongX?x1:z1)-0.08;t+=0.1){const m=C[k++%C.length];
-      alongX?fb(g,t-0.04,t+0.04,0.85,1.75,z0+0.05,z1-0.05,m):fb(g,x0+0.05,x1-0.05,0.85,1.75,t-0.04,t+0.04,m);}
-    for(let t=(alongX?x0:z0)+0.05;t<(alongX?x1:z1)-0.3;t+=0.36)
-      alongX?fb(g,t,t+0.32,0.32,0.55,z0+0.05,z1-0.05,FM.sisal):fb(g,x0+0.05,x1-0.05,0.32,0.55,t,t+0.32,FM.sisal);};
-  ARARA(2.5,3.03,4.8,5.85,false);ARARA(0.7,2.2,4.05,4.58,true);
-  fb(g,2.6,2.63,2.58,2.61,4.75,5.9,FM.black);[[4.75,5.0],[5.6,5.88]].forEach(([a,b])=>fb(g,2.44,2.48,0.05,2.58,a,b,FM.linen));   // cortina do closet
-  fb(g,0.68,2.22,2.58,2.61,4.6,4.63,FM.black);[[0.68,0.95],[1.95,2.22]].forEach(([a,b])=>fb(g,a,b,0.05,2.58,4.62,4.66,FM.linen));
-  solid(0,2.45,3.05,4.78,5.88);solid(0,0.68,2.22,4.0,4.66);
+  // closet com guarda-roupas modulares (módulos de loja de 45/60/90 cm, 2,10 m de altura, 55 cm de profundidade):
+  // caixa branca, portas de freijó com puxador perfil preto, rodapé recuado; um módulo com porta de espelho.
+  // Em cima sobra um vão de 55 cm até o teto para caixas organizadoras.
+  const MOD=(a0,a1,c0,c1,alongX,doors,mirror)=>{const H=2.1,D=0.02;
+    alongX?fb(g,a0,a1,0.08,H,c0,c1-D,FM.white):fb(g,c0+D,c1,0.08,H,a0,a1,FM.white);
+    alongX?fb(g,a0+0.03,a1-0.03,0,0.08,c0,c1-0.06,FM.black):fb(g,c0+0.06,c1,0,0.08,a0+0.03,a1-0.03,FM.black);
+    const w=(a1-a0)/doors;for(let k=0;k<doors;k++){const d0=a0+k*w+0.002,d1=a0+(k+1)*w-0.002,m=mirror&&k===0?FM.mirror:FM.freijo;
+      alongX?fb(g,d0,d1,0.1,H-0.01,c1-D,c1,m):fb(g,c0,c0+D,0.1,H-0.01,d0,d1,m);
+      const hp=(k%2===0)?d1-0.03:d0+0.03;alongX?fb(g,hp-0.006,hp+0.006,0.9,1.5,c1,c1+0.012,FM.black):fb(g,c0-0.012,c0,0.9,1.5,hp-0.006,hp+0.006,FM.black);}
+    [0.25,0.6].forEach((t,k)=>{const L=a1-a0;if(t*L>L-0.3)return;const b0=a0+0.05+k*0.35;
+      alongX?fb(g,b0,b0+0.3,H,H+0.25,c0+0.08,c1-0.08,FM.sisal):fb(g,c0+0.08,c1-0.08,H,H+0.25,b0,b0+0.3,FM.sisal);});};
+  MOD(4.8,5.25,2.5,3.05,false,1,true);MOD(5.25,5.85,2.5,3.05,false,2,false);        // parede da sala: 45 (espelho) + 60
+  MOD(0.7,1.6,4.03,4.58,true,2,false);MOD(1.6,2.2,4.03,4.58,true,2,false);           // parede do banheiro: 90 + 60
+  solid(0,2.45,3.05,4.78,5.88);solid(0,0.68,2.22,4.0,4.6);
   // penteadeira solta + espelho apoiado + banqueta
   fb(g,0.05,0.62,0.72,0.75,4.05,4.45,FM.white);[[0.08,4.08],[0.59,4.08],[0.08,4.42],[0.59,4.42]].forEach(([x,z])=>fb(g,x-0.015,x+0.015,0,0.72,z-0.015,z+0.015,FM.freijo));
   {const m=fb(g,0.13,0.54,0.75,1.45,4.06,4.08,FM.mirror);m.rotation.x=0.08;}
