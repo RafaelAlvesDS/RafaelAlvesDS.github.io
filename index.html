@@ -464,30 +464,37 @@ doubleBed(FURN_L,'x',0.02,1.96,5.29);solid(0,0,1.98,4.5,6.08);
 nightstand(FURN_L,0.06,0.46,4.1,4.48);nightstand(FURN_L,0.06,0.46,6.1,6.46);solid(0,0,0.48,4.08,6.48);
 wardrobe(FURN_L,2.47,3.03,4.85,6.46,'x');solid(0,2.45,3.05,4.83,6.48);
 fc(FURN_L,1.35,0.005,5.29,0.7,0.012,FM.rug,32);
-// cozinha: geladeira, pia e fogão na parede dos quartos; tanque e lava e seca na fachada
+// cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
+// perna 2 sob a janela (lava-louça, pia, lava e seca junto da hidráulica da área de serviço)
 (function(){const g=FURN_L;
-  fb(g,3.2,3.8,0,0.86,0.04,0.62,FM.black);fb(g,3.19,3.81,0.86,0.9,0.03,0.63,FM.black);          // fogão 4 bocas
-  [[3.38,0.18],[3.62,0.18],[3.38,0.46],[3.62,0.46]].forEach(([x,z])=>{fc(g,x,0.9,z,0.07,0.012,FM.inox,16);fc(g,x,0.912,z,0.035,0.01,FM.black,12);});
-  fb(g,3.78,3.81,0.2,0.72,0.08,0.58,FM.granite);                                                 // porta do forno
-  // bancada da pia de 1,20 m (como na planta mobiliada), cuba inox 50 × 40, gabinete com 3 portas
-  fb(g,3.2,3.79,0.1,0.86,0.62,1.8,FM.white);fb(g,3.2,3.77,0,0.1,0.64,1.78,FM.black);fb(g,3.18,3.82,0.86,0.9,0.6,1.82,FM.granite);
-  [1.0,1.4].forEach(z=>fb(g,3.79,3.8,0.12,0.84,z-0.004,z+0.004,FM.granite));
-  [0.8,1.2,1.6].forEach(z=>fb(g,3.8,3.815,0.7,0.78,z-0.08,z+0.08,FM.chrome));
-  fb(g,3.3,3.7,0.88,0.905,0.95,1.45,FM.inox);fb(g,3.33,3.67,0.7,0.885,0.98,1.42,FM.inox);                // cuba
-  fc(g,3.26,0.9,1.2,0.02,0.34,FM.chrome,10);{const b=fb(g,3.26,3.47,1.2,1.23,1.185,1.215,FM.chrome);}   // torneira gourmet
-  fb(g,3.2,3.21,0.9,1.5,0.6,1.82,FM.lacq);                                                                 // frontão
+  // bases e tampo contínuo (prof. 60, altura 90)
+  fb(g,3.2,3.79,0.1,0.86,0,1.97,FM.white);fb(g,3.79,5.6,0.1,0.86,0,0.59,FM.white);
+  fb(g,3.2,3.77,0,0.1,0.02,1.95,FM.black);fb(g,3.77,5.6,0,0.1,0,0.57,FM.black);
+  fb(g,3.18,3.82,0.86,0.9,0,1.99,FM.granite);fb(g,3.82,5.6,0.86,0.9,0,0.62,FM.granite);
+  fb(g,3.2,3.21,0.9,1.5,0,1.97,FM.lacq);fb(g,3.21,5.6,0.9,1.0,0,0.01,FM.lacq);   // frontão (10 cm sob a janela)
+  // perna 1: gavetas | cooktop 4 bocas sobre forno de embutir | gavetas
+  [[0.62,0.98],[1.62,1.95]].forEach(([a,b])=>[0.3,0.55,0.8].forEach(y=>fb(g,3.8,3.815,y-0.01,y+0.01,a+0.06,b-0.06,FM.chrome)));
+  fb(g,3.79,3.81,0.12,0.72,1.02,1.58,FM.black);fb(g,3.81,3.825,0.62,0.66,1.1,1.5,FM.chrome);   // forno
+  fb(g,3.26,3.76,0.9,0.912,1.02,1.58,FM.black);                                                  // cooktop vitrocerâmico
+  [[3.38,1.15],[3.62,1.15],[3.38,1.45],[3.62,1.45]].forEach(([x,z])=>fc(g,x,0.912,z,0.075,0.003,FM.granite,20));
   // geladeira duplex 0,70 × 0,72 × 1,86
-  fb(g,3.2,3.92,0,1.86,1.84,2.54,FM.inox);fb(g,3.92,3.93,1.0,1.85,1.86,2.52,FM.inox);
-  fb(g,3.925,3.945,1.08,1.75,2.44,2.47,FM.chrome);fb(g,3.925,3.945,0.2,0.88,2.44,2.47,FM.chrome);fb(g,3.92,3.94,0.97,0.99,1.85,2.53,FM.black);
-  fb(g,3.2,3.55,1.5,2.2,0.04,1.82,FM.lacq);                                                               // armário aéreo sobre pia e fogão
-  [0.6,1.2].forEach(z=>fb(g,3.55,3.555,1.52,2.18,z-0.004,z+0.004,FM.walnut));
-  solid(0,3.15,3.95,0,2.56);
-  fb(g,5.04,5.6,0,0.86,0.15,0.72,FM.white);fb(g,5.1,5.5,0.8,0.87,0.22,0.65,FM.inox);fc(g,5.55,0.86,0.44,0.015,0.25,FM.chrome,10);   // tanque
-  fb(g,4.98,5.6,0,0.86,0.78,1.4,FM.white);                                                         // lava e seca
-  {const d=fc(g,4.975,0.42,1.09,0.2,0.02,FM.screen,28);d.rotation.z=Math.PI/2;d.position.set(4.975,0.42,1.09);
-   const r=fc(g,4.97,0.42,1.09,0.23,0.015,FM.chrome,28);r.rotation.z=Math.PI/2;r.position.set(4.972,0.42,1.09);}
-  fb(g,4.97,4.99,0.72,0.82,0.85,1.33,FM.black);
-  solid(0,4.95,5.6,0.1,1.42);
+  fb(g,3.2,3.92,0,1.86,1.99,2.69,FM.inox);fb(g,3.92,3.93,1.0,1.85,2.01,2.67,FM.inox);
+  fb(g,3.925,3.945,1.08,1.75,2.59,2.62,FM.chrome);fb(g,3.925,3.945,0.2,0.88,2.59,2.62,FM.chrome);fb(g,3.92,3.94,0.97,0.99,2.0,2.68,FM.black);
+  // perna 2: lava-louça 60 | pia com cuba 50 × 40 sob a janela | lava e seca 60
+  fb(g,3.82,4.4,0.1,0.86,0.59,0.605,FM.inox);fb(g,3.85,4.37,0.78,0.82,0.605,0.62,FM.black);
+  fb(g,4.45,4.95,0.88,0.905,0.1,0.5,FM.inox);fb(g,4.48,4.92,0.7,0.885,0.13,0.47,FM.inox);       // cuba
+  [4.7].forEach(x=>fb(g,x-0.004,x+0.004,0.12,0.84,0.59,0.6,FM.granite));
+  [4.6,4.8].forEach(x=>fb(g,x-0.06,x+0.06,0.7,0.78,0.6,0.615,FM.chrome));
+  fc(g,4.7,0.9,0.06,0.02,0.3,FM.chrome,10);fb(g,4.685,4.715,1.17,1.2,0.06,0.25,FM.chrome);        // torneira à frente do vidro
+  fb(g,5.0,5.58,0.1,0.85,0.59,0.6,FM.white);
+  {const d=fc(g,5.29,0.42,0.6,0.2,0.02,FM.screen,28);d.rotation.x=Math.PI/2;d.position.set(5.29,0.42,0.605);
+   const r=fc(g,5.29,0.42,0.6,0.23,0.015,FM.chrome,28);r.rotation.x=Math.PI/2;r.position.set(5.29,0.42,0.6);}
+  // aéreos: perna 1 com depurador sobre o cooktop; um módulo sobre a lava e seca
+  fb(g,3.2,3.55,1.55,2.2,0,1.0,FM.lacq);fb(g,3.2,3.55,1.55,2.2,1.6,1.97,FM.lacq);
+  fb(g,3.2,3.72,1.6,1.68,1.0,1.6,FM.inox);fb(g,3.2,3.45,1.68,2.2,1.05,1.55,FM.inox);           // depurador
+  [0.5].forEach(z=>fb(g,3.55,3.555,1.57,2.18,z-0.004,z+0.004,FM.walnut));
+  fb(g,5.0,5.6,1.55,2.2,0,0.35,FM.lacq);
+  solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);
 })();
 // sala inferior: mesa de jantar para 4 entre a escada e o quarto 2
 (function(){const g=FURN_L;
