@@ -737,13 +737,24 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
    const arm=new THREE.Vector3(1.0-bx,0,1.0-bz),L=arm.length();const a=fb(g,-L/2,L/2,-0.012,0.012,-0.012,0.012,FM.black);
    a.position.set((bx+1.0)/2,2.48,(bz+1.0)/2);a.rotation.y=-Math.atan2(arm.z,arm.x);
    fc(g,1.0,2.12,1.0,0.03,0.36,FM.black,8);fc(g,1.0,2.22,1.0,0.04,0.26,OUT,8,1.15);solid(1,bx-0.15,bx+0.15,bz-0.15,bz+0.15);}
-  // jardim vertical na parede do banheiro (fundo do lounge): ripado de madeira plástica com vasos e folhagens
-  ripado(g,0.05,2.2,0.15,2.3,2.57,-1);
-  {let sd=3;const rr=()=>(sd=(sd*16807)%2147483647)/2147483647;
-   [0.75,1.3,1.85].forEach((y,r)=>[0.3,0.7,1.1,1.5,1.9].forEach((x,c)=>{if((r+c)%2&&r===0)return;
-     fb(g,x-0.12,x+0.12,y,y+0.16,2.37,2.54,CC);
-     for(let k=0;k<6;k++){const l=new THREE.Mesh(new THREE.SphereGeometry(0.05+rr()*0.03,8,6),FM.leaf);l.scale.set(1.6,0.5+rr()*0.4,0.8);l.rotation.z=(rr()-0.5)*1.2;
-       l.position.set(x+(rr()-0.5)*0.24,y+0.16+rr()*0.12,2.47+(rr()-0.5)*0.06);l.castShadow=true;g.add(l);}}));}
+  // jardim vertical de paletes na parede do banheiro (fundo do lounge): 2 paletes PBR (1,00 × 1,20 m) em pé sobre uma
+  // jardineira de concreto que serve de contrapeso — nada é furado na parede (alvenaria estrutural) nem no piso impermeabilizado.
+  // Cada vão entre tábuas vira um bolso de manta com terra; manta impermeável entre o palete e a parede.
+  {const PW=FM.oak.clone();PW.color.setHex(0xc9ad84);const ZW=2.57,ZP=ZW-0.03;
+   fb(g,0.08,2.18,0,0.36,ZW-0.36,ZW,CC);fb(g,0.1,2.16,0.33,0.35,ZW-0.34,ZW-0.02,FM.walnut);           // jardineira de base com terra
+   fb(g,0.08,2.18,0.36,1.58,ZW-0.01,ZW,FM.black);                                                    // manta impermeável
+   let sd=3;const rr=()=>(sd=(sd*16807)%2147483647)/2147483647;
+   [0.12,1.12].forEach(x0=>{const x1=x0+1.0,y0=0.36,y1=1.56;
+     [x0,(x0+x1)/2-0.05,x1-0.1].forEach(x=>fb(g,x,x+0.1,y0,y1,ZP-0.1,ZP-0.01,PW));                    // 3 longarinas
+     [x0,x1-0.1].forEach(x=>fb(g,x,x+0.1,y0,y1,ZP-0.125,ZP-0.1,PW));
+     const n=7,step=(y1-y0-0.1)/(n-1);
+     for(let k=0;k<n;k++){const y=y0+k*step;fb(g,x0,x1,y,y+0.1,ZP-0.145,ZP-0.125,PW);                 // tábuas da frente
+       if(k<n-1){fb(g,x0+0.02,x1-0.02,y+0.1,y+0.12,ZP-0.14,ZP-0.1,FM.walnut);                          // bolso de terra
+         for(let j=0;j<7;j++){const l=new THREE.Mesh(new THREE.SphereGeometry(0.045+rr()*0.03,8,6),FM.leaf);l.scale.set(1.6,0.6+rr()*0.5,0.9);
+           l.rotation.z=(rr()-0.5)*1.2;l.position.set(x0+0.08+rr()*0.84,y+0.15+rr()*0.06,ZP-0.16+(rr()-0.5)*0.05);l.castShadow=true;g.add(l);}}}});
+   for(let j=0;j<10;j++){const l=new THREE.Mesh(new THREE.SphereGeometry(0.07+rr()*0.04,8,6),FM.leaf);l.scale.set(1.4,0.8,1);
+     l.position.set(0.2+rr()*1.9,0.4+rr()*0.08,ZW-0.24+rr()*0.15);g.add(l);}                        // folhagens da jardineira
+   solid(1,0.08,2.18,ZW-0.4,ZW);}
   // vasos grandes nas pontas (fora da área de calor da churrasqueira)
   plant(g,2.05,0.25,1.0);solid(1,1.85,2.25,0.05,0.45);plant(g,4.3,0.22,0.9);solid(1,4.12,4.48,0.05,0.4);
   // varal de lâmpadas (cordão de luz) entre o muro da churrasqueira e as paredes do banheiro e da sala
