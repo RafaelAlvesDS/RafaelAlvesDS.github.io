@@ -532,8 +532,8 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,0.55,2.6,0.008,0.018,1.3,2.45,FM.sisal);
 })();
 // escritório + closet (quarto 2, x 0–3,05, z 4,03–6,50) — versão econômica:
-// bancada = tampo de MDF 2,40 × 0,60 sobre gaveteiro e pés; closet com guarda-roupas modulares (de loja, com cara de
-// planejado); penteadeira solta junto da janela com espelho apoiado.
+// bancada = tampo de MDF 2,40 × 0,60 sobre gaveteiro e pés; closet com módulos abertos de loja (sem portas,
+// cara de closet); penteadeira solta junto da janela com espelho apoiado.
 // Cabo HDMI 2.1 do PC: sobe por uma canaleta adesiva no canto (sem furar parede) e atravessa a laje num furo de ≈ 32 mm
 // (x 2,85 · z 6,35), que em cima fica escondido atrás da estante de nichos da sala.
 (function(){const g=FURN_L;
@@ -547,19 +547,27 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   deskChair(g,1.78,5.4);deskChair(g,0.62,5.42,FM.boucle);
   fb(g,2.85,3.05,2.62,2.65,6.34,6.36,FM.white);fb(g,3.03,3.05,0.46,2.65,6.34,6.38,FM.white);   // canaleta do cabo
   solid(0,0,2.75,5.88,6.5);
-  // closet com guarda-roupas modulares (módulos de loja de 45/60/90 cm, 2,10 m de altura, 55 cm de profundidade):
-  // caixa branca, portas de freijó com puxador perfil preto, rodapé recuado; um módulo com porta de espelho.
-  // Em cima sobra um vão de 55 cm até o teto para caixas organizadoras.
-  const MOD=(a0,a1,c0,c1,alongX,doors,mirror)=>{const H=2.1,D=0.02;
-    alongX?fb(g,a0,a1,0.08,H,c0,c1-D,FM.white):fb(g,c0+D,c1,0.08,H,a0,a1,FM.white);
-    alongX?fb(g,a0+0.03,a1-0.03,0,0.08,c0,c1-0.06,FM.black):fb(g,c0+0.06,c1,0,0.08,a0+0.03,a1-0.03,FM.black);
-    const w=(a1-a0)/doors;for(let k=0;k<doors;k++){const d0=a0+k*w+0.002,d1=a0+(k+1)*w-0.002,m=mirror&&k===0?FM.mirror:FM.freijo;
-      alongX?fb(g,d0,d1,0.1,H-0.01,c1-D,c1,m):fb(g,c0,c0+D,0.1,H-0.01,d0,d1,m);
-      const hp=(k%2===0)?d1-0.03:d0+0.03;alongX?fb(g,hp-0.006,hp+0.006,0.9,1.5,c1,c1+0.012,FM.black):fb(g,c0-0.012,c0,0.9,1.5,hp-0.006,hp+0.006,FM.black);}
-    [0.25,0.6].forEach((t,k)=>{const L=a1-a0;if(t*L>L-0.3)return;const b0=a0+0.05+k*0.35;
-      alongX?fb(g,b0,b0+0.3,H,H+0.25,c0+0.08,c1-0.08,FM.sisal):fb(g,c0+0.08,c1-0.08,H,H+0.25,b0,b0+0.3,FM.sisal);});};
-  MOD(4.8,5.25,2.5,3.05,false,1,true);MOD(5.25,5.85,2.5,3.05,false,2,false);        // parede da sala: 45 (espelho) + 60
-  MOD(0.7,1.6,4.03,4.58,true,2,false);MOD(1.6,2.2,4.03,4.58,true,2,false);           // parede do banheiro: 90 + 60
+  // closet com módulos abertos (de loja, sem portas — cara de closet): estrutura de freijó, fundo branco, 2,10 m de altura,
+  // 50 cm de profundidade. Tipos: cabideiro longo, cabideiro duplo, gaveteiro com nichos e prateleiras/sapateira.
+  // As peças são pensadas no eixo "a" (ao longo da parede) e "c" (profundidade, c0 = parede); o mapa troca x/z conforme a parede.
+  const MOD=(a0,a1,wallC,dir,alongX,type)=>{const H=2.1,DP=0.5,c=t=>wallC+dir*t;
+    const B=(A0,A1,y0,y1,t0,t1,m)=>{const z0=Math.min(c(t0),c(t1)),z1=Math.max(c(t0),c(t1));return alongX?fb(g,A0,A1,y0,y1,z0,z1,m):fb(g,z0,z1,y0,y1,A0,A1,m);};
+    B(a0,a1,0.02,H,0,0.015,FM.white);B(a0,a0+0.02,0,H,0,DP,FM.freijo);B(a1-0.02,a1,0,H,0,DP,FM.freijo);
+    B(a0,a1,H-0.02,H,0,DP,FM.freijo);B(a0,a1,0,0.06,0,DP,FM.freijo);
+    const CL=[FM.linen,FM.olive,FM.fabricD,FM.boucle,FM.terra,FM.duvet],clothes=(y0,y1)=>{let k=0;for(let a=a0+0.06;a<a1-0.05;a+=0.07)B(a-0.03,a+0.03,y0,y1,0.06,DP-0.06,CL[k++%CL.length]);};
+    const rod=y=>B(a0+0.02,a1-0.02,y,y+0.02,DP/2-0.01,DP/2+0.01,FM.chrome);
+    if(type==='longo'){rod(1.85);clothes(0.6,1.83);B(a0+0.02,a1-0.02,0.35,0.37,0,DP,FM.freijo);
+      for(let a=a0+0.05;a<a1-0.1;a+=0.13)B(a,a+0.1,0.37,0.47,0.1,DP-0.05,FM.black);}                       // sapatos
+    if(type==='duplo'){rod(1.9);clothes(1.15,1.88);rod(0.95);clothes(0.25,0.93);B(a0+0.02,a1-0.02,1.1,1.12,0,DP,FM.freijo);}
+    if(type==='gavetas'){for(let k=0;k<3;k++){const y=0.08+k*0.25;B(a0+0.025,a1-0.025,y,y+0.23,DP-0.02,DP,FM.white);B((a0+a1)/2-0.08,(a0+a1)/2+0.08,y+0.17,y+0.185,DP,DP+0.012,FM.black);}
+      [1.15,1.5,1.82].forEach((y,k)=>{B(a0+0.02,a1-0.02,y,y+0.02,0,DP,FM.freijo);B(a0+0.06,a1-0.06,y+0.02,y+0.14+k*0.03,0.08,DP-0.08,[FM.linen,FM.sisal,FM.fabricD][k]);});}
+    if(type==='nichos'){[0.4,0.75,1.1,1.45,1.8].forEach((y,k)=>{B(a0+0.02,a1-0.02,y,y+0.02,0,DP,FM.freijo);
+      if(k<2)for(let a=a0+0.04;a<a1-0.1;a+=0.12)B(a,a+0.09,y+0.02,y+0.12,0.1,DP-0.05,k?FM.terra:FM.black);
+      else B(a0+0.05,a1-0.05,y+0.02,y+0.16,0.08,DP-0.08,[FM.linen,FM.olive,FM.sisal][k-2]);});}
+    B(a0+0.05,a1-0.05,H,H+0.25,0.08,DP-0.08,FM.sisal);};                                               // caixa em cima
+  MOD(4.8,5.25,3.05,-1,false,'nichos');MOD(5.25,5.85,3.05,-1,false,'longo');          // parede da sala: 45 + 60
+  MOD(0.7,1.6,4.03,1,true,'duplo');MOD(1.6,2.2,4.03,1,true,'gavetas');                // parede do banheiro: 90 + 60
+  {const m=fb(g,2.3,2.33,0.05,1.75,4.65,5.15,FM.mirror);m.rotation.z=-0.06;}            // espelho de chão apoiado ao lado do closet
   solid(0,2.45,3.05,4.78,5.88);solid(0,0.68,2.22,4.0,4.6);
   // penteadeira solta + espelho apoiado + banqueta
   fb(g,0.05,0.62,0.72,0.75,4.05,4.45,FM.white);[[0.08,4.08],[0.59,4.08],[0.08,4.42],[0.59,4.42]].forEach(([x,z])=>fb(g,x-0.015,x+0.015,0,0.72,z-0.015,z+0.015,FM.freijo));
