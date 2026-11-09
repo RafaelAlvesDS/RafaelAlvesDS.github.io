@@ -622,17 +622,18 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
 
 // ===== pavimento superior =====
 (function(){const g=FURN_U;
-  // sala de TV: sofá retrátil e reclinável "sem caixa" de 2,04 m em linho bege (referência: Soberano 2,04 m):
-  // braços e encosto sobre pés baixos, vão livre embaixo; 2 assentos que deslizam e 2 encostos reclináveis com pillow top
+  // sala de TV: sofá retrátil e reclinável "sem caixa" de 2,04 m em linho bege. Pelas referências (Soberano, Inbox Versátil/Secret):
+  // braços finos de 10–14 cm, sem a caixa lateral; 2 módulos de assento sobre pés; encostos reclináveis com pillow top;
+  // altura ≈ 0,97 m, profundidade 1,00 m fechado e ≈ 1,30 m com os assentos puxados
   const LB=FM.linen.clone();LB.color.setHex(0xcdbfa6);const LBd=FM.linen.clone();LBd.color.setHex(0xb3a58c);
-  const X0=0.18,X1=2.22,ZB=4.05,ZF=5.06;
-  rbox(g,X0,X0+0.2,0.1,0.62,ZB,ZF,LB,0.07);rbox(g,X1-0.2,X1,0.1,0.62,ZB,ZF,LB,0.07);          // braços
-  rbox(g,X0+0.2,X1-0.2,0.1,0.58,ZB,ZB+0.24,LB,0.05);                                         // costas
-  rbox(g,X0+0.2,X1-0.2,0.12,0.27,ZB+0.2,ZF-0.08,LBd,0.03);                                   // estrutura do assento (sem caixa)
-  [[X0+0.21,1.195],[1.205,X1-0.21]].forEach(([a,b])=>{
+  const X0=0.18,X1=2.22,ZB=4.03,ZF=5.03,AW=0.13;
+  rbox(g,X0,X0+AW,0.1,0.6,ZB,ZF,LB,0.05);rbox(g,X1-AW,X1,0.1,0.6,ZB,ZF,LB,0.05);              // braços finos
+  rbox(g,X0+AW,X1-AW,0.1,0.58,ZB,ZB+0.24,LB,0.05);                                         // costas
+  rbox(g,X0+AW,X1-AW,0.12,0.27,ZB+0.2,ZF-0.08,LBd,0.03);                                   // estrutura do assento (sem caixa)
+  [[X0+AW+0.01,1.195],[1.205,X1-AW-0.01]].forEach(([a,b])=>{
     rbox(g,a,b,0.26,0.47,ZB+0.22,ZF,LB,0.06);                                                // assento retrátil
-    const k=rbox(g,a+0.01,b-0.01,0.46,1.0,ZB+0.02,ZB+0.3,LB,0.09);k.rotation.x=-0.13;         // encosto reclinável
-    const t=rbox(g,a+0.03,b-0.03,0.86,0.99,ZB+0.06,ZB+0.36,LB,0.06);t.rotation.x=-0.13;});   // pillow top
+    const k=rbox(g,a+0.01,b-0.01,0.46,0.97,ZB+0.02,ZB+0.3,LB,0.09);k.rotation.x=-0.13;         // encosto reclinável
+    const t=rbox(g,a+0.03,b-0.03,0.84,0.96,ZB+0.06,ZB+0.36,LB,0.06);t.rotation.x=-0.13;});   // pillow top
   [[0.6,FM.olive],[1.85,FM.terra]].forEach(([x,m])=>{const c=rbox(g,x-0.2,x+0.2,0.47,0.85,ZB+0.3,ZB+0.44,m,0.06);c.rotation.x=-0.22;});
   [[X0+0.06,ZB+0.06],[X1-0.06,ZB+0.06],[X0+0.06,ZF-0.06],[X1-0.06,ZF-0.06],[1.2,ZB+0.06],[1.2,ZF-0.12]].forEach(([x,z])=>fc(g,x,0,z,0.025,0.1,FM.walnut,10,0.018));
   solid(1,0.05,2.35,3.98,5.08);
