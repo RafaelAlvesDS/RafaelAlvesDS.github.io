@@ -214,6 +214,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 function showFail(msg){const d=document.createElement('div');d.className='fail';d.textContent=msg;document.getElementById('app').appendChild(d);}
 window.addEventListener('error',e=>{if(!document.querySelector('.fail'))showFail('Erro ao carregar o modelo: '+(e.message||'desconhecido'));});
@@ -421,12 +422,13 @@ const ROOF=(function(){
   m.material=M.wall.clone();m.material.side=THREE.DoubleSide;U.add(m);return m;})();
 function roofVis(){ROOF.visible=state.mode==='ctx'||walk.on||tour.on;}
 const FURN_L=new THREE.Group(),FURN_U=new THREE.Group();lower.add(FURN_L);U.add(FURN_U);
+const PLANTS=[];let SOFA_BOX=null;                    // peças que os modelos 3D substituem quando carregam
 const FURNCOL=[[],[]];                                  // obstáculos para quem anda (por pavimento)
 function fb(g,x0,x1,y0,y1,z0,z1,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,y1-y0,z1-z0),mat);
   m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function fc(g,x,y,z,r,h,mat,seg=20,r2){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r2===undefined?r:r2,h,seg),mat);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function solid(f,x0,x1,z0,z1){const k=0.08;FURNCOL[f].push([x0+k,x1-k,z0+k,z1-k]);}   // folga para chegar perto dos móveis
-function plant(g,x,z,s=1){fc(g,x,0,z,0.17*s,0.42*s,FM.pot,16,0.13*s);
+function plant(g0,x,z,s=1){const g=new THREE.Group();g0.add(g);PLANTS.push({p:g,g:g0,x,z,s});fc(g,x,0,z,0.17*s,0.42*s,FM.pot,16,0.13*s);
   [[0,0.75,0,0.3],[0.12,0.62,0.05,0.22],[-0.1,0.66,-0.06,0.24],[0.02,0.9,0.08,0.18]].forEach(([dx,y,dz,r])=>{
     const b=new THREE.Mesh(new THREE.SphereGeometry(r*s,12,10),FM.leaf);b.position.set(x+dx*s,y*s,z+dz*s);b.castShadow=true;g.add(b);});}
 function nightstand(g,x0,x1,z0,z1){fb(g,x0,x1,0.05,0.5,z0,z1,FM.oak);fb(g,x0+0.02,x1-0.02,0.27,0.29,z0-0.005,z1+0.005,FM.walnut);
@@ -582,11 +584,12 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
 // ===== pavimento superior =====
 (function(){const g=FURN_U;
   // sala de TV: sofá retrátil e reclinável de 2,20 m em bouclé off-white, almofadas oliva e terracota
-  fb(g,0.1,2.3,0.08,0.44,4.03,5.05,FM.boucle);fb(g,0.1,2.3,0.44,0.9,4.03,4.28,FM.boucle);
-  fb(g,0.1,0.28,0.44,0.64,4.03,5.05,FM.boucle);fb(g,2.12,2.3,0.44,0.64,4.03,5.05,FM.boucle);
-  [[0.29,1.19],[1.21,2.11]].forEach(([a,b])=>{fb(g,a,b,0.44,0.56,4.3,5.04,FM.linen);const k=fb(g,a+0.02,b-0.02,0.5,0.92,4.28,4.48,FM.linen);k.rotation.x=-0.18;});
-  [[0.5,FM.olive],[0.8,FM.terra],[1.9,FM.olive]].forEach(([x,m])=>{const c=fb(g,x-0.2,x+0.2,0.56,0.94,4.48,4.6,m);c.rotation.x=-0.25;});
-  [[0.15,4.08],[2.25,4.08],[0.15,5.0],[2.25,5.0]].forEach(([x,z])=>fb(g,x-0.02,x+0.02,0,0.08,z-0.02,z+0.02,FM.black));
+  const SB=new THREE.Group();g.add(SB);SOFA_BOX=SB;
+  fb(SB,0.1,2.3,0.08,0.44,4.03,5.05,FM.boucle);fb(SB,0.1,2.3,0.44,0.9,4.03,4.28,FM.boucle);
+  fb(SB,0.1,0.28,0.44,0.64,4.03,5.05,FM.boucle);fb(SB,2.12,2.3,0.44,0.64,4.03,5.05,FM.boucle);
+  [[0.29,1.19],[1.21,2.11]].forEach(([a,b])=>{fb(SB,a,b,0.44,0.56,4.3,5.04,FM.linen);const k=fb(SB,a+0.02,b-0.02,0.5,0.92,4.28,4.48,FM.linen);k.rotation.x=-0.18;});
+  [[0.5,FM.olive],[0.8,FM.terra],[1.9,FM.olive]].forEach(([x,m])=>{const c=fb(SB,x-0.2,x+0.2,0.56,0.94,4.48,4.6,m);c.rotation.x=-0.25;});
+  [[0.15,4.08],[2.25,4.08],[0.15,5.0],[2.25,5.0]].forEach(([x,z])=>fb(SB,x-0.02,x+0.02,0,0.08,z-0.02,z+0.02,FM.black));
   solid(1,0.05,2.35,3.98,5.08);
   fb(g,0.55,2.1,0.008,0.018,5.0,6.0,FM.sisal);
   fc(g,1.55,0,5.6,0.27,0.4,FM.terra,28);                                   // puff (sai do caminho quando o sofá abre)
@@ -649,6 +652,20 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   solid(1,0.15,1.85,0.25,1.95);
 })();
 
+
+// ---------- modelos 3D gratuitos (glTF) que substituem as peças feitas de caixas assim que carregam
+// Sofá: "Glam Velvet Sofa" © 2021 Wayfair, LLC, por Eric Chadwick (CC BY 4.0). Planta: "Diffuse Transmission Plant" © 2024
+// Darmstadt Graphics Group, por Eric Chadwick (CC BY 4.0), sobre asset CC0 de Rico Cilliers. Vaso com flores: "Glass Vase Flowers" (CC0).
+// Todos do Khronos glTF Sample Assets (github.com/KhronosGroup/glTF-Sample-Assets), com texturas reduzidas para a web.
+if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
+  const load=(f,cb)=>GL.load('models/'+f,gl=>{const o=gl.scene,lights=[];o.traverse(m=>{if(m.isLight)lights.push(m);});lights.forEach(l=>l.parent.remove(l));   // alguns modelos trazem luzes próprias
+      o.traverse(m=>{if(!m.isMesh)return;m.castShadow=m.receiveShadow=true;
+      [].concat(m.material).forEach(mt=>{if(mt.map)mt.map.encoding=THREE.LinearEncoding;mt.emissiveMap=null;mt.emissive&&mt.emissive.setHex(0);mt.needsUpdate=true;});});cb(o);},
+    undefined,e=>console.warn('modelo 3D não carregou:',f,e));
+  load('sofa.glb',o=>{o.traverse(m=>{if(m.isMesh&&!/leg/i.test(m.name+m.material.name)){m.material.color.setHex(0xd6cdbd);m.material.roughness=0.95;m.material.metalness=0;}});o.position.set(1.22,0,4.68);FURN_U.add(o);SOFA_BOX.visible=false;});
+  load('planta.glb',o=>{o.traverse(m=>{if(m.isMesh)m.material.color.multiplyScalar(0.75);});PLANTS.forEach(({p,g,x,z,s})=>{const c=o.clone();c.scale.setScalar(1.25*s);c.position.set(x+0.06*s,0,z+0.11*s);g.add(c);p.visible=false;});});
+  load('vaso-flores.glb',o=>{o.scale.setScalar(1.6);o.position.set(3.99,0.76,5.6);FURN_L.add(o);});
+}
 
 // ---------- banheiros (mesmo layout nos dois andares)
 const SHOWERS=[];

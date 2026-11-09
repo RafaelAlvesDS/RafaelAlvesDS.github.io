@@ -33,3 +33,11 @@ python -m http.server 8000
 e abre `http://localhost:8000`.
 
 Para regenerar os dados do mapa na sua máquina, `pip install pillow numpy` e `python scripts/fetch_uberaba.py`.
+
+## Modelos 3D de terceiros
+
+Da coleção [Khronos glTF Sample Assets](https://github.com/KhronosGroup/glTF-Sample-Assets), com texturas reduzidas para a web:
+
+- `models/sofa.glb` — "Glam Velvet Sofa", © 2021 Wayfair, LLC, por Eric Chadwick. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Cor do tecido alterada.
+- `models/planta.glb` — "Diffuse Transmission Plant", © 2024 Darmstadt Graphics Group GmbH, por Eric Chadwick ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a partir de asset CC0 de Rico Cilliers. Geometria simplificada.
+- `models/vaso-flores.glb` — "Glass Vase Flowers", Eric Chadwick e Rico Cilliers. [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
