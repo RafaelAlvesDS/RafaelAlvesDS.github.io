@@ -531,22 +531,29 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   [[0.6,0.98],[2.17,2.55]].forEach(([a,b])=>fb(g,a,b,0.05,2.58,0.03,0.11,FM.linen));
   fb(g,0.55,2.6,0.008,0.018,1.3,2.45,FM.sisal);
 })();
-// escritório + closet (quarto 2, x 0–3,05, z 4,03–6,50) — versão econômica:
-// bancada = tampo de MDF 2,40 × 0,60 sobre gaveteiro e pés; closet com módulos abertos de loja (sem portas,
-// cara de closet); penteadeira solta junto da janela com espelho apoiado.
-// Cabo HDMI 2.1 do PC: sobe por uma canaleta adesiva no canto (sem furar parede) e atravessa a laje num furo de ≈ 32 mm
-// (x 2,85 · z 6,35), que em cima fica escondido atrás da estante de nichos da sala.
+// escritório + closet (quarto 2, x 0–3,05, z 4,03–6,50). Porta em x 2,25–3,00 abrindo contra a parede da sala; janela na fachada.
+// Planejamento (circulação primeiro): a faixa da porta (x 2,2–3,05) e a parede da sala ficam livres, só com um espelho de chão
+// encostado. Closet aberto na parede do banheiro (único lado sem porta nem janela), bancada para dois na parede de baixo,
+// sob a TV da sala de cima. Entre o closet e as cadeiras sobram ≈ 70 cm para se vestir; da porta até a bancada, 1,6 m livres.
+// PC (4K 120 Hz na TV de cima): a torre fica no canto (x 2,5–2,72), ao lado do lugar do Rafael. Os monitores usam DisplayPort
+// e a TV a HDMI 2.1 nativa da placa de vídeo, por um cabo HDMI 2.1 de fibra óptica (AOC, Ultra High Speed 48 Gbps) de 7,5 m
+// + um cabo USB de fibra para controles/teclado na sala. Eles sobem por uma canaleta adesiva na parede (sem furar) e atravessam
+// a laje num furo de ≈ 32 mm em x 2,76 · z 6,33, que em cima cai atrás da estante de nichos, ao lado do rack da TV.
 (function(){const g=FURN_L;
-  fb(g,0.03,2.43,0.72,0.75,5.9,6.48,FM.freijo);fb(g,1.0,1.4,0,0.72,5.95,6.44,FM.white);
-  [0.3,0.5].forEach(y=>fb(g,1.05,1.35,y-0.01,y+0.01,5.94,5.95,FM.chrome));
-  [[0.08,5.95],[0.08,6.43],[2.38,5.95],[2.38,6.43]].forEach(([x,z])=>fb(g,x-0.02,x+0.02,0,0.72,z-0.02,z+0.02,FM.black));
-  monitor(g,1.45,6.28,0.12);monitor(g,2.1,6.28,-0.12);
-  fb(g,1.54,2.02,0.75,0.77,5.95,6.1,FM.black);fb(g,2.08,2.14,0.75,0.77,5.98,6.06,FM.black);
+  fb(g,0.03,2.43,0.72,0.75,5.95,6.48,FM.freijo);fb(g,1.0,1.4,0,0.72,6.0,6.44,FM.white);
+  [0.3,0.5].forEach(y=>fb(g,1.05,1.35,y-0.01,y+0.01,5.99,6.0,FM.chrome));
+  [[0.08,6.0],[0.08,6.43],[2.38,6.0],[2.38,6.43]].forEach(([x,z])=>fb(g,x-0.02,x+0.02,0,0.72,z-0.02,z+0.02,FM.black));
+  // lugar do Rafael (direita): 2 monitores, teclado, mouse; torre no canto
+  monitor(g,1.45,6.3,0.12);monitor(g,2.1,6.3,-0.12);
+  fb(g,1.54,2.02,0.75,0.77,5.99,6.14,FM.black);fb(g,2.08,2.14,0.75,0.77,6.02,6.1,FM.black);
   fb(g,2.5,2.72,0,0.46,6.0,6.45,FM.black);fb(g,2.495,2.5,0.05,0.42,6.03,6.06,new THREE.MeshStandardMaterial({color:0x2266ff,emissive:0x3355ff,emissiveIntensity:1.2}));
-  fb(g,0.42,0.8,0.75,0.765,6.0,6.24,FM.inox);fb(g,0.42,0.8,0.765,0.99,6.24,6.25,FM.inox);
-  deskChair(g,1.78,5.4);deskChair(g,0.62,5.42,FM.boucle);
-  fb(g,2.85,3.05,2.62,2.65,6.34,6.36,FM.white);fb(g,3.03,3.05,0.46,2.65,6.34,6.38,FM.white);   // canaleta do cabo
-  solid(0,0,2.75,5.88,6.5);
+  fb(g,2.74,2.78,0.46,2.65,6.47,6.5,FM.white);fb(g,2.74,2.78,2.62,2.65,6.33,6.5,FM.white);       // canaleta até o furo da laje
+  // lugar dela (esquerda, junto da janela): notebook e espelho de mesa — a bancada também é a penteadeira
+  fb(g,0.45,0.83,0.75,0.765,6.02,6.26,FM.inox);fb(g,0.45,0.83,0.765,0.99,6.26,6.27,FM.inox);
+  {const m=fc(g,0,0,0,0.16,0.012,FM.mirror,32);m.rotation.x=Math.PI/2;m.position.set(0.2,1.0,6.38);fb(g,0.19,0.21,0.75,0.84,6.37,6.39,FM.black);}
+  deskChair(g,1.78,5.5);deskChair(g,0.64,5.5,FM.boucle);
+  solid(0,0,2.75,5.93,6.5);
+  fb(g,0,0.07,2.2,2.3,4.5,6.1,FM.white);                                                          // persiana rolô (blackout) na janela
   // closet com módulos abertos (de loja, sem portas — cara de closet): estrutura de freijó, fundo branco, 2,10 m de altura,
   // 50 cm de profundidade. Tipos: cabideiro longo, cabideiro duplo, gaveteiro com nichos e prateleiras/sapateira.
   // As peças são pensadas no eixo "a" (ao longo da parede) e "c" (profundidade, c0 = parede); o mapa troca x/z conforme a parede.
@@ -565,16 +572,10 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
       if(k<2)for(let a=a0+0.04;a<a1-0.1;a+=0.12)B(a,a+0.09,y+0.02,y+0.12,0.1,DP-0.05,k?FM.terra:FM.black);
       else B(a0+0.05,a1-0.05,y+0.02,y+0.16,0.08,DP-0.08,[FM.linen,FM.olive,FM.sisal][k-2]);});}
     B(a0+0.05,a1-0.05,H,H+0.25,0.08,DP-0.08,FM.sisal);};                                               // caixa em cima
-  MOD(4.8,5.25,3.05,-1,false,'nichos');MOD(5.25,5.85,3.05,-1,false,'longo');          // parede da sala: 45 + 60
-  MOD(0.7,1.6,4.03,1,true,'duplo');MOD(1.6,2.2,4.03,1,true,'gavetas');                // parede do banheiro: 90 + 60
-  {const m=fb(g,2.3,2.33,0.05,1.75,4.65,5.15,FM.mirror);m.rotation.z=-0.06;}            // espelho de chão apoiado ao lado do closet
-  solid(0,2.45,3.05,4.78,5.88);solid(0,0.68,2.22,4.0,4.6);
-  // penteadeira solta + espelho apoiado + banqueta
-  fb(g,0.05,0.62,0.72,0.75,4.05,4.45,FM.white);[[0.08,4.08],[0.59,4.08],[0.08,4.42],[0.59,4.42]].forEach(([x,z])=>fb(g,x-0.015,x+0.015,0,0.72,z-0.015,z+0.015,FM.freijo));
-  {const m=fb(g,0.13,0.54,0.75,1.45,4.06,4.08,FM.mirror);m.rotation.x=0.08;}
-  fc(g,0.34,0,4.75,0.17,0.42,FM.boucle,20);
-  solid(0,0,0.66,4.0,4.5);
-  fb(g,0.35,2.2,0.008,0.018,4.85,5.8,FM.sisal);
+  MOD(0.05,0.65,4.03,1,true,'gavetas');MOD(0.65,1.55,4.03,1,true,'duplo');MOD(1.55,2.15,4.03,1,true,'longo');   // 60 + 90 + 60 = 2,10 m
+  solid(0,0.03,2.17,4.0,4.55);
+  fb(g,3.01,3.04,0.03,1.73,5.0,5.5,FM.mirror);fb(g,2.98,3.05,0,0.03,4.98,5.52,FM.black);          // espelho de chão encostado na parede da sala
+  fb(g,0.4,2.2,0.008,0.018,4.75,5.75,FM.sisal);
 })();
 // cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
 // perna 2 sob a janela (lava-louça, pia, lava e seca); tanque fica no terraço, ao lado da pia de lá
@@ -651,7 +652,7 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,0.75,1.65,0.52,0.59,6.15,6.25,FM.black);
   solid(1,0.25,2.15,6.04,6.5);
   // estantes de nichos prontas (de loja), 4×4 + 2×4 nichos de 33 cm: consoles na fileira de baixo, jogos no meio, livros em cima.
-  // O furo do cabo do PC (vindo do escritório) fica atrás da primeira, que é solta e afastada 2 cm da parede.
+  // O furo do cabo do PC (vindo do escritório, x 2,76 · z 6,33) fica atrás da primeira, que é solta e afastada 2 cm da parede.
   {const Z0=6.09,Z1=6.48,C=0.335,T=0.035;
    const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6});
    const K={wh:mat(0xeef0f2),bk:mat(0x1a1b1d),gl:mat(0xb7babf),gd:mat(0x5d5f63),pu:mat(0x4b3f8a),ps:mat(0x1f4fa8),xb:mat(0x2f7d32),sw:mat(0xd0312d)};
