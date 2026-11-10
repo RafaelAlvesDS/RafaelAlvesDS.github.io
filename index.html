@@ -692,10 +692,9 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
    unit(2.35,4,4);unit(3.92,2,4);}
   plant(g,0.3,5.6,0.95);solid(1,0.12,0.5,5.4,5.8);
   // ===== TERRAÇO (descoberto, x 0–5,6 · z 0–2,85) =====
-  // Zoneamento: linha gourmet no muro cheio (tanque · pia · churrasqueira, que ficam onde estão), jantar no meio com
-  // 90 cm livres de trabalho na frente da bancada e 1 m da brasa, e lounge no canto das duas fachadas, sob um ombrelone,
-  // com jardim vertical na parede do banheiro. Materiais de área externa: madeira plástica/teca, alumínio preto,
-  // corda náutica, tecido acrílico e concreto.
+  // Zoneamento: linha gourmet no muro cheio (tanque · pia · churrasqueira, que ficam onde estão) e mesa no meio com
+  // 90 cm livres de trabalho na frente da bancada e 1 m da brasa; painéis de vasos na parede do banheiro.
+  // Nada fixo nem alto que o vento leve (sem ombrelone, sem varal de luz).
   const CC=FM.conc.clone();CC.color.setHex(0xcfcdc7);CC.roughness=0.95;const IX=FM.inox.clone();IX.color.setHex(0xe4e7ea);IX.roughness=0.2;                 // concreto da pré-moldada
   const OUT=FM.linen.clone();OUT.color.setHex(0xdcd6ca);const OUTd=FM.linen.clone();OUTd.color.setHex(0x8c9478);
   // churrasqueira pré-moldada de concreto (frente para o terraço): pés em U, corpo com gaveta de cinzas, braseiro com
@@ -728,31 +727,16 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,5.04,5.6,0,0.86,0.3,0.86,FM.white);fb(g,5.1,5.5,0.8,0.87,0.36,0.8,FM.inox);fc(g,5.55,0.86,0.58,0.015,0.25,FM.chrome,10);
   fb(g,5.03,5.5,0.87,0.9,0.29,0.87,FM.oak);
   solid(1,5.0,5.6,0.26,0.9);
-  // mesa de jantar externa em teca 1,60 × 0,85 para 6, cadeiras de corda náutica com estrutura de alumínio
-  fb(g,2.75,3.6,0.72,0.76,0.35,1.95,FM.oak);
-  [[2.8,0.4],[3.55,0.4],[2.8,1.9],[3.55,1.9]].forEach(([x,z])=>fb(g,x-0.025,x+0.025,0,0.72,z-0.025,z+0.025,FM.black));
-  [0.65,1.15,1.65].forEach(z=>[[2.46,1],[3.89,-1]].forEach(([x,sx])=>{const g=new THREE.Group();FURN_U.add(g);swap('cadeira_externa.glb',g,x,0,z,sx*Math.PI/2,{linen:OUT});
-    fb(g,x-0.2,x+0.2,0.42,0.46,z-0.2,z+0.2,FM.rope);fb(g,x-0.19,x+0.19,0.46,0.5,z-0.18,z+0.18,OUT);
-    fb(g,x-sx*0.2-0.02,x-sx*0.2+0.02,0.46,0.82,z-0.2,z+0.2,FM.rope);
-    [[-0.18,-0.18],[0.18,-0.18],[-0.18,0.18],[0.18,0.18]].forEach(([a,b])=>fb(g,x+a-0.012,x+a+0.012,0,0.42,z+b-0.012,z+b+0.012,FM.black));}));
-  solid(1,2.25,4.1,0.4,1.9);
-  // lounge em L no canto das fachadas: estrutura de alumínio, almofadas de tecido acrílico, mesa de centro de concreto
-  {const g0=g,LG=new THREE.Group();g0.add(LG);{const g=LG;const SEAT=(x0,x1,z0,z1,back)=>{fb(g,x0,x1,0.06,0.3,z0,z1,FM.black);fb(g,x0+0.01,x1-0.01,0.3,0.42,z0+0.01,z1-0.01,OUT);
-     if(back==='z')rbox(g,x0+0.03,x1-0.03,0.38,0.72,z0+0.02,z0+0.18,OUT,0.05);else rbox(g,x0+0.02,x0+0.18,0.38,0.72,z0+0.03,z1-0.03,OUT,0.05);
-     [[x0+0.03,z0+0.03],[x1-0.03,z0+0.03],[x0+0.03,z1-0.03],[x1-0.03,z1-0.03]].forEach(([x,z])=>fb(g,x-0.015,x+0.015,0,0.06,z-0.015,z+0.015,FM.black));};
-   SEAT(0.03,0.8,0.03,0.8,'z');SEAT(0.8,1.75,0.03,0.8,'z');SEAT(0.03,0.8,0.8,1.75,'x');
-   [[0.45,0.25,OUTd,0],[1.3,0.25,FM.terra,0],[0.25,1.35,OUTd,1]].forEach(([x,z,m,r])=>{const c=rbox(g,x-0.2,x+0.2,0.42,0.78,z-0.06,z+0.06,m,0.05);if(r)c.rotation.y=Math.PI/2;c.rotation.x=r?0:-0.2;});}
-   swap('lounge_canto.glb',LG,0.415,0,0.415,0,{linen:OUT,terra:OUTd});swap('lounge_modulo.glb',LG,1.275,0,0.415,0,{linen:OUT});
-   swap('lounge_modulo.glb',LG,0.415,0,1.275,Math.PI/2,{linen:OUT,terra:OUTd});
-   fb(g,0.85,1.95,0.006,0.016,0.85,1.95,FM.sisal);
-   fc(g,1.3,0,1.3,0.32,0.36,CC,28);
-   solid(1,0,1.8,0,0.85);solid(1,0,0.85,0.8,1.8);solid(1,1.0,1.6,1.0,1.6);}
-  // ombrelone lateral (o terraço é descoberto): base em cruz, mastro e cobertura sobre o lounge
-  {const bx=2.05,bz=2.3,g=new THREE.Group();FURN_U.add(g);swap('ombrelone.glb',g,bx,0,bz,Math.atan2(1.0-bx,1.0-bz),{linen:OUT});fb(g,bx-0.4,bx+0.4,0,0.05,bz-0.04,bz+0.04,FM.black);fb(g,bx-0.04,bx+0.04,0,0.05,bz-0.4,bz+0.2,FM.black);
-   fc(g,bx,0.05,bz,0.025,2.45,FM.black,10);
-   const arm=new THREE.Vector3(1.0-bx,0,1.0-bz),L=arm.length();const a=fb(g,-L/2,L/2,-0.012,0.012,-0.012,0.012,FM.black);
-   a.position.set((bx+1.0)/2,2.48,(bz+1.0)/2);a.rotation.y=-Math.atan2(arm.z,arm.x);
-   fc(g,1.0,2.12,1.0,0.03,0.36,FM.black,8);fc(g,1.0,2.22,1.0,0.04,0.26,OUT,8,1.15);solid(1,bx-0.15,bx+0.15,bz-0.15,bz+0.15);}
+  // por enquanto (orçamento): conjunto de plástico branco, mesa quadrada de 70 cm com 4 cadeiras bistrô, no meio do terraço,
+  // a 1 m da brasa e fora da faixa de trabalho da bancada. Peças leves: em dia de vento forte, empilhar e guardar.
+  {const PL=new THREE.MeshStandardMaterial({color:0xededea,roughness:.35});FM.plastic=PL;
+   const TX=2.95,TZ=1.15;
+   {const t=new THREE.Group();g.add(t);fb(t,TX-0.35,TX+0.35,0.69,0.71,TZ-0.35,TZ+0.35,PL);
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>fb(t,TX+a*0.3-0.035,TX+a*0.3+0.035,0,0.69,TZ+b*0.3-0.035,TZ+b*0.3+0.035,PL));
+    swap('mesa_plastico.glb',t,TX,0,TZ,0);}
+   [[TX-0.62,TZ,Math.PI/2],[TX+0.62,TZ,-Math.PI/2],[TX,TZ-0.62,0],[TX,TZ+0.62,Math.PI]].forEach(([x,z,ry])=>{
+     const c=new THREE.Group();g.add(c);fb(c,x-0.21,x+0.21,0.42,0.45,z-0.21,z+0.21,PL);swap('cadeira_plastico.glb',c,x,0,z,ry);});
+   solid(1,TX-0.85,TX+0.85,TZ-0.85,TZ+0.85);}
   // jardim vertical econômico (como nas fotos de referência): painéis de ripas de pinus de 0,60 × 1,30 m apoiados no
   // piso e encostados na parede — nada furado —, com vasos meia-lua de barro e vasos autoirrigáveis presos por aros de metal
   {const PW=FM.oak.clone();PW.color.setHex(0xe2c9a2);const ZW=2.57;let sd=5;const rr=()=>(sd=(sd*16807)%2147483647)/2147483647;
@@ -769,12 +753,6 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
    solid(1,0.2,1.7,ZW-0.25,ZW);}
   // vasos grandes nas pontas (fora da área de calor da churrasqueira)
   plant(g,2.05,0.25,1.0);solid(1,1.85,2.25,0.05,0.45);plant(g,4.3,0.22,0.9);solid(1,4.12,4.48,0.05,0.4);
-  // varal de lâmpadas (cordão de luz) entre o muro da churrasqueira e as paredes do banheiro e da sala
-  {const CM=new THREE.LineBasicMaterial({color:0x222222});
-   [[[5.58,2.5,0.3],[0.2,2.45,2.55]],[[5.58,2.5,1.5],[1.6,2.45,2.55]],[[5.58,2.5,0.9],[3.3,2.45,2.83]]].forEach(([A,B])=>{
-     const pts=[];for(let i=0;i<=24;i++){const t=i/24,y=A[1]+(B[1]-A[1])*t-0.35*Math.sin(Math.PI*t);pts.push(new THREE.Vector3(A[0]+(B[0]-A[0])*t,y,A[2]+(B[2]-A[2])*t));}
-     g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),CM));
-     for(let i=1;i<24;i+=2){const b=new THREE.Mesh(new THREE.SphereGeometry(0.028,8,6),FM.led);b.position.copy(pts[i]).y-=0.04;g.add(b);}});}
 })();
 
 
