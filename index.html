@@ -286,7 +286,7 @@ function box(x0,x1,y0,y1,z0,z1,mat,parent,list){
 // openings: {a,b,lo,hi,glass}
 const WALLREC=[];                                   // registro das paredes (para a planta com medidas)
 function wall(axis,c,s,e,t,h,parent,list,openings=[],mat=M.wall){
-  WALLREC.push({axis,c,s,e,t,h,parent,openings});
+  WALLREC.push({axis,c,s,e,t,h,parent,openings,mat});
   const ops=openings.slice().sort((p,q)=>p.a-q.a);
   const piece=(a,b,y0,y1,m)=>{
     if(axis==='x') return box(a,b,y0,y1,c-t/2,c+t/2,m,parent,list);
@@ -785,6 +785,37 @@ if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
   load('vaso-flores.glb',o=>{o.scale.setScalar(1.6);o.position.set(3.99,0.76,5.6);FURN_L.add(o);});
 }
 
+// ---------- acabamentos da estrutura, gerados a partir das próprias paredes (WALLREC):
+// rodapé branco de 7 cm nas faces internas, batente e guarnição nas portas, caixilho de alumínio grafite com folhas de
+// correr nas janelas e na porta do terraço, e peitoril de granito nas janelas. Entram nas listas das paredes, então
+// respeitam o modo "paredes baixas" e as colisões.
+(function(){
+  const AL=new THREE.MeshStandardMaterial({color:0x3a3c3f,roughness:.45,metalness:.5}),RD=FM.white;
+  const inner=w=>w.mat!==M.ext?[1,-1]:[(w.axis==='x'?w.c<3.25:w.c<2.8)?1:-1];       // lados internos da parede
+  const B=(w,a0,a1,y0,y1,o0,o1,m)=>{const L=w.parent===U?upWalls:lowWalls;              // a: ao longo da parede; o: deslocamento da linha de centro
+    return w.axis==='x'?box(a0,a1,y0,y1,w.c+Math.min(o0,o1),w.c+Math.max(o0,o1),m,w.parent,L):box(w.c+Math.min(o0,o1),w.c+Math.max(o0,o1),y0,y1,a0,a1,m,w.parent,L);};
+  WALLREC.filter(w=>w.parent===lower||w.parent===U).forEach(w=>{
+    const t=w.t/2,sides=inner(w),ops=w.openings.slice().sort((p,q)=>p.a-q.a);
+    // rodapé (só em paredes de altura inteira; interrompe nas portas e vãos)
+    if(w.h>2){let cur=w.s;const segs=[];ops.forEach(o=>{if(o.lo<0.05){segs.push([cur,o.a]);cur=o.b;}});segs.push([cur,w.e]);
+      segs.forEach(([a,b])=>{if(b-a<0.05)return;sides.forEach(sd=>B(w,a,b,0.005,0.075,sd*t,sd*(t+0.012),RD));});}
+    ops.forEach(o=>{
+      if(o.hi>=w.h-0.01&&!o.glass)return;                                                 // vão aberto, sem porta
+      if(!o.glass){                                                                       // porta: batente + guarnições
+        B(w,o.a,o.a+0.02,0,o.hi,-t,t,M.door);B(w,o.b-0.02,o.b,0,o.hi,-t,t,M.door);B(w,o.a,o.b,o.hi-0.02,o.hi,-t,t,M.door);
+        sides.forEach(sd=>{B(w,o.a-0.05,o.a,0,o.hi+0.05,sd*t,sd*(t+0.012),RD);B(w,o.b,o.b+0.05,0,o.hi+0.05,sd*t,sd*(t+0.012),RD);
+          B(w,o.a-0.05,o.b+0.05,o.hi,o.hi+0.05,sd*t,sd*(t+0.012),RD);});
+        return;}
+      // caixilho de alumínio: quadro, travessa central (folhas de correr) e contramarcos
+      const f=0.04,d=0.03;
+      B(w,o.a,o.a+f,o.lo,o.hi,-d,d,AL);B(w,o.b-f,o.b,o.lo,o.hi,-d,d,AL);B(w,o.a,o.b,o.lo,o.lo+f,-d,d,AL);B(w,o.a,o.b,o.hi-f,o.hi,-d,d,AL);
+      if(o.b-o.a>0.7){const m=(o.a+o.b)/2;B(w,m-0.025,m-0.005,o.lo,o.hi,-d,0,AL);B(w,m+0.005,m+0.025,o.lo,o.hi,0,d,AL);}
+      if(o.lo>0.05)B(w,o.a-0.03,o.b+0.03,o.lo-0.02,o.lo,-t-0.03,t+0.03,FM.granite);          // peitoril de granito
+      else B(w,o.a,o.b,0,0.012,-t,t,FM.granite);                                             // soleira da porta de correr
+    });
+  });
+})();
+
 // ---------- banheiros (mesmo layout nos dois andares)
 const SHOWERS=[];
 function bathroom(parent,list){
@@ -801,18 +832,20 @@ function bathroom(parent,list){
   head.position.set(0.395,2.06,3.05);parent.add(head);
   box(0.385,0.405,2.05,2.08,2.9,3.05,M.steel,parent);              // braço
   // vaso sanitário
-  box(1.02,1.38,0.38,0.78,2.69,2.87,M.ceramic,parent,list);
+  const VG=new THREE.Group();parent.add(VG);swap('vaso_sanitario.glb',VG,1.2,0,2.69,0);    // trocado pelo modelo do Blender ao carregar
+  box(1.02,1.38,0.38,0.78,2.69,2.87,M.ceramic,VG);
   const bowl=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.15,0.4,28),M.ceramic);
-  bowl.scale.z=1.2;bowl.position.set(1.2,0.2,3.08);bowl.castShadow=true;parent.add(bowl);
+  bowl.scale.z=1.2;bowl.position.set(1.2,0.2,3.08);bowl.castShadow=true;VG.add(bowl);
   const seat=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.03,28),M.ceramic);
-  seat.scale.z=1.2;seat.position.set(1.2,0.415,3.08);parent.add(seat);
+  seat.scale.z=1.2;seat.position.set(1.2,0.415,3.08);VG.add(seat);
   // pia com gabinete e espelho
   box(1.53,2.06,0.12,0.82,2.69,3.13,M.vanity,parent,list);
   box(1.51,2.08,0.82,0.86,2.69,3.16,M.ceramic,parent,list);
   const basin=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.13,0.12,28),M.ceramic);
-  basin.position.set(1.795,0.92,2.96);basin.castShadow=true;parent.add(basin);
-  box(1.78,1.81,0.86,1.06,2.71,2.75,M.steel,parent,list);          // torneira
-  box(1.78,1.81,1.03,1.06,2.71,2.84,M.steel,parent,list);
+  basin.position.set(1.795,0.92,2.96);basin.castShadow=true;
+  const CG=new THREE.Group();parent.add(CG);CG.add(basin);swap('cuba_apoio.glb',CG,1.795,0.86,2.92,0);
+  box(1.78,1.81,0.86,1.06,2.71,2.75,M.steel,CG);          // torneira
+  box(1.78,1.81,1.03,1.06,2.71,2.84,M.steel,CG);
   box(1.56,2.03,1.12,1.8,2.69,2.71,M.mirror,parent,list);
 }
 bathroom(lower,lowWalls);

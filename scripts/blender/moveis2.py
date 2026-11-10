@@ -123,3 +123,44 @@ def geladeira():
 os.makedirs(OUT, exist_ok=True)
 cadeira_fibra(); cadeira_externa(); lounge('lounge_modulo.glb', 0.95, False); lounge('lounge_canto.glb', 0.77, True)
 ombrelone(); tv(); monitor(); geladeira()
+
+# ---------------------------------------------------------------- louças do banheiro
+def cone(name, x, y, z0, z1, r0, r1, m, seg=32, sy=1.0, open_top=False, thick=0.0):
+    bpy.ops.mesh.primitive_cone_add(vertices=seg, radius1=r0, radius2=r1, depth=z1-z0, location=(x, y, (z0+z1)/2))
+    o = bpy.context.object; o.name = name; o.scale = (1, sy, 1); bpy.ops.object.transform_apply(scale=True)
+    if open_top:
+        import bmesh
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        top = [f for f in bm.faces if f.normal.z > 0.9 and f.calc_center_median().z > 0]
+        bmesh.ops.delete(bm, geom=top, context='FACES'); bm.to_mesh(o.data); bm.free()
+    if thick:
+        md = o.modifiers.new('sl', 'SOLIDIFY'); md.thickness = thick
+    md = o.modifiers.new('bv', 'BEVEL'); md.width = 0.006; md.segments = 2; md.limit_method = 'ANGLE'
+    return finish(o, m)
+
+def vaso():                                                                    # vaso com caixa acoplada; costas na parede (y=0), frente -Y
+    reset()
+    Ce, Cr = mat('ceramic', (0.97, 0.97, 0.97), 0.2), mat('chrome', (0.85, 0.85, 0.87), 0.2, 1.0)
+    cone('pe', 0, -0.37, 0, 0.32, 0.12, 0.172, Ce, sy=1.2)
+    cone('bacia', 0, -0.39, 0.3, 0.4, 0.17, 0.19, Ce, sy=1.2, open_top=True, thick=0.02)
+    cone('fundo', 0, -0.39, 0.28, 0.33, 0.1, 0.12, Ce, sy=1.2)
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.165, minor_radius=0.022, major_segments=40, minor_segments=10, location=(0, -0.39, 0.415))
+    t = bpy.context.object; t.scale = (1, 1.2, 0.6); finish(t, Ce)
+    cone('tampa', 0, -0.39, 0.425, 0.445, 0.19, 0.185, Ce, sy=1.2)
+    cube('caixa', -0.18, 0.18, -0.18, 0.0, 0.4, 0.78, Ce, bevel=0.025, seg=4)
+    cube('caixa_base', -0.15, 0.15, -0.2, -0.02, 0.38, 0.42, Ce, bevel=0.01, seg=2)
+    cyl('botao', 0, -0.09, 0.78, 0.79, 0.025, 0.025, Cr, 20)
+    export('vaso_sanitario.glb', 4000)
+
+def cuba():                                                                    # cuba de apoio oval + misturador alto; origem no centro da cuba, sobre a bancada
+    reset()
+    Ce, Cr = mat('ceramic', (0.97, 0.97, 0.97), 0.2), mat('chrome', (0.85, 0.85, 0.87), 0.2, 1.0)
+    cone('cuba', 0, 0, 0, 0.13, 0.13, 0.2, Ce, sy=0.8, open_top=True, thick=0.012)
+    cyl('ralo', 0, 0, 0.012, 0.016, 0.02, 0.02, Cr, 16)
+    cyl('corpo', 0, 0.2, 0, 0.3, 0.018, 0.016, Cr, 16)
+    cube('bica', -0.012, 0.012, 0.07, 0.215, 0.285, 0.31, Cr, bevel=0.01, seg=3)
+    cube('ponta', -0.012, 0.012, 0.07, 0.095, 0.25, 0.31, Cr, bevel=0.01, seg=3)
+    cyl('alavanca', 0.03, 0.2, 0.22, 0.25, 0.008, 0.008, Cr, 8, axis='X')
+    export('cuba_apoio.glb', 3000)
+
+vaso(); cuba()
