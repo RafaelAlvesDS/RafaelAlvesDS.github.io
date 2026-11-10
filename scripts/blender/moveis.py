@@ -104,18 +104,17 @@ def cama():
     cube('base_cab', -W-0.08, W+0.08, -0.03, 0, 0.08, 0.98, Fd, bevel=0.01, seg=1)
     cube('box', -W-0.02, W+0.02, -1.94, -0.06, 0.1, 0.34, Wd, bevel=0.015, seg=2)
     cube('rodape', -W+0.05, W-0.05, -1.87, -0.13, 0.0, 0.1, mat('black', (0.05, 0.05, 0.05), 0.5))
-    cube('colchao', -W, W, -1.92, -0.08, 0.34, 0.6, Li, bevel=0.04, seg=4, sub=1)
-    d = cube('edredom', -W-0.04, W+0.04, -1.96, -0.72, 0.56, 0.66, Du, bevel=0.05, seg=4, sub=2, puff=0.03); noise(d, 0.012, 0.12)
+    cube('colchao', -W, W, -1.92, -0.08, 0.34, 0.6, Li, bevel=0.04, seg=4)
+    d = cube('edredom', -W-0.04, W+0.04, -1.96, -0.72, 0.56, 0.66, Du, bevel=0.04, seg=4); noise(d, 0.008, 0.12)
     for s in (-1, 1):                                                       # caimento lateral do edredom
         x0, x1 = (W+0.02, W+0.06) if s > 0 else (-W-0.06, -W-0.02)
-        f = cube('caimento', x0, x1, -1.96, -0.72, 0.36, 0.64, Du, bevel=0.02, seg=3, sub=1); noise(f, 0.01, 0.1)
-    cube('dobra', -W-0.04, W+0.04, -0.82, -0.68, 0.6, 0.7, Du, bevel=0.05, seg=4, sub=1, puff=0.1)
-    m = cube('manta', -W-0.06, W+0.06, -1.72, -1.42, 0.65, 0.69, Th, bevel=0.02, seg=3, sub=1); noise(m, 0.008, 0.1)
+        f = cube('caimento', x0, x1, -1.96, -0.72, 0.36, 0.64, Du, bevel=0.015, seg=3); noise(f, 0.006, 0.1)
+    cube('dobra', -W-0.04, W+0.04, -0.82, -0.68, 0.6, 0.71, Du, bevel=0.05, seg=4)
+    m = cube('manta', -W-0.06, W+0.06, -1.72, -1.42, 0.655, 0.685, Th, bevel=0.012, seg=3)
     for s in (-1, 1):
-        p = cube('travesseiro', s*0.36-0.3, s*0.36+0.3, -0.5, -0.14, 0.6, 0.76, Cu, bevel=0.07, seg=4, sub=2, puff=0.25)
-        p.rotation_euler = (0.25, 0, 0); p.location.z += 0.02
-        q = cube('almofada', s*0.3-0.2, s*0.3+0.2, -0.6, -0.5, 0.62, 0.92, Fd, bevel=0.05, seg=3, sub=2, puff=0.25)
-        q.rotation_euler = (-0.25, 0, 0)
+        cube('travesseiro', s*0.36-0.3, s*0.36+0.3, -0.5, -0.12, 0.585, 0.73, Cu, bevel=0.06, seg=4, puff=0.2)
+        q = cube('almofada', s*0.3-0.2, s*0.3+0.2, -0.6, -0.5, 0.52, 0.84, Fd, bevel=0.05, seg=4, puff=0.2)
+        q.rotation_euler = (-0.3, 0, 0)
     export('cama_casal.glb', 16000)
 
 # ---------------------------------------------------------------- cadeira de escritório (presidente), encosto para +Y
@@ -131,12 +130,17 @@ def cadeira():
     cyl('pistao', 0, 0, 0.1, 0.4, 0.028, 0.028, Bk, 16); cyl('capa', 0, 0, 0.1, 0.3, 0.04, 0.032, Bk, 16)
     cube('mecanismo', -0.12, 0.12, -0.12, 0.1, 0.38, 0.43, Bk, bevel=0.01)
     s = cube('assento', -0.27, 0.27, -0.27, 0.25, 0.42, 0.53, Le, bevel=0.05, seg=4, sub=1, puff=0.12); noise(s, 0.003, 0.1)
-    b = cube('encosto', -0.25, 0.25, 0.24, 0.33, 0.53, 1.18, Le, bevel=0.05, seg=4, sub=1, puff=0.1)
-    md = b.modifiers.new('curva', 'SIMPLE_DEFORM'); md.deform_method = 'BEND'; md.angle = 0.5; md.deform_axis = 'Z'
-    b.rotation_euler = (-0.12, 0, 0)
-    for z0, z1 in ((0.62, 0.75), (0.8, 0.93)):                              # gomos do encosto
-        g = cube('gomo', -0.22, 0.22, 0.2, 0.26, z0, z1, Le, bevel=0.03, seg=3, sub=1, puff=0.2); g.rotation_euler = (-0.12, 0, 0)
-    h = cube('cabeca', -0.19, 0.19, 0.27, 0.37, 1.16, 1.36, Le, bevel=0.05, seg=4, sub=1, puff=0.15); h.rotation_euler = (-0.15, 0, 0)
+    cube('suporte', -0.04, 0.04, 0.1, 0.26, 0.4, 0.44, Bk, bevel=0.01)          # lâmina que liga o mecanismo ao encosto
+    cube('suporte2', -0.04, 0.04, 0.22, 0.27, 0.4, 0.62, Bk, bevel=0.01)
+    bpy.ops.object.empty_add(location=(0, 0.25, 0.5)); piv = bpy.context.object
+    parts = [cube('encosto', -0.25, 0.25, 0.2, 0.3, 0.52, 1.17, Le, bevel=0.05, seg=4, puff=0.06),
+             cube('lombar', -0.22, 0.22, 0.16, 0.24, 0.6, 0.76, Le, bevel=0.03, seg=3, puff=0.1),
+             cube('gomo', -0.22, 0.22, 0.16, 0.24, 0.8, 0.96, Le, bevel=0.03, seg=3, puff=0.1),
+             cube('haste_cab', -0.03, 0.03, 0.27, 0.31, 1.1, 1.22, Bk, bevel=0.008),
+             cube('cabeca', -0.19, 0.19, 0.21, 0.3, 1.18, 1.36, Le, bevel=0.04, seg=4, puff=0.12)]
+    for o in parts:
+        mw = o.matrix_world.copy(); o.parent = piv; o.matrix_world = mw
+    piv.rotation_euler = (-0.12, 0, 0)
     for x in (-0.29, 0.29):                                                 # braços
         cube('haste', x-0.025, x+0.025, -0.02, 0.06, 0.5, 0.66, Bk, bevel=0.01)
         cube('apoio', x-0.04, x+0.04, -0.2, 0.14, 0.66, 0.7, Bk, bevel=0.015, seg=3)
