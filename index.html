@@ -578,7 +578,7 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,3.01,3.04,0.03,1.73,5.0,5.5,FM.mirror);fb(g,2.98,3.05,0,0.03,4.98,5.52,FM.black);          // espelho de chão encostado na parede da sala
   fb(g,0.4,2.2,0.008,0.018,4.75,5.75,FM.sisal);
 })();
-// cozinha em L: perna 1 na parede dos quartos (cooktop + forno embutido, geladeira no fim),
+// cozinha em L: perna 1 na parede dos quartos (cooktop com gavetões embaixo, geladeira no fim),
 // perna 2 sob a janela (lava-louça, pia, lava e seca); tanque fica no terraço, ao lado da pia de lá
 (function(){const g=FURN_L;
   // bases e tampo contínuo (prof. 60, altura 90)
@@ -586,9 +586,9 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   fb(g,3.2,3.77,0,0.1,0.02,1.95,FM.black);fb(g,3.77,5.6,0,0.1,0,0.57,FM.black);
   fb(g,3.18,3.82,0.86,0.9,0,1.99,FM.granite);fb(g,3.82,5.6,0.86,0.9,0,0.62,FM.granite);
   fb(g,3.2,3.21,0.9,1.5,0,1.97,FM.lacq);fb(g,3.21,5.6,0.9,1.0,0,0.01,FM.lacq);   // frontão (10 cm sob a janela)
-  // perna 1: gavetas | cooktop 4 bocas sobre forno de embutir | gavetas
+  // perna 1: gavetas | cooktop 4 bocas sobre 2 gavetões de panelas | gavetas
   [[0.62,0.98],[1.62,1.95]].forEach(([a,b])=>[0.3,0.55,0.8].forEach(y=>fb(g,3.8,3.815,y-0.01,y+0.01,a+0.06,b-0.06,FM.chrome)));
-  fb(g,3.79,3.81,0.12,0.72,1.02,1.58,FM.black);fb(g,3.81,3.825,0.62,0.66,1.1,1.5,FM.chrome);   // forno
+  fb(g,3.79,3.81,0.12,0.84,1.03,1.57,FM.white);fb(g,3.79,3.815,0.47,0.48,1.03,1.57,FM.granite);[0.4,0.78].forEach(y=>fb(g,3.81,3.825,y-0.01,y+0.01,1.12,1.48,FM.chrome));   // gavetões
   fb(g,3.26,3.76,0.9,0.912,1.02,1.58,FM.black);                                                  // cooktop vitrocerâmico
   [[3.38,1.15],[3.62,1.15],[3.38,1.45],[3.62,1.45]].forEach(([x,z])=>fc(g,x,0.912,z,0.075,0.003,FM.granite,20));
   // geladeira duplex 0,70 × 0,72 × 1,86
@@ -613,6 +613,17 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
    [1.61,1.69,1.77].forEach((y,r)=>{for(let i=0;i<11;i++){const b=fc(g,0,0,0,0.036,0.3,BM[(i+r)%4],10);b.rotation.z=Math.PI/2;b.position.set(3.38,y,0.06+i*0.087);}});}
   fb(g,3.2,3.72,1.6,1.68,1.0,1.6,FM.inox);fb(g,3.2,3.45,1.68,2.2,1.05,1.55,FM.inox);           // depurador
   fb(g,5.0,5.6,1.55,2.2,0,0.35,FM.lacq);
+  // torre quente na parede da área de serviço: forno e micro-ondas de embutir na altura dos olhos, gavetões embaixo e
+  // porta em cima. Fica de frente para o cooktop com 1,20 m de circulação e deixa 65 cm livres na frente da lava e seca.
+  {const X0=5.0,X1=5.6,Z0=1.25,Z1=1.85,F=X0;
+   fb(g,X0+0.02,X1,0,2.2,Z0,Z1,FM.white);fb(g,F-0.005,F+0.02,0,0.08,Z0+0.03,Z1-0.03,FM.black);              // caixa + rodapé recuado
+   [[0.1,0.42],[0.44,0.76]].forEach(([y0,y1])=>{fb(g,F-0.005,F+0.02,y0,y1,Z0+0.005,Z1-0.005,FM.white);fb(g,F-0.02,F-0.005,y1-0.06,y1-0.045,Z0+0.12,Z1-0.12,FM.chrome);});
+   fb(g,F-0.01,F+0.02,0.8,1.4,Z0+0.01,Z1-0.01,FM.black);fb(g,F-0.015,F-0.01,0.88,1.28,Z0+0.06,Z1-0.06,FM.smoke);  // forno 60 × 60
+   fb(g,F-0.04,F-0.015,1.32,1.34,Z0+0.08,Z1-0.08,FM.chrome);[Z0+0.1,Z1-0.1].forEach(z=>fb(g,F-0.04,F-0.01,1.32,1.34,z-0.01,z+0.01,FM.chrome));
+   fb(g,F-0.01,F+0.02,1.44,1.84,Z0+0.01,Z1-0.01,FM.black);fb(g,F-0.015,F-0.01,1.49,1.79,Z0+0.04,Z1-0.18,FM.smoke);  // micro-ondas
+   fb(g,F-0.016,F-0.01,1.62,1.66,Z1-0.12,Z1-0.05,FM.screen);
+   fb(g,F-0.005,F+0.02,1.88,2.19,Z0+0.005,Z1-0.005,FM.white);fb(g,F-0.02,F-0.005,1.9,1.915,Z0+0.12,Z1-0.12,FM.chrome);
+   solid(0,X0-0.05,X1,Z0-0.02,Z1+0.02);}
   solid(0,3.15,3.95,0,2.72);solid(0,3.8,5.6,0,0.66);
 })();
 // sala de jantar — versão econômica: mesa de 4 lugares com cadeiras de fibra natural e pendente (sem banco planejado).
