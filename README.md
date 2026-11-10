@@ -40,3 +40,9 @@ Da coleção [Khronos glTF Sample Assets](https://github.com/KhronosGroup/glTF-S
 
 - `models/planta.glb` — "Diffuse Transmission Plant", © 2024 Darmstadt Graphics Group GmbH, por Eric Chadwick ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a partir de asset CC0 de Rico Cilliers. Geometria simplificada.
 - `models/vaso-flores.glb` — "Glass Vase Flowers", Eric Chadwick e Rico Cilliers. [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+
+## Móveis modelados no Blender
+
+`scripts/blender/moveis.py` gera `models/sofa_retratil.glb`, `models/cama_casal.glb` e `models/cadeira_escritorio.glb`
+(rodar com o módulo `bpy`: `pip install bpy && python scripts/blender/moveis.py models`, depois `gltf-transform quantize`).
+Os materiais saem com nomes (`linen`, `walnut`, `leather`…) que o site troca pelos materiais dele.

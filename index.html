@@ -422,7 +422,8 @@ const ROOF=(function(){
   m.material=M.wall.clone();m.material.side=THREE.DoubleSide;U.add(m);return m;})();
 function roofVis(){ROOF.visible=state.mode==='ctx'||walk.on||tour.on;}
 const FURN_L=new THREE.Group(),FURN_U=new THREE.Group();lower.add(FURN_L);U.add(FURN_U);
-const PLANTS=[];                    // peças que os modelos 3D substituem quando carregam
+const PLANTS=[],SWAP=[];   // SWAP: peças de caixas que um modelo glTF (feito no Blender) substitui ao carregar
+function swap(file,grp,x,y,z,ry,mats){SWAP.push({file,grp,x,y,z,ry,mats});}                    // peças que os modelos 3D substituem quando carregam
 const FURNCOL=[[],[]];                                  // obstáculos para quem anda (por pavimento)
 function metricUV(geo,w,h,d){const uv=geo.attributes.uv,S=[[d,h],[d,h],[w,d],[w,d],[w,h],[w,h]];   // UV em metros: textura não estica
   for(let f=0;f<6;f++)for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*S[f][0],uv.getY(i)*S[f][1]);}}
@@ -517,13 +518,13 @@ function deskChair(g,x,z,mat=FM.leather){const c=new THREE.Group();c.position.se
     const w=new THREE.Mesh(new THREE.SphereGeometry(0.03,10,8),FM.black);w.position.set(Math.cos(a)*0.31,0.03,Math.sin(a)*0.31);c.add(w);}
   fc(c,0,0.08,0,0.025,0.34,FM.chrome,12);fb(c,-0.27,0.27,0.42,0.52,-0.26,0.26,mat);
   const back=fb(c,-0.25,0.25,0.52,1.25,-0.34,-0.24,mat);back.rotation.x=-0.12;fb(c,-0.2,0.2,1.18,1.36,-0.37,-0.28,mat);
-  [-0.29,0.29].forEach(x=>{fb(c,x-0.03,x+0.03,0.52,0.66,-0.05,0.05,FM.black);fb(c,x-0.04,x+0.04,0.66,0.7,-0.2,0.15,mat);});}
+  [-0.29,0.29].forEach(x=>{fb(c,x-0.03,x+0.03,0.52,0.66,-0.05,0.05,FM.black);fb(c,x-0.04,x+0.04,0.66,0.7,-0.2,0.15,mat);});swap('cadeira_escritorio.glb',c,x,0,z,0,mat===FM.leather?null:{leather:mat});}
 function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,FM.black);fc(g,x,y,z,0.04,0.16,mat,24,0.2);fc(g,x,y-0.005,z,0.15,0.01,FM.led,20);}
 
 // quarto do casal (quarto 1, x 0–3,05, z 0–2,57) — versão econômica, só móveis soltos (de loja):
 // cama com a cabeceira dela centralizada na janela, criados-mudos, pendentes de tomada e cortina de linho
 (function(){const g=FURN_L;
-  doubleBed(g,'z',0.05,1.99,1.575);solid(0,0.79,2.36,0,2.0);
+  {const BG=new THREE.Group();g.add(BG);doubleBed(BG,'z',0.05,1.99,1.575);swap('cama_casal.glb',BG,1.575,0,0.05,0);}solid(0,0.79,2.36,0,2.0);
   [[0.3,0.75],[2.4,2.85]].forEach(([a,b])=>{fb(g,a,b,0.12,0.55,0.03,0.43,FM.freijo);fb(g,a+0.02,b-0.02,0.34,0.36,0.43,0.435,FM.walnut);
     [[a+0.03,0.06],[b-0.03,0.06],[a+0.03,0.4],[b-0.03,0.4]].forEach(([x,z])=>fb(g,x-0.012,x+0.012,0,0.12,z-0.012,z+0.012,FM.black));
     pendant(g,(a+b)/2,0.24,0.95,FM.terra);});
@@ -630,16 +631,18 @@ function pendant(g,x,z,y,mat){fb(g,x-0.004,x+0.004,y+0.15,2.65,z-0.004,z+0.004,F
   // braços finos de 10–14 cm, sem a caixa lateral; 2 módulos de assento sobre pés; encostos reclináveis com pillow top;
   // altura ≈ 0,97 m, profundidade 1,00 m fechado e ≈ 1,30 m com os assentos puxados
   const LB=FM.linen.clone();LB.color.setHex(0xcdbfa6);const LBd=FM.linen.clone();LBd.color.setHex(0xb3a58c);
+  const SG=new THREE.Group();g.add(SG);
   const X0=0.18,X1=2.22,ZB=4.03,ZF=5.03,AW=0.13;
-  rbox(g,X0,X0+AW,0.1,0.6,ZB,ZF,LB,0.05);rbox(g,X1-AW,X1,0.1,0.6,ZB,ZF,LB,0.05);              // braços finos
-  rbox(g,X0+AW,X1-AW,0.1,0.58,ZB,ZB+0.24,LB,0.05);                                         // costas
-  rbox(g,X0+AW,X1-AW,0.12,0.27,ZB+0.2,ZF-0.08,LBd,0.03);                                   // estrutura do assento (sem caixa)
+  rbox(SG,X0,X0+AW,0.1,0.6,ZB,ZF,LB,0.05);rbox(SG,X1-AW,X1,0.1,0.6,ZB,ZF,LB,0.05);              // braços finos
+  rbox(SG,X0+AW,X1-AW,0.1,0.58,ZB,ZB+0.24,LB,0.05);                                         // costas
+  rbox(SG,X0+AW,X1-AW,0.12,0.27,ZB+0.2,ZF-0.08,LBd,0.03);                                   // estrutura do assento (sem caixa)
   [[X0+AW+0.01,1.195],[1.205,X1-AW-0.01]].forEach(([a,b])=>{
-    rbox(g,a,b,0.26,0.47,ZB+0.22,ZF,LB,0.06);                                                // assento retrátil
-    const k=rbox(g,a+0.01,b-0.01,0.46,0.97,ZB+0.02,ZB+0.3,LB,0.09);k.rotation.x=-0.13;         // encosto reclinável
-    const t=rbox(g,a+0.03,b-0.03,0.84,0.96,ZB+0.06,ZB+0.36,LB,0.06);t.rotation.x=-0.13;});   // pillow top
-  [[0.6,FM.olive],[1.85,FM.terra]].forEach(([x,m])=>{const c=rbox(g,x-0.2,x+0.2,0.47,0.85,ZB+0.3,ZB+0.44,m,0.06);c.rotation.x=-0.22;});
-  [[X0+0.06,ZB+0.06],[X1-0.06,ZB+0.06],[X0+0.06,ZF-0.06],[X1-0.06,ZF-0.06],[1.2,ZB+0.06],[1.2,ZF-0.12]].forEach(([x,z])=>fc(g,x,0,z,0.025,0.1,FM.walnut,10,0.018));
+    rbox(SG,a,b,0.26,0.47,ZB+0.22,ZF,LB,0.06);                                                // assento retrátil
+    const k=rbox(SG,a+0.01,b-0.01,0.46,0.97,ZB+0.02,ZB+0.3,LB,0.09);k.rotation.x=-0.13;         // encosto reclinável
+    const t=rbox(SG,a+0.03,b-0.03,0.84,0.96,ZB+0.06,ZB+0.36,LB,0.06);t.rotation.x=-0.13;});   // pillow top
+  [[0.6,FM.olive],[1.85,FM.terra]].forEach(([x,m])=>{const c=rbox(SG,x-0.2,x+0.2,0.47,0.85,ZB+0.3,ZB+0.44,m,0.06);c.rotation.x=-0.22;});
+  [[X0+0.06,ZB+0.06],[X1-0.06,ZB+0.06],[X0+0.06,ZF-0.06],[X1-0.06,ZF-0.06],[1.2,ZB+0.06],[1.2,ZF-0.12]].forEach(([x,z])=>fc(SG,x,0,z,0.025,0.1,FM.walnut,10,0.018));
+  swap('sofa_retratil.glb',SG,1.2,0,4.03,0,{linen:LB,fabricD:LBd});
   solid(1,0.05,2.35,3.98,5.08);
   fb(g,0.55,2.1,0.008,0.018,5.0,6.0,FM.sisal);
   fc(g,1.55,0,5.6,0.27,0.4,FM.terra,28);                                   // puff (sai do caminho quando o sofá abre)
@@ -769,6 +772,11 @@ if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
       [].concat(m.material).forEach(mt=>{if(mt.map)mt.map.encoding=THREE.LinearEncoding;mt.emissiveMap=null;mt.emissive&&mt.emissive.setHex(0);mt.needsUpdate=true;});});cb(o);},
     undefined,e=>console.warn('modelo 3D não carregou:',f,e));
   load('planta.glb',o=>{o.traverse(m=>{if(m.isMesh)m.material.color.multiplyScalar(0.75);});PLANTS.forEach(({p,g,x,z,s})=>{const c=o.clone();c.scale.setScalar(1.25*s);c.position.set(x+0.06*s,0,z+0.11*s);g.add(c);p.visible=false;});});
+  // móveis modelados no Blender (scripts/blender/moveis.py): trocam as caixas e usam os materiais do site (texturas procedurais)
+  const byFile={};SWAP.forEach(e=>(byFile[e.file]=byFile[e.file]||[]).push(e));
+  Object.entries(byFile).forEach(([f,list])=>load(f,o=>list.forEach(e=>{const c=o.clone(true);
+    c.traverse(m=>{if(m.isMesh){const n=m.material.name;m.material=(e.mats&&e.mats[n])||FM[n]||m.material;}});
+    c.position.set(e.x,e.y,e.z);c.rotation.y=e.ry;e.grp.parent.add(c);e.grp.visible=false;})));
   load('vaso-flores.glb',o=>{o.scale.setScalar(1.6);o.position.set(3.99,0.76,5.6);FURN_L.add(o);});
 }
 
