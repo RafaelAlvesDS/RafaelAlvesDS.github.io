@@ -1070,7 +1070,7 @@ const AV=[[-17.7,103],[11,98],[75,87],[100,81.6]];   // borda oeste da avenida (
 const avEdge=z=>{for(let i=0;i<AV.length-1;i++){const [z0,x0]=AV[i],[z1,x1]=AV[i+1];if(z<=z1||i===AV.length-2){const t=(z-z0)/(z1-z0);return x0+(x1-x0)*t;}}};
 const FRONT=[[80.2,-17.7],[103,-17.7],[98,11],[87,75],[81.6,100],[58,100],[61.6,72],[65.1,62.3]];
 // vagas: colunas de vagas (5 m de fundo, 2,5 m de largura) e a fileira ao longo do muro sul
-const CARS=[],TREES_SITE=[];
+const CARS=[],TREES_SITE=[],BOXCARS=[];
 (function(){
   const cols=[[160,120,440],[205,120,440],[250,120,760],[295,120,800],[70,520,800],[105,520,800],
     [350,410,780],[400,410,780],[515,410,780],[575,410,780],[615,410,780],[655,410,700],
@@ -1093,7 +1093,23 @@ const CARS=[],TREES_SITE=[];
   groups.forEach((g,ci)=>{if(!g.length)return;const mat=new THREE.MeshStandardMaterial({color:colors[ci],roughness:.4,metalness:.3});
     [[body,0.55,0],[cab,1.35,-0.2]].forEach(([geo,y,off])=>{const im=new THREE.InstancedMesh(geo,mat,g.length);
       g.forEach(([x,z,r],i)=>{q.setFromAxisAngle(up,r?Math.PI/2:0);pv.set(x+(r?0:off),y,z+(r?off:0));mt.compose(pv,q,sv);im.setMatrixAt(i,mt);if(!off)CARS.push(r?[x-0.95,x+0.95,z-2.15,z+2.15]:[x-2.15,x+2.15,z-0.95,z+0.95]);});
-      im.castShadow=true;ctx.add(im);});});
+      im.castShadow=true;ctx.add(im);BOXCARS.push(im);});});
+  // modelos do Blender (scripts/blender/carros.py): hatch, sedã e SUV instanciados; a cor vai por instância na pintura.
+  // Enquanto carregam, ficam as caixas acima.
+  if(THREE.GLTFLoader){const TYPES=['carro_hatch','carro_seda','carro_suv'],all=[];
+    groups.forEach((g,ci)=>g.forEach(st=>all.push([...st,colors[ci]])));
+    const byType=TYPES.map(()=>[]);all.forEach(c=>byType[Math.floor(rnd()*TYPES.length)].push([...c,rnd()<0.5?0:Math.PI]));
+    const MAT={paint:new THREE.MeshStandardMaterial({color:0xffffff,roughness:.3,metalness:.15}),glass:new THREE.MeshStandardMaterial({color:0x1a2128,roughness:.08,metalness:.6}),
+      tire:new THREE.MeshStandardMaterial({color:0x111111,roughness:.9}),rim:new THREE.MeshStandardMaterial({color:0xc0c3c8,roughness:.3,metalness:.8}),
+      light:new THREE.MeshStandardMaterial({color:0xf4f2ea,emissive:0x333322,roughness:.1}),tail:new THREE.MeshStandardMaterial({color:0x9a1010,emissive:0x220000,roughness:.3})};
+    let done=0;const gl=new THREE.GLTFLoader(),cc=new THREE.Color();
+    TYPES.forEach((t,ti)=>gl.load('models/'+t+'.glb',G=>{const list=byType[ti];G.scene.updateMatrixWorld(true);
+      if(list.length)G.scene.traverse(m=>{if(!m.isMesh)return;const geo=m.geometry.clone().applyMatrix4(m.matrixWorld),mat=MAT[m.material.name]||m.material;
+        const im=new THREE.InstancedMesh(geo,mat,list.length);
+        list.forEach(([x,z,r,col,flip],i)=>{q.setFromAxisAngle(up,(r?Math.PI/2:0)+flip);pv.set(x,0.14,z);mt.compose(pv,q,sv);im.setMatrixAt(i,mt);
+          if(m.material.name==='paint')im.setColorAt(i,cc.setHex(col));});
+        if(im.instanceColor)im.instanceColor.needsUpdate=true;im.castShadow=true;ctx.add(im);});
+      if(++done===TYPES.length)BOXCARS.forEach(b=>{b.visible=false;});},undefined,e=>console.warn('carro não carregou',t,e)));}
   // árvores marcadas na implantação
   const T=[[75,150],[160,40],[190,40],[150,95],[140,360],[85,500],[75,540],[70,610],[50,680],[45,745],[40,820],[60,860],
     [330,840],[850,840],[820,390],[1135,385],[1055,490],[1105,480],[1055,560],[1100,560],[1060,620],[1100,610],[1060,680],[1090,712],
