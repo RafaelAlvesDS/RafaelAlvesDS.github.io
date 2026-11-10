@@ -146,5 +146,6 @@ def cadeira():
         cube('apoio', x-0.04, x+0.04, -0.2, 0.14, 0.66, 0.7, Bk, bevel=0.015, seg=3)
     export('cadeira_escritorio.glb', 9000)
 
-os.makedirs(OUT, exist_ok=True)
-sofa(); cama(); cadeira()
+if __name__ == '__main__':
+    os.makedirs(OUT, exist_ok=True)
+    sofa(); cama(); cadeira()

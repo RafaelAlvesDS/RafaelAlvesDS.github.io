@@ -43,6 +43,6 @@ Da coleção [Khronos glTF Sample Assets](https://github.com/KhronosGroup/glTF-S
 
 ## Móveis modelados no Blender
 
-`scripts/blender/moveis.py` gera `models/sofa_retratil.glb`, `models/cama_casal.glb` e `models/cadeira_escritorio.glb`
+`scripts/blender/moveis.py` e `moveis2.py` geram os móveis em `models/` (sofá, cama, cadeiras, lounge, ombrelone, TV, monitor, geladeira)
 (rodar com o módulo `bpy`: `pip install bpy && python scripts/blender/moveis.py models`, depois `gltf-transform quantize`).
 Os materiais saem com nomes (`linen`, `walnut`, `leather`…) que o site troca pelos materiais dele.
