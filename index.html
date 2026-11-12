@@ -888,7 +888,7 @@ function cbox(x0,x1,y0,y1,z0,z1,mat,parent=ctx){
 }
 // caixas instanciadas (uma chamada de desenho por material, leve no celular)
 const IB={wall:[],band:[],glass:[],door:[]};
-const ibox=(x0,x1,y0,y1,z0,z1,k)=>IB[k].push([Math.min(x0,x1),Math.max(x0,x1),y0,y1,Math.min(z0,z1),Math.max(z0,z1)]);
+const ibox=(x0,x1,y0,y1,z0,z1,k)=>IBOX(x0,x1,y0,y1,z0,z1,k),IBOX=(x0,x1,y0,y1,z0,z1,k)=>IB[k].push([Math.min(x0,x1),Math.max(x0,x1),y0,y1,Math.min(z0,z1),Math.max(z0,z1)]);
 const F17=17*F;                             // piso do 17º (coberturas)
 // Prédio medido na imagem da construtora + plantas (≈ 5,66 px/m na implantação, ≈ 134 px/m na planta do meio).
 // X: 0 = fachada oeste; Z: 0 = ponta norte. Colunas: pares a oeste, ímpares a leste, corredor aberto no meio.
@@ -983,7 +983,8 @@ function rectSub(r,h){const [x0,x1,z0,z1]=r,[a,b,c,d]=h;if(b<=x0||a>=x1||d<=z0||
 function esOffset(x,z){             // altura do piso dentro da caixa de escada, relativa ao andar de baixo (0 … F)
   if(z>=ES.ZL)return 0;if(z<=ES.ZM)return F/2;
   const t=(ES.ZL-z)/(ES.ZL-ES.ZM);return x<ES.XM?t*F/2:F-t*F/2;}
-function coreOurs(){ // núcleo da torre 1: térreo, 16º e 17º ocos (hall e elevadores), maciço nos demais andares
+function coreOurs(ox=0){ // núcleo das torres (iguais): hall, elevadores e escada em todos os andares
+  const ibox=(x0,x1,y0,y1,z0,z1,k)=>IBOX(x0+ox,x1+ox,y0,y1,z0,z1,k);
   const XE=BW+1.7,C0=CORE[0],C1=CORE[1];
   // poço do elevador A (x 1,85–3,55 · z 25,15–27,00): o maciço e as lajes contornam o poço, então quem sobe de elevador
   // vê as paredes do poço passando, e não o piso de cada andar atravessando a cabine
@@ -1052,11 +1053,11 @@ function building(ox,ours){
   corner(ox,true,true,false,true);          // 01
   // núcleo: elevadores, escada e hall, atravessando o prédio
   const T=([x0,x1,z0,z1])=>[ox+x0,ox+x1,z0,z1];
-  if(ours) coreOurs(); else unitMass(T,[[0.5,BW+1.7,CORE[0],CORE[1]]],0,TOP+0.6);
+  coreOurs(ox);                             // as três torres são iguais: núcleo acessível em todas
   ibox(ox+5,ox+11,TOP+0.6,TOP+3.2,CORE[0]+0.4,CORE[1]-0.4,'wall');      // casa de máquinas
   for(let f=0;f<=17;f++){const y=f*F;
     ibox(ox+0.45,ox+0.55,y+0.9,y+2.2,CORE[0]+1.8,CORE[1]-1.8,'glass');
-    if(!(ours&&f===0)) ibox(ox+BW+1.65,ox+BW+1.75,y+0.9,y+2.2,CORE[0]+1.8,CORE[1]-1.8,'glass');
+    if(f>0) ibox(ox+BW+1.65,ox+BW+1.75,y+0.9,y+2.2,CORE[0]+1.8,CORE[1]-1.8,'glass');
     // corredor aberto: laje de cada andar
     if(f>0){ibox(ox+COR[0],ox+COR[1],y-0.2,y,UD,CORE[0],'band');ibox(ox+COR[0],ox+COR[1],y-0.2,y,CORE[1],BL-UD,'band');}
   }
@@ -1099,8 +1100,8 @@ let GLASS_LIT=null;
      parts[parts.length-1].translate(0,0,0);}
    parts.push(new THREE.BoxGeometry(ES.X1-ES.X0,0.2,ES.ZM-ES.Z0).translate((ES.X0+ES.X1)/2,F/2-0.1,(ES.Z0+ES.ZM)/2));      // patamar intermediário
    parts.push(new THREE.BoxGeometry(0.1,F,ES.ZL-ES.ZM).translate(ES.XM,F/2,(ES.ZM+ES.ZL)/2));                             // parede central
-   const geo=THREE.BufferGeometryUtils.mergeBufferGeometries(parts),im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({color:0xb9b4aa,roughness:.85}),ES.F1-ES.F0);
-   for(let f=ES.F0;f<ES.F1;f++){pv.set(0,f*F,0);sv.set(1,1,1);mt.compose(pv,q,sv);im.setMatrixAt(f-ES.F0,mt);}im.receiveShadow=true;ctx.add(im);}
+   const geo=THREE.BufferGeometryUtils.mergeBufferGeometries(parts),im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({color:0xb9b4aa,roughness:.85}),(ES.F1-ES.F0)*BX.length);
+   let ii=0;BX.forEach(ox=>{for(let f=ES.F0;f<ES.F1;f++){pv.set(ox,f*F,0);sv.set(1,1,1);mt.compose(pv,q,sv);im.setMatrixAt(ii++,mt);}});im.receiveShadow=true;ctx.add(im);}
   // cada caracol é girada para que o pé (16º) e a chegada (17º) caiam em área livre, longe das paredes
   {const free=(fp,x,z)=>fp.areas.some(a=>x>a[0]+0.35&&x<a[1]-0.35&&z>a[2]+0.35&&z<a[3]-0.35)&&!fp.walls.some(w=>x>w[0]-0.25&&x<w[1]+0.25&&z>w[2]-0.25&&z<w[3]+0.25);
    STAIRS.forEach(st=>{let best=0,bs=-1;for(let k=0;k<16;k++){const a0=k*Math.PI/8,aT=a0+Math.PI*1.5;let sc=0;
@@ -1967,7 +1968,8 @@ interact(tb(75.47,75.5,1.08,1.18,62.2,62.3,btnMat()),'Tocar o interfone',()=>{
 tb(72.7,72.9,0,1.2,62.1,62.3,CM.conc);                                             // botão de saída (lado de dentro)
 interact(tb(72.6,72.7,1.05,1.13,62.16,62.24,btnMat()),'Abrir o portão',()=>{openPed();say('Portão aberto.',2);});
 
-// ---------- térreo da torre 1: entrada de vidro automática, hall, elevadores
+// ---------- térreo da torre: entrada de vidro automática, hall, elevadores (um conjunto só, levado para a torre onde a pessoa está)
+const TOWERG=new THREE.Group(),TOWERG_N0=tourG.children.length;tourG.add(TOWERG);
 const ENT={t:0,goal:0};
 const entL=tb(XE-0.1,XE-0.06,0.12,2.3,26.6,27.3,TM.glass), entR=tb(XE-0.1,XE-0.06,0.12,2.3,27.3,28.0,TM.glass);
 tb(XE-0.12,XE-0.04,2.3,2.4,26.55,28.05,TM.bar);
@@ -2036,6 +2038,10 @@ PANEL_ROWS.forEach((r,i)=>r.forEach((t,c)=>{
     liftCall(k);
   });
 }));
+tourG.children.slice(TOWERG_N0+1).forEach(o=>TOWERG.attach(o));      // tudo o que foi criado acima vai para o grupo da torre
+const TOWER_NAME=['Torre 3','Torre 2','Torre 1'];
+function setTower(ox){if(tour.tw===ox)return;tour.tw=ox;TOWERG.position.x=ox;
+  if(!(tour.zone==='lift'))Object.assign(LIFT,{y:LV[0],lvl:0,target:-1,pend:-1,doors:0,goal:0,moving:false});}
 function flashBtn(m){m.material.emissive.setHex(0xc0533d);setTimeout(()=>m.material.emissive.setHex(0),500);}
 const LIFT={y:LV[0],lvl:0,target:-1,pend:-1,doors:0,goal:0,moving:false,v:0,timer:0,shown:''};
 function liftCall(k){
@@ -2044,7 +2050,7 @@ function liftCall(k){
   LIFT.target=k;LIFT.goal=0;litFloor(k,true);
 }
 function litFloor(k,on){const m=CABBTN[LVN[k]];if(m)m.material.emissive.setHex(on?0xff8a2a:0);LAND[k].b.material.emissive.setHex(on?0xff8a2a:0);}
-function tvInDoorway(){return (tour.zone==='lift'&&tour.x>3.2)||((tour.zone==='ground'||tour.zone==='hall')&&tour.x<4.15&&tour.z>25.4&&tour.z<26.75);}
+function tvInDoorway(){const x=tour.x-tour.tw;return (tour.zone==='lift'&&x>3.2)||((tour.zone==='ground'||tour.zone==='hall')&&x<4.15&&tour.z>25.4&&tour.z<26.75);}
 function liftOpenAt(k){return LIFT.lvl===k&&!LIFT.moving&&LIFT.target<0&&LIFT.doors>0.8;}
 function liftUpdate(dt){
   const sp=dt/1.1;LIFT.doors+=Math.max(-sp,Math.min(sp,LIFT.goal-LIFT.doors));
@@ -2104,7 +2110,7 @@ function tvAnimate(dt){
   if(SLD){const s=dt*1.2;SLD.t+=Math.max(-s,Math.min(s,SLD.goal-SLD.t));SLD.m.position.x=SLD.x0+SLD.t*1.02;}
   {const s=dt*0.9;if(PED.timer>0){PED.timer-=dt;if(PED.timer<=0&&!(tour.zone==='ground'&&Math.abs(tour.x-PGX)<2.4&&tour.z<64.8))PED.goal=0;else if(PED.timer<=0)PED.timer=1;}
    PED.t+=Math.max(-s,Math.min(s,PED.goal-PED.t));pedGate.rotation.y=PED.closedA+(PED.openA-PED.closedA)*PED.t;}
-  {const near=tour.on&&tour.zone==='ground'&&Math.hypot(tour.x-XE,tour.z-27.3)<2.4;const g=near?1:0;if(g!==ENT.goal){ENT.goal=g;if(tour.on)SFX.whoosh();}
+  {const near=tour.on&&tour.zone==='ground'&&Math.hypot(tour.x-tour.tw-XE,tour.z-27.3)<2.4;const g=near?1:0;if(g!==ENT.goal){ENT.goal=g;if(tour.on)SFX.whoosh();}
    const s=dt*1.6;ENT.t+=Math.max(-s,Math.min(s,ENT.goal-ENT.t));entL.position.z=26.95-ENT.t*0.68;entR.position.z=27.65+ENT.t*0.68;}
   liftUpdate(dt);measFrame();
   if(toastT>0){toastT-=dt;if(toastT<=0){toastVR.visible=false;$('walktoast').hidden=true;}}
@@ -2153,14 +2159,13 @@ function tvBuildShapes(){
   addShape(R(PGX-0.05,PGX+0.05,67.3,71.9));addShape(R(75.15,75.5,62.05,62.45));addShape(R(72.65,72.95,62.05,62.35));
   addShape(R(PGX-0.06,PGX+0.06,62.1,64.6,()=>PED.t<0.6),true);
   BX.forEach((ox,i)=>{
-    if(i<2){addShape(R(ox+0.3,ox+13.5,-0.1,BL+0.1));addShape(R(ox+13.4,ox+XE+0.05,C0,C1));return;}
-    addShape(R(0.3,13.5,-0.1,C0+0.15));addShape(R(0.3,13.5,C1-0.15,BL+0.1));
-    addShape(R(13.4,XE+0.05,C0-0.05,C0+0.15));addShape(R(13.4,XE+0.05,C1-0.15,C1+0.05));
-    addShape(R(0.3,3.7,C0,C1));addShape(R(XE-0.15,XE+0.05,C0,26.6));addShape(R(XE-0.15,XE+0.05,28.0,C1));
+    addShape(R(ox+0.3,ox+13.5,-0.1,C0+0.15));addShape(R(ox+0.3,ox+13.5,C1-0.15,BL+0.1));
+    addShape(R(ox+13.4,ox+XE+0.05,C0-0.05,C0+0.15));addShape(R(ox+13.4,ox+XE+0.05,C1-0.15,C1+0.05));
+    addShape(R(ox+0.3,ox+3.7,C0,C1));addShape(R(ox+XE-0.15,ox+XE+0.05,C0,26.6));addShape(R(ox+XE-0.15,ox+XE+0.05,28.0,C1));
+    addShape(R(ox+XE-0.15,ox+XE+0.05,26.6,28.0,()=>tour.tw!==ox||ENT.t<0.75),true);     // porta de vidro (abre só na torre ativa)
+    addShape(R(ox+12.6,ox+15.2,C1-0.45,C1));addShape(R(ox+12.6,ox+14.9,24.85,25.85));
+    [[14.9,29.3],[4.3,25.2],[9.0,29.3]].forEach(([x,z])=>addShape({t:'c',x:ox+x,z,r:0.3}));
   });
-  addShape(R(XE-0.15,XE+0.05,26.6,28.0,()=>ENT.t<0.75),true);
-  addShape(R(10.4,13.6,C1-0.45,C1));addShape(R(12.6,14.9,24.85,25.85));
-  [[14.9,29.3],[4.3,25.2],[9.0,29.3]].forEach(([x,z])=>addShape({t:'c',x,z,r:0.3}));
   CARS.forEach(c=>addShape(R(c[0],c[1],c[2],c[3])));
   TREES_SITE.forEach(([x,z])=>addShape({t:'c',x,z,r:0.3}));
   [[pw(885,385),pw(905,440)],[pw(975,390),pw(1037,437)],[pw(1040,397),pw(1062,430)],[pw(1093,395),pw(1105,440)],[pw(1062,790),pw(1090,812)]]
@@ -2196,24 +2201,16 @@ function tvPush(x,z){
   const lim=TER.span/2-60;
   return [Math.max(ANCHOR[0]-lim,Math.min(ANCHOR[0]+lim,x)),Math.max(ANCHOR[1]-lim,Math.min(ANCHOR[1]+lim,z))];
 }
-const inLobby=(x,z)=>x>0.5&&x<XE&&z>C0&&z<C1;
+const inLobbyL=(x,z)=>x>0.5&&x<XE&&z>C0&&z<C1,inLobby=(x,z)=>BX.some(ox=>inLobbyL(x-ox,z)),lobbyOf=(x,z)=>BX.find(ox=>inLobbyL(x-ox,z));
 function groundY(x,z){if(inLobby(x,z))return 0.12;if(inPoly([x,z],SITE)||inPoly([x,z],ACCESS))return 0.1;return Math.max(HT(x,z),-60);}
 
 // ---------- estado do passeio e deslocamento por zona
-const tour={spi:-1,spa:0,sth:0,sy:0,on:false,xr:false,zone:'ground',L:0,x:88.8,z:63.5,ys:0,apt:{x:4.3,z:5.0,y:0,floor:0,stair:false,phi:0},seen:{},where:'',adj:0,wristOff:false,run:false};
+const tour={tw:0,spi:-1,spa:0,sth:0,sy:0,on:false,xr:false,zone:'ground',L:0,x:88.8,z:63.5,ys:0,apt:{x:4.3,z:5.0,y:0,floor:0,stair:false,phi:0},seen:{},where:'',adj:0,wristOff:false,run:false};
 const HALLR=[[3.70+PR,9.55-PR,C0+0.15+PR,C1-0.15-PR],[COR[0]+PR,COR[1]-PR,C1-0.5,BL-UD-PR],[COR[0]+PR,COR[1]-PR,UD+PR,C0+0.5]];
 const inR=(x,z,L)=>L.some(r=>x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3]);
 const DOOR_IN=[25.62+0.16,26.52-0.16];
 function enterApt(nx,nz,L){const S=tour.apt;Object.assign(S,{x:BL-0.2-nz,z:nx-0.2,y:L===17?LEVEL:0,floor:L-16,stair:false,phi:0});tour.zone='apt';tour.x=nx;tour.z=nz;}
-function tvStep(nx,nz){
-  const zn=tour.zone;
-  if(zn==='ground'){
-    if(inLobby(nx,nz)&&nx>ES.X0&&nx<ES.X1&&nz<ES.ZL){                                    // escada no hall do térreo
-      if(nx>ES.X0+PR&&nx<ES.XM-0.05-PR&&tour.z>=ES.ZL-0.02){tour.zone='stair';tour.sy=0;tour.x=nx;tour.z=nz;}
-      return;}
-    if(nx<3.96&&nz>DOOR_IN[0]&&nz<DOOR_IN[1]&&liftOpenAt(0)){if(nx<3.62)tour.zone='lift';tour.x=nx;tour.z=nz;return;}   // pela porta aberta do elevador
-    const r=tvPush(nx,nz);tour.x=r[0];tour.z=r[1];return;
-  }
+function tvStepTower(zn,nx,nz){
   if(zn==='lift'){
     const open=!LIFT.moving&&LIFT.target<0&&LIFT.doors>0.8,inDoor=nz>DOOR_IN[0]&&nz<DOOR_IN[1];
     if(open&&inDoor&&nx>3.62){if(LIFT.lvl===0)tour.zone='ground';else{tour.zone='hall';tour.L=LIFT.lvl;}tour.x=nx;tour.z=nz;return;}
@@ -2226,7 +2223,7 @@ function tvStep(nx,nz){
     if(L>=1&&nx>9.33&&nx>tour.x&&nz>28.1+PR&&nz<29.0-PR){tour.zone='stair';tour.sy=L*F;tour.x=Math.max(nx,ES.X0+PR+0.01);tour.z=nz;return;}   // porta da escada
     if(L>=16){const e=spiralEnter(nx,nz,L);if(e===1){tour.x=nx;tour.z=nz;return;}if(e===-1)return;}
     if(nx<3.62&&nz>DOOR_IN[0]&&nz<DOOR_IN[1]&&liftOpenAt(L)){tour.zone='lift';tour.x=nx;tour.z=nz;return;}
-    const fd=L>=16?FRONT_DOORS[L-16]:null;                        // apto 12: só no 16º e no 17º
+    const fd=L>=16&&tour.tw===0?FRONT_DOORS[L-16]:null;          // apto 12 da torre 1: só no 16º e no 17º
     if(fd&&nz>48.62&&nx>6.02&&nx<6.56&&fd.t>0.8){enterApt(nx,nz,L);return;}
     const RR=HALLR.slice();if(liftOpenAt(L))RR.push([3.3,3.95,DOOR_IN[0],DOOR_IN[1]]);if(fd&&fd.t>0.8)RR.push([6.02,6.56,47.9,48.95]);
     const FP=FLOORPLAN[L<=15?'std':L===16?'d16':'d17'];          // apartamentos dos outros andares: área do apto menos as paredes
@@ -2234,6 +2231,19 @@ function tvStep(nx,nz){
     if(ok(nx,nz)){tour.x=nx;tour.z=nz;}else if(ok(nx,tour.z))tour.x=nx;else if(ok(tour.x,nz))tour.z=nz;
     return;
   }
+}
+function tvStep(nx,nz){
+  const zn=tour.zone;
+  if(zn==='ground'){
+    {let best=tour.tw,bd=1e9;BX.forEach(ox=>{const d=Math.abs(nx-(ox+BW/2));if(d<bd){bd=d;best=ox;}});setTower(best);}   // torre mais próxima
+    const TW=tour.tw,lx=nx-TW;
+    if(inLobbyL(lx,nz)&&lx>ES.X0&&lx<ES.X1&&nz<ES.ZL){                                    // escada no hall do térreo
+      if(lx>ES.X0+PR&&lx<ES.XM-0.05-PR&&tour.z>=ES.ZL-0.02){tour.zone='stair';tour.sy=0;tour.x=nx;tour.z=nz;}
+      return;}
+    if(lx<3.96&&nz>DOOR_IN[0]&&nz<DOOR_IN[1]&&liftOpenAt(0)){if(lx<3.62)tour.zone='lift';tour.x=nx;tour.z=nz;return;}   // pela porta aberta do elevador
+    const r=tvPush(nx,nz);tour.x=r[0];tour.z=r[1];return;
+  }
+  if(zn==='lift'||zn==='hall'||zn==='stair'){const TW=tour.tw;tour.x-=TW;tvStepTower(zn,nx-TW,nz);tour.x+=TW;return;}
   if(zn==='apt'){
     const S=tour.apt,xl=BL-0.2-nz,zl=nx-0.2,fd=FRONT_DOORS[S.floor];
     if(!S.stair&&fd.t>0.8&&zl>5.82&&zl<6.36&&xl>5.3){
@@ -2276,9 +2286,9 @@ function whereName(){
   const z=tour.zone;
   if(z==='lift')return 'Elevador';
   if(z==='stair'){const f=Math.round(tour.sy/F);return 'Escada · '+(f<1?'térreo':f+'º andar');}
-  if(z==='hall')return tour.spi>=0?'Escada caracol':LVN[tour.L]+'º andar';
+  if(z==='hall')return tour.spi>=0?'Escada caracol':TOWER_NAME[BX.indexOf(tour.tw)]+' · '+LVN[tour.L]+'º andar';
   if(z==='apt'){const S=tour.apt;if(S.stair)return 'Escada caracol';if(S.floor===0)return 'Apartamento · pavimento inferior';return S.x<3.05&&S.z<2.9?'Terraço descoberto':'Apartamento · pavimento superior';}
-  if(inLobby(tour.x,tour.z))return 'Hall de entrada · Torre 1';
+  if(inLobby(tour.x,tour.z))return 'Hall de entrada · '+TOWER_NAME[BX.indexOf(lobbyOf(tour.x,tour.z))];
   if(inPoly([tour.x,tour.z],ACCESS))return 'Portaria';
   if(inPoly([tour.x,tour.z],SITE))return 'Condomínio';
   return 'Rua';
