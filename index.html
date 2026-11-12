@@ -1008,12 +1008,12 @@ function coreOurs(){ // núcleo da torre 1: térreo, 16º e 17º ocos (hall e el
 // instanciadas do prédio (poucas chamadas de desenho). 1º–15º: andar-tipo (8 do meio + 4 de canto); 16º: parte de baixo
 // dos duplex (com a escada caracol); 17º: parte de cima. Meio: plantas enviadas (andar-tipo e cobertura do meio);
 // canto: a planta de vocês, espelhada. O térreo continua fechado.
-IB.inner=[];IB.floor=[];
+IB.inner=[];IB.floor=[];IB.win=[];          // win: vidro transparente das janelas dos apartamentos ocos
 const FLOORPLAN={std:{walls:[],areas:[]},d16:{walls:[],areas:[]},d17:{walls:[],areas:[]}};   // para andar a pé (2D)
 const STAIRS=[];                                                                           // escadas caracol: [x,z]
 function wallBoxes(ax,c0,c1,s,e,ops,h,k,out){   // 'u': corre em u e ocupa v c0..c1; 'v': corre em v e ocupa u c0..c1
   const P=(a,b,y0,y1,kk,g)=>{const q0=g?(c0+c1)/2-0.015:c0,q1=g?(c0+c1)/2+0.015:c1;out.push(ax==='u'?[a,b,q0,q1,y0,y1,kk]:[q0,q1,a,b,y0,y1,kk]);};
-  let cur=s;ops.slice().sort((p,q)=>p[0]-q[0]).forEach(([a,b,lo,hi,gl])=>{if(a>cur)P(cur,a,0,h,k);if(lo>0)P(a,b,0,lo,k);if(hi<h)P(a,b,hi,h,k);if(gl)P(a,b,lo,hi,'glass',1);cur=b;});
+  let cur=s;ops.slice().sort((p,q)=>p[0]-q[0]).forEach(([a,b,lo,hi,gl])=>{if(a>cur)P(cur,a,0,h,k);if(lo>0)P(a,b,0,lo,k);if(hi<h)P(a,b,hi,h,k);if(gl)P(a,b,lo,hi,'win',1);cur=b;});
   if(e>cur)P(cur,e,0,h,k);}
 const MH=2.6,MIDU={std:[],d17:[]};
 {const o=MIDU.std,W=(ax,c0,c1,s,e,ops=[],k='wall')=>wallBoxes(ax,c0,c1,s,e,ops,MH,k,o);
@@ -1045,11 +1045,11 @@ function emitUnit(boxes,T,y,fp){boxes.forEach(([a,b,c,d,y0,y1,k])=>{const [x0,x1
 function emitSlab(rects,T,y,fp){rects.forEach(r=>{const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y-0.2,y,z0,z1,'floor');
   if(fp)fp.areas.push([Math.min(x0,x1)-0.35,Math.max(x0,x1)+0.35,Math.min(z0,z1)-0.35,Math.max(z0,z1)+0.35]);});}
 function building(ox,ours){
-  ROWS.forEach(([z0,flip])=>{middle(ox,true,z0,flip,ours);middle(ox,false,z0,flip,ours);});
-  corner(ox,false,false,ours,ours);         // 12 (o de vocês no prédio da direita)
-  corner(ox,true,false,false,ours);         // 11
-  corner(ox,false,true,false,ours);         // 02
-  corner(ox,true,true,false,ours);          // 01
+  ROWS.forEach(([z0,flip])=>{middle(ox,true,z0,flip,true);middle(ox,false,z0,flip,true);});   // as três torres ocas, com janelas de vidro
+  corner(ox,false,false,ours,true);         // 12 (o de vocês no prédio da direita)
+  corner(ox,true,false,false,true);         // 11
+  corner(ox,false,true,false,true);         // 02
+  corner(ox,true,true,false,true);          // 01
   // núcleo: elevadores, escada e hall, atravessando o prédio
   const T=([x0,x1,z0,z1])=>[ox+x0,ox+x1,z0,z1];
   if(ours) coreOurs(); else unitMass(T,[[0.5,BW+1.7,CORE[0],CORE[1]]],0,TOP+0.6);
@@ -1083,14 +1083,15 @@ let GLASS_LIT=null;
     glass:new THREE.MeshStandardMaterial({color:0x4f6573,roughness:.15,metalness:.4}),
     door:new THREE.MeshStandardMaterial({color:0x7a6450,roughness:.7}),
     inner:new THREE.MeshStandardMaterial({color:0xf4f0e8,roughness:.9}),
-    floor:new THREE.MeshStandardMaterial({color:0xd8d1c4,roughness:.7})};
+    floor:new THREE.MeshStandardMaterial({color:0xd8d1c4,roughness:.7}),
+    win:new THREE.MeshStandardMaterial({color:0x9fb8c4,roughness:.05,metalness:.3,transparent:true,opacity:.22,depthWrite:false})};
   mats.glassLit=GLASS_LIT=mats.glass.clone();
   const mt=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sv=new THREE.Vector3();
   Object.keys(IB).forEach(k=>{
     const L=IB[k];if(!L.length) return;
     const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mats[k],L.length);
     L.forEach(([x0,x1,y0,y1,z0,z1],i)=>{pv.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);sv.set(Math.max(x1-x0,0.01),Math.max(y1-y0,0.01),Math.max(z1-z0,0.01));mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});
-    im.castShadow=k!=='glass'&&k!=='glassLit'&&k!=='inner'&&k!=='floor';im.receiveShadow=true;ctx.add(im);
+    im.castShadow=k!=='glass'&&k!=='glassLit'&&k!=='inner'&&k!=='floor'&&k!=='win';if(k==='win')im.renderOrder=2;im.receiveShadow=true;ctx.add(im);
   });
   {const N=8,parts=[],rise=F/2/N,run=(ES.ZL-ES.ZM)/N;             // escada: um andar de degraus, repetido do térreo ao 16º
    for(let i=0;i<N;i++){parts.push(new THREE.BoxGeometry(ES.XM-ES.X0-0.05,rise*(i+1),run).translate((ES.X0+ES.XM-0.05)/2,rise*(i+1)/2,ES.ZL-run*(i+0.5)));
