@@ -205,6 +205,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
       <button id="b-walk">Andar (1ª pessoa)</button>
       <button id="b-tour">Passeio a pé</button>
       <button id="b-vr" hidden>Entrar em VR</button>
+      <button id="b-br">Battle royale</button>
+      <button id="b-brvr" hidden>Battle royale em VR</button>
       <button id="b-top">Vista de cima</button>
       <button id="b-reset">Recentralizar</button>
     </div>
@@ -1838,7 +1840,7 @@ addEventListener('keydown',e=>{if(!walk.on&&!tour.on)return;walk.keys[e.code]=tr
 addEventListener('keyup',e=>{walk.keys[e.code]=false;});
 addEventListener('blur',()=>{walk.keys={};});
 const look=(dx,dy,k)=>{walk.yaw-=dx*k;walk.pitch=Math.max(-1.35,Math.min(1.35,walk.pitch-dy*k));};
-canvas.addEventListener('click',()=>{if(tour.on&&tvUseTarget())return;if((walk.on||tour.on)&&!matchMedia('(pointer:coarse)').matches&&canvas.requestPointerLock){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}});
+canvas.addEventListener('click',()=>{if(tour.on&&!BR.on&&tvUseTarget())return;if((walk.on||tour.on)&&!matchMedia('(pointer:coarse)').matches&&canvas.requestPointerLock){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{});}catch(e){}}});
 addEventListener('mousemove',e=>{if((walk.on||tour.on)&&document.pointerLockElement===canvas) look(e.movementX,e.movementY,0.0022);});
 // sem trava do mouse: arrastar com o botão pressionado também olha
 let drag=null;
@@ -2361,6 +2363,7 @@ function tvFindTarget(){
 }
 function tvUseTarget(){if(tvTarget)return useItem(tvTarget,null)||true;return false;}
 function tvKey(code){
+  if(BR.on){if(code==='KeyE')brPickup();if(code==='KeyR')brReload();if(code==='KeyN')setNight(!state.night);if(code==='Enter'&&BR.over)brStart();return;}
   if(code==='KeyE')tvUseTarget();
   if(code==='KeyN')setNight(!state.night);
   if(code==='KeyM'){centerRay();RAY.far=30;const h=measHit();if(!h)return;if(MEAS.done||!MEAS.a)measStart(h.point);else measEnd(h.point);}
@@ -2466,6 +2469,8 @@ function xrInput(dt){
     const ax=gp.axes,bt=gp.buttons,pr=k=>bt[k]&&bt[k].pressed,edge=k=>pr(k)&&!H.prev[k];
     const sx=ax.length>=4?ax[2]:ax[0]||0,sy=ax.length>=4?ax[3]:ax[1]||0;
     poseHand(H.hh,gp,dt);
+    if(BR.on){if(H.hand==='left'){move=[sx,-sy];tour.run=pr(3);}else{if(Math.abs(sx)>0.7&&!H.turnLock){turn=-Math.sign(sx);H.turnLock=true;}if(Math.abs(sx)<0.3)H.turnLock=false;}
+      brXR(H,pr,edge);bt.forEach((b,k)=>H.prev[k]=b.pressed);continue;}
     if(H.hand==='left'){move=[sx,-sy];if(edge(5))setNight(!state.night);if(edge(4))tour.wristOff=!tour.wristOff;tour.run=pr(3);}
     else{if(Math.abs(sx)>0.7&&!H.turnLock){turn=-Math.sign(sx);H.turnLock=true;}if(Math.abs(sx)<0.3)H.turnLock=false;}
     // toque: ponta do indicador
@@ -2563,7 +2568,7 @@ function startTour(xr){
     'Vocês estão na Av. Djalma Castro Alves, em frente à portaria. Mire no botão do interfone (pilar à direita do portão) e clique.',9);
 }
 function stopTour(){
-  if(!tour.on)return;tour.on=false;
+  if(!tour.on)return;if(BR.on)brStop();tour.on=false;
   if(renderer.xr.isPresenting){const s=renderer.xr.getSession();if(s)s.end().catch(()=>{});}
   sun.castShadow=shadowWas;humOn(false);clearMeas();reticle.visible=false;apt.traverse(o=>{if(o.isLineSegments)o.visible=true;});
   rig.position.set(0,0,0);rig.rotation.set(0,0,0);camera.quaternion.identity();
@@ -2585,6 +2590,274 @@ $('b-vr').onclick=async()=>{
     startTour(true);
   }catch(e){alert('Não foi possível entrar em VR: '+e.message);}
 };
+
+// ---------- BATTLE ROYALE no condomínio: o jogador + 99 NPCs, armas espalhadas pelo chão e pelos apartamentos das 3 torres,
+// zona que fecha. Funciona no computador (mouse/teclado), no celular (botões) e em VR (gatilho direito atira, grip pega).
+const BR={on:false,npcs:[],items:[],hp:100,wpn:null,mag:0,cd:0,rl:0,kills:0,alive:0,firing:false,t:0,zone:null,over:false,dmgFlash:0,hudT:0,msgs:[]};
+const WPN={
+  pistola:{n:'Pistola',dmg:22,rate:0.32,range:45,mag:12,rl:1.2,spread:0.012,col:0x30343a,len:0.2},
+  escopeta:{n:'Escopeta',dmg:14,pel:7,rate:0.9,range:18,mag:6,rl:2.2,spread:0.07,col:0x6b4a2e,len:0.55},
+  fuzil:{n:'Fuzil',dmg:24,rate:0.12,range:110,mag:30,rl:2.0,spread:0.018,col:0x3d4a35,len:0.75,auto:true},
+  sniper:{n:'Sniper',dmg:90,rate:1.3,range:200,mag:5,rl:2.6,spread:0.002,col:0x1c2228,len:1.0}};
+const WKEYS=Object.keys(WPN);
+let brRnd=Math.random;
+// --- vista de linha (tiros e visão): grade 3D com as caixas dos prédios, para não fazer raycast em dezenas de milhares de instâncias
+const LOS={grid:null,C:4};
+function losBuild(){const G=new Map(),C=LOS.C,k=(i,j,l)=>i*73856093^j*19349663^l*83492791;
+  ['wall','band','inner','floor','glass','glassLit','door'].forEach(n=>(IB[n]||[]).forEach(b=>{
+    for(let i=Math.floor(b[0]/C);i<=Math.floor(b[1]/C);i++)for(let j=Math.floor(b[2]/C);j<=Math.floor(b[3]/C);j++)for(let l=Math.floor(b[4]/C);l<=Math.floor(b[5]/C);l++){
+      const key=k(i,j,l);let a=G.get(key);if(!a)G.set(key,a=[]);a.push(b);}}));
+  LOS.grid=G;LOS.key=k;}
+function rayBox(o,d,b,tmax){let t0=0,t1=tmax;for(let a=0;a<3;a++){const lo=b[a*2],hi=b[a*2+1],oo=a===0?o.x:a===1?o.y:o.z,dd=a===0?d.x:a===1?d.y:d.z;
+  if(Math.abs(dd)<1e-9){if(oo<lo||oo>hi)return Infinity;continue;}let ta=(lo-oo)/dd,tb=(hi-oo)/dd;if(ta>tb){const q=ta;ta=tb;tb=q;}
+  t0=Math.max(t0,ta);t1=Math.min(t1,tb);if(t0>t1)return Infinity;}return t0;}
+function losHit(o,d,tmax){          // distância até a primeira parede/laje no caminho (Infinity se livre)
+  if(!LOS.grid)losBuild();const C=LOS.C,seen=new Set();let best=Infinity;
+  for(let t=0;t<=tmax;t+=0.8){if(t>best)break;const x=o.x+d.x*t,y=o.y+d.y*t,z=o.z+d.z*t;
+    const key=LOS.key(Math.floor(x/C),Math.floor(y/C),Math.floor(z/C));
+    if(seen.has(key))continue;seen.add(key);const a=LOS.grid.get(key);if(!a)continue;
+    for(const b of a){const h=rayBox(o,d,b,tmax);if(h<best)best=h;}}
+  return best<=tmax?best:Infinity;}
+const _lo=new THREE.Vector3(),_ld=new THREE.Vector3();
+function canSee(ax,ay,az,bx,by,bz){_lo.set(ax,ay,az);_ld.set(bx-ax,by-ay,bz-az);const L=_ld.length();if(L<0.01)return true;_ld.divideScalar(L);
+  return losHit(_lo,_ld,L-0.3)===Infinity;}
+// --- onde dá para estar: chão do condomínio ou dentro dos andares (planta 2D da torre, coordenadas locais)
+const FPK=f=>f<=15?'std':f===16?'d16':'d17';
+function indoorOK(lx,z,f){const FP=FLOORPLAN[FPK(f)];
+  return inR(lx,z,HALLR)||(inR(lx,z,FP.areas)&&!FP.walls.some(w=>lx>w[0]-PR&&lx<w[1]+PR&&z>w[2]-PR&&z<w[3]+PR));}
+function groundOK(x,z){return inPoly([x,z],SITE)&&!inLobby(x,z)&&!blocked(x,z,nearShapes(x,z));}
+const SITEBB=(()=>{let a=[1e9,-1e9,1e9,-1e9];SITE.forEach(([x,z])=>{a[0]=Math.min(a[0],x);a[1]=Math.max(a[1],x);a[2]=Math.min(a[2],z);a[3]=Math.max(a[3],z);});return a;})();
+function randGround(){for(let i=0;i<400;i++){const x=SITEBB[0]+brRnd()*(SITEBB[1]-SITEBB[0]),z=SITEBB[2]+brRnd()*(SITEBB[3]-SITEBB[2]);if(groundOK(x,z))return {x,z,f:-1,ox:0};}return {x:60,z:60,f:-1,ox:0};}
+const T1AREAS=k=>FLOORPLAN[k].areas.filter(a=>a[0]>-2&&a[1]<BW+6);
+function randIndoor(){for(let i=0;i<200;i++){const f=1+Math.floor(brRnd()*17),A=T1AREAS(FPK(f)),a=A[Math.floor(brRnd()*A.length)];
+  const lx=a[0]+0.5+brRnd()*(a[1]-a[0]-1),z=a[2]+0.5+brRnd()*(a[3]-a[2]-1);if(indoorOK(lx,z,f))return {x:lx+BX[Math.floor(brRnd()*3)],z,f,lx};}
+  return randGround();}
+const spotY=s=>s.f<0?groundY(s.x,s.z):s.f*F;
+// --- NPCs: corpo, cabeça e arma instanciados (3 chamadas de desenho para 99 pessoas)
+const NPCN=99;
+const npcBody=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.22,0.2,1.15,10).translate(0,0.85,0),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.8}),NPCN);
+const npcLegs=new THREE.InstancedMesh(new THREE.BoxGeometry(0.34,0.3,0.22).translate(0,0.15,0).scale(1,1,1),new THREE.MeshStandardMaterial({color:0x2c3440,roughness:.8}),NPCN);
+const npcHead=new THREE.InstancedMesh(new THREE.SphereGeometry(0.14,12,10).translate(0,1.58,0),new THREE.MeshStandardMaterial({color:0xd9a77f,roughness:.7}),NPCN);
+const npcGun=new THREE.InstancedMesh(new THREE.BoxGeometry(0.07,0.09,0.6).translate(0.2,1.2,-0.3),new THREE.MeshStandardMaterial({color:0x22262b,roughness:.5,metalness:.4}),NPCN);
+[npcBody,npcLegs,npcHead,npcGun].forEach(m=>{m.frustumCulled=false;m.visible=false;m.castShadow=true;scene.add(m);});
+const SHIRTS=[0xc0533d,0x1f6f6a,0x3b5998,0xd9a441,0x7a4b8c,0x5a7d3a,0xe07b39,0x2b2f33,0xb0b6bd,0x8c2f39];
+// --- itens no chão (armas e kits médicos)
+const ITEMG=new THREE.Group();scene.add(ITEMG);ITEMG.visible=false;
+const ITEMGEO={box:new THREE.BoxGeometry(1,1,1),kit:new THREE.BoxGeometry(0.32,0.2,0.24)};
+const KITM=new THREE.MeshStandardMaterial({color:0xeeeeee,emissive:0x661111,emissiveIntensity:.6});
+function makeItem(kind,s){const g=new THREE.Group();
+  if(kind==='kit'){g.add(new THREE.Mesh(ITEMGEO.kit,KITM));const c=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.205,0.04),new THREE.MeshBasicMaterial({color:0xcc1111}));g.add(c);}
+  else{const W=WPN[kind],m=new THREE.Mesh(ITEMGEO.box,new THREE.MeshStandardMaterial({color:W.col,emissive:0x2a1e00,roughness:.5,metalness:.3}));m.scale.set(0.08,0.12,W.len);g.add(m);
+    const gr=new THREE.Mesh(ITEMGEO.box,m.material);gr.scale.set(0.06,0.16,0.08);gr.position.set(0,-0.1,W.len*0.15);g.add(gr);}
+  const halo=new THREE.Mesh(new THREE.RingGeometry(0.35,0.42,24).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:kind==='kit'?0xff5050:0xffd040,transparent:true,opacity:.7,depthWrite:false}));
+  halo.position.y=-0.3;g.add(halo);
+  const y=spotY(s);g.position.set(s.x,y+0.35,s.z);ITEMG.add(g);return {kind,g,x:s.x,z:s.z,y,f:s.f,taken:false};}
+// --- zona que fecha
+const ZONEM=new THREE.MeshBasicMaterial({color:0x3a7bff,transparent:true,opacity:.18,side:THREE.DoubleSide,depthWrite:false});
+const zoneMesh=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,64,1,true),ZONEM);zoneMesh.visible=false;scene.add(zoneMesh);
+function zoneSetup(){const cx=(SITEBB[0]+SITEBB[1])/2+(brRnd()-0.5)*40,cz=(SITEBB[2]+SITEBB[3])/2+(brRnd()-0.5)*30;
+  const r0=Math.max(...[[SITEBB[0],SITEBB[2]],[SITEBB[1],SITEBB[2]],[SITEBB[0],SITEBB[3]],[SITEBB[1],SITEBB[3]]].map(([x,z])=>Math.hypot(x-cx,z-cz)))+5;
+  // fases: [espera, fecha em s, raio final relativo]
+  const P=[[50,50,0.6],[40,45,0.35],[35,40,0.18],[30,35,0.07],[25,40,0]];let t=0,r=r0;const seq=[];
+  P.forEach(([w,s,k])=>{seq.push({t0:t,t1:t+w,r0:r,r1:r});t+=w;seq.push({t0:t,t1:t+s,r0:r,r1:r0*k});t+=s;r=r0*k;});
+  BR.zone={cx,cz,r:r0,seq,dps:[2,4,7,10,15]};}
+function zoneUpdate(){const Z=BR.zone;let ph=0;for(let i=0;i<Z.seq.length;i++){const s=Z.seq[i];if(BR.t>=s.t0){ph=i;Z.r=s.r0+(s.r1-s.r0)*Math.min(1,(BR.t-s.t0)/(s.t1-s.t0));}}
+  Z.phase=ph;Z.dmg=Z.dps[Math.min(4,Math.floor(ph/2))];Z.next=Z.seq[Math.min(Z.seq.length-1,ph+1)].t0-BR.t;
+  zoneMesh.position.set(Z.cx,40,Z.cz);zoneMesh.scale.set(Math.max(0.1,Z.r),120,Math.max(0.1,Z.r));}
+const outZone=(x,z)=>Math.hypot(x-BR.zone.cx,z-BR.zone.cz)>BR.zone.r;
+// --- efeitos: rastro do tiro e som
+const TRACERS=[];const TRM=new THREE.LineBasicMaterial({color:0xffe08a,transparent:true,opacity:.9});
+function tracer(a,b){const g=new THREE.BufferGeometry().setFromPoints([a.clone(),b.clone()]),l=new THREE.Line(g,TRM.clone());scene.add(l);TRACERS.push({l,t:0.08});}
+function shotSound(dist,heavy){const a=audio();if(!a)return;const v=Math.max(0.015,0.22/(1+dist*0.08));noise(heavy?0.35:0.18,heavy?600:1400,v);tone(heavy?70:110,0.12,'square',v*0.5);}
+// --- HUD: na tela (computador/celular) e numa plaquinha presa à câmera (VR)
+const hudEl=document.createElement('div');hudEl.id='brhud';hudEl.hidden=true;
+hudEl.innerHTML='<div class="brtop"><b id="br-alive"></b><span id="br-zone"></span><span id="br-kills"></span></div><div class="brbot"><div class="brhp"><i id="br-hpbar"></i></div><b id="br-wpn"></b></div><div id="br-feed"></div><div id="br-red"></div><div class="brmob"><button id="br-fire">Atirar</button><button id="br-pick">Pegar</button><button id="br-rl">Recarregar</button></div><div id="br-end" hidden><h2 id="br-endt"></h2><button id="br-again">Jogar de novo</button><button id="br-exit">Sair</button></div>';
+document.getElementById('app').appendChild(hudEl);
+{const st=document.createElement('style');st.textContent=`#brhud{position:absolute;inset:0;pointer-events:none;font:600 14px system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px #000}
+#brhud .brtop{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:16px;background:#0008;padding:6px 14px;border-radius:8px}
+#brhud .brbot{position:absolute;bottom:150px;left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:#0008;padding:6px 14px;border-radius:8px}
+#brhud .brhp{width:180px;height:12px;background:#4448;border-radius:6px;overflow:hidden}#brhud .brhp i{display:block;height:100%;background:#4cd16a}
+#br-feed{position:absolute;top:56px;right:14px;text-align:right;font-weight:500;font-size:13px;line-height:1.5}
+#br-red{position:absolute;inset:0;background:radial-gradient(transparent 50%,#c00a);opacity:0}
+#brhud .brmob{position:absolute;right:14px;bottom:150px;display:none;flex-direction:column;gap:8px;pointer-events:auto}
+#brhud .brmob button{width:84px;height:54px;border-radius:12px;border:0;background:#c0533dcc;color:#fff;font:700 13px system-ui}
+@media (pointer:coarse){#brhud .brmob{display:flex}}
+#br-end{position:absolute;top:30%;left:50%;transform:translateX(-50%);background:#000c;padding:20px 28px;border-radius:12px;text-align:center;pointer-events:auto}
+#br-end button{margin:6px;padding:10px 16px;border:0;border-radius:8px;background:#1f6f6a;color:#fff;font:700 14px system-ui}`;document.head.appendChild(st);}
+const vrHudC=document.createElement('canvas');vrHudC.width=512;vrHudC.height=128;const vrHudT=new THREE.CanvasTexture(vrHudC);
+const vrHud=new THREE.Mesh(new THREE.PlaneGeometry(0.36,0.09),new THREE.MeshBasicMaterial({map:vrHudT,transparent:true,depthTest:false}));
+vrHud.renderOrder=30;vrHud.position.set(0,-0.22,-0.6);vrHud.visible=false;camera.add(vrHud);
+function feed(t){BR.msgs.unshift(t);BR.msgs.length=Math.min(BR.msgs.length,5);$('br-feed').innerHTML=BR.msgs.join('<br>');}
+function hudUpdate(){
+  const Z=BR.zone,w=BR.wpn?WPN[BR.wpn]:null,wt=w?(w.n+' · '+(BR.rl>0?'recarregando…':BR.mag+'/'+w.mag)):'Sem arma — procure uma (E / grip)';
+  const zt=Z.next>0&&Z.phase%2===0?'Zona fecha em '+Math.ceil(Z.next)+' s':'Zona fechando!';
+  $('br-alive').textContent=BR.alive+' vivos';$('br-zone').textContent=zt;$('br-kills').textContent=BR.kills+' abates';
+  $('br-hpbar').style.width=Math.max(0,BR.hp)+'%';$('br-hpbar').style.background=BR.hp>50?'#4cd16a':BR.hp>25?'#e0b23a':'#d9443a';$('br-wpn').textContent=wt;
+  $('br-red').style.opacity=Math.min(0.9,BR.dmgFlash+(outZone(tour.x,tour.z)?0.35:0));
+  if(renderer.xr.isPresenting){const g=vrHudC.getContext('2d');g.clearRect(0,0,512,128);g.fillStyle='#000a';g.fillRect(0,0,512,128);
+    g.fillStyle=BR.hp>50?'#4cd16a':BR.hp>25?'#e0b23a':'#d9443a';g.fillRect(12,12,Math.max(0,BR.hp)*2.4,20);g.strokeStyle='#fff';g.strokeRect(12,12,240,20);
+    g.fillStyle='#fff';g.font='700 26px system-ui';g.fillText(BR.alive+' vivos · '+BR.kills+' abates',270,32);
+    g.font='600 24px system-ui';g.fillText(wt,12,72);g.fillStyle=outZone(tour.x,tour.z)?'#ff6b6b':'#9cc7ff';g.fillText(zt,12,110);vrHudT.needsUpdate=true;}}
+// --- começo e fim
+function brStart(){
+  BR.on=true;BR.over=false;BR.t=0;BR.hp=100;BR.wpn=null;BR.mag=0;BR.kills=0;BR.cd=0;BR.rl=0;BR.msgs=[];$('br-feed').innerHTML='';$('br-end').hidden=true;
+  if(!LOS.grid)losBuild();
+  zoneSetup();zoneMesh.visible=true;
+  // itens: 70 no chão, 110 dentro dos prédios
+  ITEMG.clear();BR.items=[];
+  for(let i=0;i<180;i++){const s=i<70?randGround():randIndoor(),r=brRnd(),kind=r<0.2?'kit':r<0.5?'pistola':r<0.7?'escopeta':r<0.92?'fuzil':'sniper';BR.items.push(makeItem(kind,s));}
+  ITEMG.visible=true;
+  // NPCs: metade no chão, metade espalhada pelos apartamentos
+  BR.npcs=[];const col=new THREE.Color();
+  for(let i=0;i<NPCN;i++){const s=i%2?randGround():randIndoor();
+    BR.npcs.push({i,x:s.x,z:s.z,f:s.f,y:spotY(s),hp:100,wpn:null,mag:0,cd:0,yaw:brRnd()*6.28,tx:null,tz:null,think:brRnd(),seen:0,tgt:null,dead:0,spd:1.1+brRnd()*0.6,acc:0.25+brRnd()*0.35,name:'NPC '+(i+1)});
+    npcBody.setColorAt(i,col.setHex(SHIRTS[i%SHIRTS.length]));}
+  npcBody.instanceColor.needsUpdate=true;[npcBody,npcLegs,npcHead,npcGun].forEach(m=>m.visible=true);
+  // jogador nasce num ponto livre do chão
+  const s=randGround();tour.zone='ground';tour.L=0;tour.spi=-1;tour.x=s.x;tour.z=s.z;tour.ys=floorY();walk.yaw=brRnd()*6.28;walk.pitch=0;
+  if(renderer.xr.isPresenting){rig.updateMatrixWorld(true);_hw.copy(camera.position);rig.localToWorld(_hw);rig.position.x+=tour.x-_hw.x;rig.position.z+=tour.z-_hw.z;}
+  hudEl.hidden=false;vrHud.visible=renderer.xr.isPresenting;BR.alive=NPCN+1;$('tourbtns').hidden=true;
+  $('walkhelp').textContent='W A S D andam · mouse mira · clique atira · E pega · R recarrega · Shift corre';
+  if(gunMesh)gunMesh.visible=false;
+  say(renderer.xr.isPresenting?'Battle royale! 100 jogadores. Procure armas (grip para pegar), gatilho direito atira. Fique dentro da zona azul.':
+    'Battle royale! 100 jogadores. Procure armas (E pega), clique atira, R recarrega. Fique dentro da zona azul.',8);
+}
+function brStop(){BR.on=false;hudEl.hidden=true;vrHud.visible=false;zoneMesh.visible=false;ITEMG.visible=false;[npcBody,npcLegs,npcHead,npcGun].forEach(m=>m.visible=false);
+  TRACERS.forEach(t=>scene.remove(t.l));TRACERS.length=0;if(gunMesh)gunMesh.visible=false;}
+function brEnd(win){if(BR.over)return;BR.over=true;$('br-endt').textContent=win?'🏆 Você venceu! '+BR.kills+' abates':'Você foi eliminado · #'+BR.alive+' · '+BR.kills+' abates';$('br-end').hidden=false;
+  if(document.pointerLockElement)document.exitPointerLock();
+  say(win?'Vitória! Você foi o último em pé.':'Eliminado! Aperte o gatilho (VR) ou o botão para jogar de novo.',8);}
+$('br-again').onclick=()=>brStart();$('br-exit').onclick=()=>{brStop();stopTour();};
+// --- posição do jogador (olhos) e direção do tiro
+const _po=new THREE.Vector3(),_pd=new THREE.Vector3();
+function playerEye(){camera.getWorldPosition(_po);return _po;}
+// --- dano
+function hurtPlayer(d,by){if(BR.over)return;BR.hp-=d;BR.lastBy=by;BR.dmgFlash=0.7;if(BR.hp<=0){BR.hp=0;feed((by||'A zona')+' eliminou você');brEnd(false);}}
+function hurtNpc(n,d,byPlayer,byName){if(n.dead)return;n.hp-=d;n.seen=Math.max(n.seen,1.5);
+  if(n.hp<=0){n.dead=1;BR.alive--;if(byPlayer){BR.kills++;feed('Você eliminou '+n.name);}else feed((byName||'A zona')+' eliminou '+n.name);
+    if(n.wpn){BR.items.push(makeItem(n.wpn,{x:n.x+0.4,z:n.z,f:n.f}));}
+    if(BR.alive===1&&BR.hp>0)brEnd(true);}}
+// --- tiro do jogador
+function playerShoot(o,d){
+  const w=WPN[BR.wpn];if(!w||BR.cd>0||BR.rl>0||BR.over)return;
+  if(BR.mag<=0){brReload();return;}
+  BR.mag--;BR.cd=w.rate;shotSound(0,w.pel||w.dmg>50);
+  for(let p=0;p<(w.pel||1);p++){
+    _pd.copy(d).add(new THREE.Vector3((brRnd()-0.5)*w.spread*2,(brRnd()-0.5)*w.spread*2,(brRnd()-0.5)*w.spread*2)).normalize();
+    const wall=losHit(o,_pd,w.range);let best=null,bt=Math.min(wall,w.range);
+    for(const n of BR.npcs){if(n.dead)continue;   // cilindro do corpo + esfera da cabeça
+      const cx=n.x-o.x,cz=n.z-o.z,t=cx*_pd.x+cz*_pd.z,hl=Math.hypot(_pd.x,_pd.z);if(t<0)continue;
+      const tt=t/(hl*hl),px=o.x+_pd.x*tt,pz=o.z+_pd.z*tt,dd=Math.hypot(px-n.x,pz-n.z);if(dd>0.28)continue;
+      const py=o.y+_pd.y*tt-n.y;if(py<0||py>1.75||tt>bt)continue;bt=tt;best={n,head:py>1.42};}
+    tracer(o.clone().addScaledVector(_pd,0.4),o.clone().addScaledVector(_pd,Math.min(bt,w.range)));
+    if(best){hurtNpc(best.n,w.dmg*(best.head?2:1)*(w.pel?Math.max(0.3,1-bt/w.range):1),true);tone(1800,0.05,'square',0.05);}
+  }
+  if(BR.mag<=0)brReload();
+}
+function brReload(){const w=WPN[BR.wpn];if(!w||BR.rl>0||BR.mag===w.mag)return;BR.rl=w.rl;tone(500,0.08,'square',0.04);tone(700,0.08,'square',0.04,w.rl-0.1);}
+function brPickup(){if(BR.over)return;const py=floorY();let best=null,bd=2.0;
+  for(const it of BR.items){if(it.taken)continue;const d=Math.hypot(it.x-tour.x,it.z-tour.z,(it.y-py)*1.5);if(d<bd){bd=d;best=it;}}
+  if(!best){say('Nada para pegar aqui.',1.5);return;}
+  best.taken=true;ITEMG.remove(best.g);SFX.click();
+  if(best.kind==='kit'){BR.hp=Math.min(100,BR.hp+50);say('+50 de vida',1.5);return;}
+  if(BR.wpn)BR.items.push(makeItem(BR.wpn,{x:tour.x+0.3,z:tour.z,f:best.f}));
+  BR.wpn=best.kind;BR.mag=WPN[best.kind].mag;BR.rl=0;say('Pegou: '+WPN[best.kind].n,1.5);setGunModel();}
+// arma na mão (VR) / na frente da câmera (computador)
+let gunMesh=null;
+function setGunModel(){if(gunMesh&&gunMesh.parent)gunMesh.parent.remove(gunMesh);gunMesh=null;if(!BR.wpn)return;
+  const W=WPN[BR.wpn],g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:W.col,roughness:.5,metalness:.3});
+  const b=new THREE.Mesh(ITEMGEO.box,m);b.scale.set(0.05,0.07,W.len);b.position.z=-W.len/2+0.05;g.add(b);
+  const h=new THREE.Mesh(ITEMGEO.box,m);h.scale.set(0.04,0.12,0.05);h.position.set(0,-0.07,0.02);h.rotation.x=0.3;g.add(h);
+  const R=HANDS.find(H=>H.hand==='right');
+  if(renderer.xr.isPresenting&&R)R.ray.add(g);else{g.position.set(0.17,-0.17,-0.32);g.scale.setScalar(0.6);camera.add(g);}
+  gunMesh=g;}
+// --- controles
+canvas.addEventListener('mousedown',e=>{if(BR.on&&e.button===0&&document.pointerLockElement===canvas){BR.firing=true;}});
+addEventListener('mouseup',()=>{BR.firing=false;});
+const _cd=new THREE.Vector3();
+function aimCam(){camera.getWorldPosition(_po);camera.getWorldDirection(_cd);return [_po,_cd];}
+$('br-fire').addEventListener('touchstart',e=>{e.preventDefault();BR.firing=true;},{passive:false});
+$('br-fire').addEventListener('touchend',()=>{BR.firing=false;});
+$('br-pick').onclick=()=>brPickup();$('br-rl').onclick=()=>brReload();
+function brXR(H,pr,edge){                         // chamado por controle em VR durante o jogo
+  if(H.hand==='right'){H.line.visible=true;H.line.scale.z=6;
+    if(BR.over){if(edge(0))brStart();return;}
+    const w=BR.wpn&&WPN[BR.wpn];if(w&&(w.auto?pr(0):edge(0))){H.ray.updateWorldMatrix(true,false);const o=new THREE.Vector3().setFromMatrixPosition(H.ray.matrixWorld),d=new THREE.Vector3(0,0,-1).transformDirection(H.ray.matrixWorld);
+      if(BR.cd<=0&&BR.rl<=0&&BR.mag>0&&H.src&&H.src.gamepad&&H.src.gamepad.hapticActuators&&H.src.gamepad.hapticActuators[0])H.src.gamepad.hapticActuators[0].pulse(0.6,40);
+      playerShoot(o,d);}
+    if(edge(1))brPickup();if(edge(4))brReload();}
+  else{if(edge(1))brPickup();}
+}
+// --- IA dos NPCs
+const _m4=new THREE.Matrix4(),_q4=new THREE.Quaternion(),_v4=new THREE.Vector3(),_s4=new THREE.Vector3(1,1,1),_e4=new THREE.Euler(),UP4=new THREE.Vector3(0,1,0);
+function npcMoveTo(n,nx,nz){
+  if(n.f<0){if(!groundOK(nx,nz))return false;n.x=nx;n.z=nz;n.y=groundY(nx,nz);return true;}
+  const ox=BX.reduce((a,b)=>Math.abs(n.x-(b+7))<Math.abs(n.x-(a+7))?b:a);if(!indoorOK(nx-ox,nz,n.f))return false;n.x=nx;n.z=nz;return true;}
+function npcThink(n){                              // escolhe destino: arma por perto, centro da zona, ou passeio
+  if(!n.wpn){let best=null,bd=n.f<0?30:12;for(const it of BR.items){if(it.taken||it.kind==='kit'||it.f!==n.f)continue;const d=Math.hypot(it.x-n.x,it.z-n.z);if(d<bd){bd=d;best=it;}}
+    if(best){n.tx=best.x;n.tz=best.z;n.want=best;return;}}
+  if(n.f<0&&outZone(n.x,n.z)){const a=Math.atan2(BR.zone.cz-n.z,BR.zone.cx-n.x);n.tx=n.x+Math.cos(a)*12;n.tz=n.z+Math.sin(a)*12;return;}
+  const r=n.f<0?10:3;n.tx=n.x+(brRnd()-0.5)*2*r;n.tz=n.z+(brRnd()-0.5)*2*r;n.want=null;}
+function npcUpdate(n,dt,P){
+  if(n.dead)return;
+  n.cd-=dt;n.think-=dt;
+  if(BR.zone&&outZone(n.x,n.z)){n.zt=(n.zt||0)+dt;if(n.zt>1){n.zt=0;hurtNpc(n,BR.zone.dmg,false,null);if(n.dead)return;}}
+  // alvo: o inimigo visível mais perto ao alcance (jogador ou outro NPC)
+  if(n.wpn&&n.think<=0){const w=WPN[n.wpn];let best=null,bd=w.range;
+    const pd=Math.hypot(P.x-n.x,P.z-n.z,P.y-(n.y+1.5));if(!BR.over&&pd<bd&&canSee(n.x,n.y+1.5,n.z,P.x,P.y-0.2,P.z)){best='P';bd=pd;}
+    let tries=0;for(const m of BR.npcs){if(m===n||m.dead)continue;const d=Math.hypot(m.x-n.x,m.z-n.z,m.y-n.y);if(d<bd&&tries<4){tries++;if(canSee(n.x,n.y+1.5,n.z,m.x,m.y+1.4,m.z)){best=m;bd=d;}}}
+    if(best!==n.tgt){n.tgt=best;n.react=0.5+brRnd()*0.7;}}
+  if(n.think<=0){n.think=0.5+brRnd()*0.6;if(!n.tgt&&(n.tx===null||brRnd()<0.25))npcThink(n);}
+  // combate
+  if(n.tgt&&(n.tgt==='P'?BR.hp>0&&!BR.over:!n.tgt.dead)){const T=n.tgt==='P'?{x:P.x,y:P.y-EYE,z:P.z}:n.tgt,w=WPN[n.wpn];
+    n.yaw=Math.atan2(T.x-n.x,T.z-n.z);n.react-=dt;
+    if(n.react<=0&&n.cd<=0){if(n.mag<=0){n.mag=w.mag;n.cd=w.rl;}else{n.mag--;n.cd=w.rate*(1.6+brRnd());
+      const d=Math.hypot(T.x-n.x,T.z-n.z,T.y-n.y),hitP=n.acc*Math.max(0.1,1-d/w.range)*(w.pel?1.4:1)*(n.tgt==='P'?0.55:1);
+      _v4.set(n.x,n.y+1.25,n.z);const tgtV=new THREE.Vector3(T.x+(brRnd()-0.5)*0.6,T.y+1.2+(brRnd()-0.5)*0.6,T.z+(brRnd()-0.5)*0.6);tracer(_v4,tgtV);
+      shotSound(Math.hypot(n.x-P.x,n.z-P.z),w.dmg>50);
+      if(brRnd()<hitP){const dmg=w.dmg*(w.pel?3:1)*(0.6+brRnd()*0.4);if(n.tgt==='P')hurtPlayer(dmg,n.name);else hurtNpc(n.tgt,dmg,false,n.name);}}}
+    // anda de lado de vez em quando
+    if(brRnd()<dt*0.8){const a=n.yaw+Math.PI/2*(brRnd()<0.5?1:-1);npcMoveTo(n,n.x+Math.sin(a)*0.4,n.z+Math.cos(a)*0.4);}
+    return;}
+  n.tgt=null;
+  // deslocamento
+  if(n.tx!==null){const dx=n.tx-n.x,dz=n.tz-n.z,d=Math.hypot(dx,dz);
+    if(d<0.4){if(n.want&&!n.want.taken&&Math.hypot(n.want.x-n.x,n.want.z-n.z)<1.2){n.want.taken=true;ITEMG.remove(n.want.g);
+        if(n.want.kind!=='kit'){n.wpn=n.want.kind;n.mag=WPN[n.wpn].mag;}else n.hp=Math.min(100,n.hp+50);}
+      n.tx=null;n.want=null;}
+    else{const s=Math.min(d,n.spd*dt);n.yaw=Math.atan2(dx,dz);if(!npcMoveTo(n,n.x+dx/d*s,n.z+dz/d*s)){
+      if(!npcMoveTo(n,n.x+dx/d*s,n.z)&&!npcMoveTo(n,n.x,n.z+dz/d*s)){n.tx=null;n.think=0;}}}}
+}
+function npcDraw(dt){for(const n of BR.npcs){const i=n.i;
+  if(n.dead){n.dead+=dt;if(n.dead>8){_s4.set(0,0,0);}else _s4.set(1,1,1);
+    _e4.set(0,n.yaw,0);_q4.setFromEuler(_e4);const qq=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-Math.PI/2);_q4.multiply(qq);_v4.set(n.x,n.y+0.25,n.z);}
+  else{_s4.set(1,1,1);_q4.setFromAxisAngle(UP4,n.yaw+Math.PI);_v4.set(n.x,n.y,n.z);}
+  _m4.compose(_v4,_q4,_s4);npcBody.setMatrixAt(i,_m4);npcLegs.setMatrixAt(i,_m4);npcHead.setMatrixAt(i,_m4);
+  if(!n.wpn||n.dead){_s4.set(0,0,0);_m4.compose(_v4,_q4,_s4);}npcGun.setMatrixAt(i,_m4);}
+  [npcBody,npcLegs,npcHead,npcGun].forEach(m=>m.instanceMatrix.needsUpdate=true);}
+// --- quadro do jogo
+function brUpdate(dt){
+  if(!BR.on)return;
+  BR.t+=dt;zoneUpdate();BR.cd-=dt;if(BR.rl>0){BR.rl-=dt;if(BR.rl<=0){BR.rl=0;BR.mag=WPN[BR.wpn].mag;}}
+  BR.dmgFlash=Math.max(0,BR.dmgFlash-dt*1.5);
+  const P=playerEye().clone();
+  if(!BR.over&&outZone(tour.x,tour.z)){BR.zt=(BR.zt||0)+dt;if(BR.zt>1){BR.zt=0;hurtPlayer(BR.zone.dmg,null);}}
+  if(!renderer.xr.isPresenting&&BR.firing&&BR.wpn){const w=WPN[BR.wpn];const [o,d]=aimCam();playerShoot(o,d);if(!w.auto)BR.firing=false;}
+  for(const n of BR.npcs)npcUpdate(n,dt,P);
+  npcDraw(dt);
+  for(let i=TRACERS.length-1;i>=0;i--){const t=TRACERS[i];t.t-=dt;t.l.material.opacity=Math.max(0,t.t/0.08);if(t.t<=0){scene.remove(t.l);t.l.geometry.dispose();TRACERS.splice(i,1);}}
+  ITEMG.children.forEach((g,k)=>{g.rotation.y+=dt*1.2;});
+  if(gunMesh&&renderer.xr.isPresenting!==(gunMesh.parent!==camera))setGunModel();
+  BR.hudT-=dt;if(BR.hudT<=0){BR.hudT=0.15;hudUpdate();}
+}
+async function startBR(xr){
+  audio();
+  if(xr){try{const s=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor']});
+      renderer.xr.setReferenceSpaceType('local-floor');await renderer.xr.setSession(s);s.addEventListener('end',()=>{if(tour.on){brStop();stopTour();}});}
+    catch(e){alert('Não foi possível entrar em VR: '+e.message);return;}}
+  startTour(!!xr);brStart();}
+$('b-br').onclick=()=>startBR(false);$('b-brvr').onclick=()=>startBR(true);
+if(navigator.xr&&navigator.xr.isSessionSupported) navigator.xr.isSessionSupported('immersive-vr').then(ok=>{$('b-brvr').hidden=!ok;}).catch(()=>{});
 
 // ---------- planta 3D com medidas: cotas de cada parede (internas), vãos de portas e janelas, sem móveis
 const DIM_L=new THREE.Group(),DIM_U=new THREE.Group();DIM_L.visible=DIM_U.visible=false;lower.add(DIM_L);U.add(DIM_U);
@@ -2669,6 +2942,7 @@ function frame(){
   state.expOff+=(target-state.expOff)*0.12;
   upper.position.y=state.expOff;
   if(tour.on) tvUpdate(dt); else if(walk.on) walkUpdate(dt); else controls.update();
+  if(BR.on) brUpdate(dt);
   tvAnimate(dt);roofVis();
   if(!tour.on){const dist=camera.position.distanceTo(controls.target);
    const near=(walk.on||state.vp!=='all')?0.05:Math.min(2,Math.max(0.05,dist*0.01));
