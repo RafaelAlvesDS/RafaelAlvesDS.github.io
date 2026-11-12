@@ -52,6 +52,28 @@ def noise(o, strength=0.006, size=0.08):
     t = bpy.data.textures.new('n'+o.name, 'CLOUDS'); t.noise_scale = size
     md = o.modifiers.new('dp', 'DISPLACE'); md.texture = t; md.strength = strength; md.mid_level = 0.5
 
+def bake_vcol(o, keep=()):
+    """troca os materiais por cores de vértice num material só ('base'); materiais em keep continuam separados.
+    Menos materiais = menos chamadas de desenho no navegador."""
+    me = o.data; ca = me.color_attributes.new('Col', 'BYTE_COLOR', 'CORNER')
+    base = bpy.data.materials.new('base'); base.use_nodes = True
+    cols = []
+    for m in me.materials:
+        b = m.node_tree.nodes['Principled BSDF']; cols.append(tuple(b.inputs['Base Color'].default_value))
+    for p in me.polygons:
+        c = cols[p.material_index]
+        for li in p.loop_indices: ca.data[li].color = c
+    names = [m.name for m in me.materials]; newmats = [base] + [me.materials[names.index(k)] for k in keep if k in names]
+    idx = [0 if names[p.material_index] not in keep else 1 + list(keep).index(names[p.material_index]) for p in me.polygons]
+    me.materials.clear()
+    for m in newmats: me.materials.append(m)
+    for p, i in zip(me.polygons, idx): p.material_index = i
+    # liga a cor de vértice ao material para o exportador gravar COLOR_0
+    nt = base.node_tree; vc = nt.nodes.new('ShaderNodeVertexColor'); vc.layer_name = 'Col'
+    nt.links.new(vc.outputs['Color'], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    nt.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.6
+
+VCOL = False
 def export(fname, tris):
     objs = [o for o in bpy.data.objects if o.type == 'MESH']
     for o in objs:
@@ -64,6 +86,7 @@ def export(fname, tris):
     bpy.ops.mesh.remove_doubles(threshold=0.0005)
     bpy.ops.uv.cube_project(cube_size=1.0, correct_aspect=False, scale_to_bounds=False)
     bpy.ops.object.mode_set(mode='OBJECT')
+    if VCOL: bake_vcol(o)
     n = sum(len(p.vertices)-2 for p in o.data.polygons)
     if n > tris:
         md = o.modifiers.new('dc', 'DECIMATE'); md.ratio = tris/n; bpy.ops.object.modifier_apply(modifier='dc')
