@@ -918,11 +918,21 @@ const MID={
   corWall:[[6.90,ML,4.8,4.9]],                          // parede cheia entre o terraço e o corredor (área comum)
   terr:[[4.29,6.90,-0.05,0.05],[6.85,6.95,0,1.58],[6.90,ML,1.53,1.63],[4.29,6.90,3.85,3.95],[4.24,4.34,0,1.12]],
 };
-function middle(ox,west,z0,flip,top){
+function middle(ox,west,z0,flip,hollow){
   const T=([u0,u1,v0,v1])=>{
     const X=v=>west?ox+0.35+v:ox+BW-0.35-v, Z=u=>flip?z0+ML-u:z0+u;
     return [X(v0),X(v1),Z(u0),Z(u1)];
   };
+  if(hollow){                                                    // torre 1: térreo fechado, do 1º ao 17º oco
+    unitMass(T,MID.kit,0,F-0.2);unitMass(T,MID.bed,0,F-0.2);unitWins(T,MID.wins,0,0);unitWins(T,MID.door,0,0,'door');
+    for(let f=1;f<=15;f++){emitSlab([...MID.kit,...MID.bed],T,f*F,FLOORPLAN.std);emitUnit(MIDU.std,T,f*F,FLOORPLAN.std);}
+    emitSlab([...MID.kit,...MID.bed],T,16*F,FLOORPLAN.d16);emitUnit(MIDU.std,T,16*F,FLOORPLAN.d16);
+    {const [x0,x1,z0_,z1]=T([2.3,2.3,4.7,4.7]);STAIRS.push([x0,z0_]);}
+    emitSlab([...MID.kit,...MID.bed],T,F17,FLOORPLAN.d17);emitUnit(MIDU.d17,T,F17,FLOORPLAN.d17);
+    [...MID.kit,...MID.bath17].forEach(r=>{const [x0,x1,zz0,zz1]=T(r);ibox(x0-0.04,x1+0.04,TOP-0.2,TOP+0.05,zz0-0.04,zz1+0.04,'band');});
+    parapet(T,MID.terr,F17);parapet(T,MID.divider,F17,2.4);parapet(T,MID.corWall,F17,TOP-F17);
+    [...MID.terr,...MID.divider,...MID.corWall].forEach(r=>{const [x0,x1,z0,z1]=T(r);FLOORPLAN.d17.walls.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1)]);});   // muretas do terraço
+    return;}
   unitMass(T,MID.kit,0,TOP);
   unitMass(T,MID.bed,0,F17);
   unitMass(T,MID.bath17,F17,TOP);
@@ -938,9 +948,20 @@ const CORNER={
   wins:[['x',0,BL-2.35,BL-1.2,1.0,2.2],['x',0,BL-5.2,BL-4.05,1.0,2.2],['z',BL,3.15,3.95,1.6,2.2],['z',BL,4.7,6.3,1.0,2.2]],
   wins17:[['z',BL,3.15,3.95,1.6,2.2],['z',BL,4.7,6.3,1.0,2.2],['x',3.05,BL-4.05,BL-2.9,0,2.2]],
 };
-function corner(ox,mx,mz,skipTop){
+function corner(ox,mx,mz,skipTop,hollow){
   const tx=x=>ox+(mx?BW-x:x), tz=z=>mz?BL-z:z;
   const T=([x0,x1,z0,z1])=>[tx(x0),tx(x1),tz(z0),tz(z1)];
+  if(hollow){                                                    // torre 1: térreo fechado, andares ocos
+    const FPR=[[0,6.9,BL-UD,BL]];
+    unitMass(T,FPR,0,F-0.2);
+    for(let f=1;f<=15;f++){emitSlab(FPR,T,f*F,FLOORPLAN.std);emitUnit(CORU.std,T,f*F,FLOORPLAN.std);}
+    for(let f=0;f<=0;f++)CORNER.wins.forEach(([ax,c,a,b,lo,hi])=>{const r=ax==='x'?[c-0.05,c+0.05,a,b]:[a,b,c-0.05,c+0.05];const [x0,x1,z0,z1]=T(r);ibox(x0,x1,lo,hi,z0,z1,'glass');});
+    if(skipTop)return;                                           // o 16º e o 17º do apto 12 são o modelo detalhado
+    emitSlab(FPR,T,16*F,FLOORPLAN.d16);emitUnit(CORU.std,T,16*F,FLOORPLAN.d16);
+    {const [x0,x1,z0,z1]=T([3.92,3.92,BL-5.08,BL-5.08]);STAIRS.push([x0,z0]);}
+    emitSlab(FPR,T,F17,FLOORPLAN.d17);emitUnit(CORU.d17,T,F17,FLOORPLAN.d17);
+    {const [x0,x1,z0,z1]=T([3.05,6.9,BL-UD,BL]);ibox(x0-0.04,x1+0.04,TOP-0.2,TOP+0.05,z0-0.04,z1+0.04,'band');}
+    return;}
   const winsT=W=>W.map(([ax,c,a,b,lo,hi])=>ax==='x'?['u',c,a,b,lo,hi]:['v',c,a,b,lo,hi]);
   // aqui u = X local e v = Z local; a janela 'u' fica numa face X = c, a 'v' numa face Z = c
   const Tw=([u0,u1,v0,v1])=>T([u0,u1,v0,v1]);
@@ -957,9 +978,9 @@ function coreOurs(){ // núcleo da torre 1: térreo, 16º e 17º ocos (hall e el
   // poço do elevador A (x 1,85–3,55 · z 25,15–27,00): o maciço e as lajes contornam o poço, então quem sobe de elevador
   // vê as paredes do poço passando, e não o piso de cada andar atravessando a cabine
   const PX=[1.85,3.55],PZ=[25.15,27.0],AROUND=(x0,x1,z0,z1)=>[[x0,PX[0],z0,z1],[PX[1],x1,z0,z1],[PX[0],PX[1],z0,PZ[0]],[PX[0],PX[1],PZ[1],z1]];
-  unitMass(q=>q,AROUND(0.5,XE,C0,C1),F,16*F-0.2);
+  const LEVELS=[[0,0.12,F]];for(let f=1;f<=17;f++)LEVELS.push([f*F,f*F,F-0.2]);   // hall em todos os andares
   const SH=[[25.62,26.52],[28.07,28.97]];                                    // portas dos dois elevadores
-  [[0,0.12,F],[16*F,16*F,F-0.2],[17*F,17*F,F-0.2]].forEach(([y0,fl,hh],k)=>{
+  LEVELS.forEach(([y0,fl,hh],k)=>{
     const top=y0+hh;
     if(k>0) AROUND(0.5,XE,C0,C1).forEach(([a,b,c,d])=>ibox(a,b,y0-0.2,y0-0.012,c,d,'band'));   // laje, com o furo do poço
     ibox(0.5,0.65,y0,top,C0,C1,'wall');                                        // oeste
@@ -972,12 +993,52 @@ function coreOurs(){ // núcleo da torre 1: térreo, 16º e 17º ocos (hall e el
   });
   ibox(0.5,XE,TOP-0.2,TOP+0.6,C0,C1,'wall');                                   // cobertura do núcleo
 }
+// ---------- torre 1 acessível: apartamentos ocos andar a andar (paredes, portas, janelas e lajes) com as mesmas caixas
+// instanciadas do prédio (poucas chamadas de desenho). 1º–15º: andar-tipo (8 do meio + 4 de canto); 16º: parte de baixo
+// dos duplex (com a escada caracol); 17º: parte de cima. Meio: plantas enviadas (andar-tipo e cobertura do meio);
+// canto: a planta de vocês, espelhada. O térreo continua fechado.
+IB.inner=[];IB.floor=[];
+const FLOORPLAN={std:{walls:[],areas:[]},d16:{walls:[],areas:[]},d17:{walls:[],areas:[]}};   // para andar a pé (2D)
+const STAIRS=[];                                                                           // escadas caracol: [x,z]
+function wallBoxes(ax,c0,c1,s,e,ops,h,k,out){   // 'u': corre em u e ocupa v c0..c1; 'v': corre em v e ocupa u c0..c1
+  const P=(a,b,y0,y1,kk,g)=>{const q0=g?(c0+c1)/2-0.015:c0,q1=g?(c0+c1)/2+0.015:c1;out.push(ax==='u'?[a,b,q0,q1,y0,y1,kk]:[q0,q1,a,b,y0,y1,kk]);};
+  let cur=s;ops.slice().sort((p,q)=>p[0]-q[0]).forEach(([a,b,lo,hi,gl])=>{if(a>cur)P(cur,a,0,h,k);if(lo>0)P(a,b,0,lo,k);if(hi<h)P(a,b,hi,h,k);if(gl)P(a,b,lo,hi,'glass',1);cur=b;});
+  if(e>cur)P(cur,e,0,h,k);}
+const MH=2.6,MIDU={std:[],d17:[]};
+{const o=MIDU.std,W=(ax,c0,c1,s,e,ops=[],k='wall')=>wallBoxes(ax,c0,c1,s,e,ops,MH,k,o);
+ W('u',1.12,1.27,0,4.29,[[0.56,1.49,1.1,2.1,1],[1.69,2.84,1.0,2.2,1]]);   // fachada da cozinha e da sala
+ W('u',0,0.15,4.29,6.9,[[4.93,5.82,1.0,2.2,1]]);                          // fachada do quarto
+ W('u',1.58,1.73,6.9,ML,[[7.5,8.62,1.0,2.2,1]]);                          // fachada do quarto de casal
+ W('v',ML-0.08,ML,1.58,4.85);W('u',4.73,4.85,6.9,ML);                     // divisa e fundo do casal
+ W('u',MD-0.12,MD,1.68,6.95,[[3.66,4.4,0,2.1,0]]);                        // corredor, com a porta de entrada
+ W('v',1.68,1.8,4.81,MD);W('u',4.69,4.81,0,1.68);W('v',0,0.08,1.12,4.81);
+ W('v',1.63,1.75,1.27,3.28,[],'inner');                                   // meia parede cozinha × sala
+ W('v',4.23,4.35,0,3.07,[],'inner');W('v',6.83,6.95,0,3.07,[],'inner');   // quarto de solteiro
+ W('u',2.95,3.07,4.35,6.83,[[4.38,5.11,0,2.1,0]],'inner');
+ W('u',3.98,4.1,4.62,6.83,[[4.77,5.45,0,2.1,0]],'inner');W('v',4.62,4.74,4.1,MD-0.12,[],'inner');   // banheiro
+ W('v',6.83,6.95,3.98,MD,[],'inner');}
+{const o=MIDU.d17,W=(ax,c0,c1,s,e,ops=[],k='wall')=>wallBoxes(ax,c0,c1,s,e,ops,MH,k,o);
+ W('u',1.12,1.27,0,4.29,[[0.56,1.49,1.1,2.1,1],[1.69,2.84,1.0,2.2,1]]);
+ W('v',4.22,4.36,1.12,3.9,[[1.4,3.4,0,2.2,1]]);                          // porta de correr da sala de TV para o terraço
+ W('u',3.9,4.02,4.29,6.9);W('v',6.83,6.95,3.9,MD);                        // banheiro de cima
+ W('v',4.22,4.36,3.9,MD-0.12,[[4.2,4.9,0,2.1,0]],'inner');
+ W('u',MD-0.12,MD,1.68,6.95,[[3.66,4.2,0,2.1,0]]);
+ W('v',1.68,1.8,4.81,MD);W('u',4.69,4.81,0,1.68);W('v',0,0.08,1.12,4.81);}
+const CORU={std:[],d17:[]};                       // canto: paredes da planta de vocês em coordenadas locais do canto
+WALLREC.forEach(w=>{const out=w.parent===lower?CORU.std:w.parent===U?CORU.d17:null;if(!out)return;
+  const k=w.mat===M.ext?'wall':'inner',tmp=[];
+  wallBoxes(w.axis==='x'?'u':'v',w.c-w.t/2,w.c+w.t/2,w.s,w.e,w.openings.map(o=>[o.a,o.b,o.lo,o.hi,o.glass?1:0]),w.h,k,tmp);
+  tmp.forEach(([x0,x1,z0,z1,y0,y1,kk])=>out.push([0.2+z0,0.2+z1,BL-0.2-x1,BL-0.2-x0,y0,y1,kk]));});   // apto → canto
+function emitUnit(boxes,T,y,fp){boxes.forEach(([a,b,c,d,y0,y1,k])=>{const [x0,x1,z0,z1]=T([a,b,c,d]);ibox(x0,x1,y+y0,y+y1,z0,z1,k);
+  if(fp&&y0<1.6&&y1>0.3)fp.walls.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1)]);});}
+function emitSlab(rects,T,y,fp){rects.forEach(r=>{const [x0,x1,z0,z1]=T(r);ibox(x0,x1,y-0.2,y,z0,z1,'floor');
+  if(fp)fp.areas.push([Math.min(x0,x1)-0.35,Math.max(x0,x1)+0.35,Math.min(z0,z1)-0.35,Math.max(z0,z1)+0.35]);});}
 function building(ox,ours){
-  ROWS.forEach(([z0,flip])=>{middle(ox,true,z0,flip);middle(ox,false,z0,flip);});
-  corner(ox,false,false,ours);              // 12 (o de vocês no prédio da direita)
-  corner(ox,true,false,false);              // 11
-  corner(ox,false,true,false);              // 02
-  corner(ox,true,true,false);               // 01
+  ROWS.forEach(([z0,flip])=>{middle(ox,true,z0,flip,ours);middle(ox,false,z0,flip,ours);});
+  corner(ox,false,false,ours,ours);         // 12 (o de vocês no prédio da direita)
+  corner(ox,true,false,false,ours);         // 11
+  corner(ox,false,true,false,ours);         // 02
+  corner(ox,true,true,false,ours);          // 01
   // núcleo: elevadores, escada e hall, atravessando o prédio
   const T=([x0,x1,z0,z1])=>[ox+x0,ox+x1,z0,z1];
   if(ours) coreOurs(); else unitMass(T,[[0.5,BW+1.7,CORE[0],CORE[1]]],0,TOP+0.6);
@@ -1009,15 +1070,22 @@ let GLASS_LIT=null;
   const mats={wall:new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.9}),
     band:new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:.9}),
     glass:new THREE.MeshStandardMaterial({color:0x4f6573,roughness:.15,metalness:.4}),
-    door:new THREE.MeshStandardMaterial({color:0x7a6450,roughness:.7})};
+    door:new THREE.MeshStandardMaterial({color:0x7a6450,roughness:.7}),
+    inner:new THREE.MeshStandardMaterial({color:0xf4f0e8,roughness:.9}),
+    floor:new THREE.MeshStandardMaterial({color:0xd8d1c4,roughness:.7})};
   mats.glassLit=GLASS_LIT=mats.glass.clone();
   const mt=new THREE.Matrix4(),q=new THREE.Quaternion(),pv=new THREE.Vector3(),sv=new THREE.Vector3();
   Object.keys(IB).forEach(k=>{
     const L=IB[k];if(!L.length) return;
     const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mats[k],L.length);
     L.forEach(([x0,x1,y0,y1,z0,z1],i)=>{pv.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);sv.set(Math.max(x1-x0,0.01),Math.max(y1-y0,0.01),Math.max(z1-z0,0.01));mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});
-    im.castShadow=k!=='glass'&&k!=='glassLit';im.receiveShadow=true;ctx.add(im);
+    im.castShadow=k!=='glass'&&k!=='glassLit'&&k!=='inner'&&k!=='floor';im.receiveShadow=true;ctx.add(im);
   });
+  if(STAIRS.length){                                             // escadas caracol dos duplex (16º → 17º)
+    const parts=[new THREE.CylinderGeometry(0.04,0.04,F,8).translate(0,F/2,0)];
+    for(let i=0;i<14;i++){const g=new THREE.BoxGeometry(0.62,0.04,0.26).translate(0.33,0.18+i*0.185,0).rotateY(-i*Math.PI*2*0.75/14);parts.push(g);}
+    const geo=THREE.BufferGeometryUtils.mergeBufferGeometries(parts),im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({color:0x4a4d52,roughness:.5,metalness:.4}),STAIRS.length);
+    STAIRS.forEach(([x,z],i)=>{pv.set(x,16*F,z);sv.set(1,1,1);mt.compose(pv,q,sv);im.setMatrixAt(i,mt);});ctx.add(im);}
 })();
 // contorno do terreno (muro), medido na implantação
 const SITE=[[155,25],[338,27],[338,377],[1145,378],[1060,830],[1040,885],[25,885]].map(([x,y])=>pw(x,y));
@@ -1778,8 +1846,8 @@ canvas.addEventListener('touchend',tend);canvas.addEventListener('touchcancel',t
 // ---------- passeio a pé e realidade virtual: da rua, pela portaria e pelo elevador, até dentro do apartamento
 // =====================================================================================
 const XE=BW+1.7, C0=CORE[0], C1=CORE[1];
-const LV=[0.12,16*F,17*F];                         // pisos onde o elevador para: térreo, 16º e 17º
-const LVN=['T','16','17'];
+const LV=[0.12,...Array.from({length:17},(_,i)=>(i+1)*F)];                         // pisos onde o elevador para: térreo, 16º e 17º
+const LVN=['T',...Array.from({length:17},(_,i)=>String(i+1))];
 const tourG=new THREE.Group();ctx.add(tourG);
 const TM={
   tile:new THREE.MeshStandardMaterial({color:0xddd6c9,roughness:.35}),
@@ -1904,13 +1972,13 @@ LV.forEach((y,k)=>{
   tb(3.7,3.72,y+0.98,y+1.32,27.15,27.45,TM.steel);
   const b=interact(tb(3.72,3.745,y+1.1,y+1.2,27.25,27.35,btnMat()),'Chamar o elevador',()=>{SFX.beep();liftCall(k);});
   LAND.push({p,b});
-  if(k>0){                                                                           // andares 16 e 17
+  if(k>0){                                                                           // todos os andares
     tb(3.75,9.5,y-0.012,y,C0+0.15,C1-0.15,TM.tile);
     [5.0,8.0].forEach(x=>tb(x-0.5,x+0.5,y+2.55,y+2.58,26.85,27.75,TM.lamp));
     for(let z=31.5;z<48;z+=4) tb(6.5,7.3,y+2.55,y+2.58,z-0.3,z+0.3,TM.lamp);
     for(let z=8;z<24;z+=4) tb(6.5,7.3,y+2.55,y+2.58,z-0.3,z+0.3,TM.lamp);
     sign(LVN[k]+'º ANDAR',1.2,0.32,9.54,1.95,27.3,'nx',{bg:'#efe8da',fg:'#1f6f6a'});
-    sign('Apto 12  →',0.9,0.2,9.54,1.55,27.3,'nx',{bg:'#efe8da',fg:'#3b3f45'});
+    sign(k>=16?'Apto 12  →':'Aptos 01 a 12',0.9,0.2,9.54,1.55,27.3,'nx',{bg:'#efe8da',fg:'#3b3f45'});
     interact(tb(9.5,9.55,y,y+2.1,28.1,29.0,TM.dark),'Porta da escada',()=>{SFX.err();say('Escada de emergência (não modelada). Use o elevador.',3);});
     sign('ESCADA',0.5,0.12,9.49,y+1.75,28.55,'nx',{bg:'#c0533d'});
   }
@@ -1941,7 +2009,6 @@ PANEL_ROWS.forEach((r,i)=>r.forEach((t,c)=>{
     if(t==='◀▶'){if(!LIFT.moving){LIFT.goal=1;LIFT.timer=0;}return;}
     if(t==='▶◀'){if(!LIFT.moving&&!tvInDoorway())LIFT.goal=0;return;}
     const k=LVN.indexOf(t);
-    if(k<0){SFX.err();flashBtn(m);say('O '+t+'º andar não foi modelado. Escolha T, 16 ou 17.',3);return;}
     liftCall(k);
   });
 }));
@@ -2113,7 +2180,7 @@ const tour={on:false,xr:false,zone:'ground',L:0,x:88.8,z:63.5,ys:0,apt:{x:4.3,z:
 const HALLR=[[3.70+PR,9.55-PR,C0+0.15+PR,C1-0.15-PR],[COR[0]+PR,COR[1]-PR,C1-0.5,BL-UD-PR],[COR[0]+PR,COR[1]-PR,UD+PR,C0+0.5]];
 const inR=(x,z,L)=>L.some(r=>x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3]);
 const DOOR_IN=[25.62+0.16,26.52-0.16];
-function enterApt(nx,nz,L){const S=tour.apt;Object.assign(S,{x:BL-0.2-nz,z:nx-0.2,y:L===2?LEVEL:0,floor:L-1,stair:false,phi:0});tour.zone='apt';tour.x=nx;tour.z=nz;}
+function enterApt(nx,nz,L){const S=tour.apt;Object.assign(S,{x:BL-0.2-nz,z:nx-0.2,y:L===17?LEVEL:0,floor:L-16,stair:false,phi:0});tour.zone='apt';tour.x=nx;tour.z=nz;}
 function tvStep(nx,nz){
   const zn=tour.zone;
   if(zn==='ground'){
@@ -2128,16 +2195,18 @@ function tvStep(nx,nz){
   if(zn==='hall'){
     const L=tour.L;
     if(nx<3.62&&nz>DOOR_IN[0]&&nz<DOOR_IN[1]&&liftOpenAt(L)){tour.zone='lift';tour.x=nx;tour.z=nz;return;}
-    const fd=FRONT_DOORS[L-1];
-    if(nz>48.62&&nx>6.02&&nx<6.56&&fd.t>0.8){enterApt(nx,nz,L);return;}
-    const RR=HALLR.slice();if(liftOpenAt(L))RR.push([3.3,3.95,DOOR_IN[0],DOOR_IN[1]]);if(fd.t>0.8)RR.push([6.02,6.56,47.9,48.95]);
-    if(inR(nx,nz,RR)){tour.x=nx;tour.z=nz;}else if(inR(nx,tour.z,RR))tour.x=nx;else if(inR(tour.x,nz,RR))tour.z=nz;
+    const fd=L>=16?FRONT_DOORS[L-16]:null;                        // apto 12: só no 16º e no 17º
+    if(fd&&nz>48.62&&nx>6.02&&nx<6.56&&fd.t>0.8){enterApt(nx,nz,L);return;}
+    const RR=HALLR.slice();if(liftOpenAt(L))RR.push([3.3,3.95,DOOR_IN[0],DOOR_IN[1]]);if(fd&&fd.t>0.8)RR.push([6.02,6.56,47.9,48.95]);
+    const FP=FLOORPLAN[L<=15?'std':L===16?'d16':'d17'];          // apartamentos dos outros andares: área do apto menos as paredes
+    const ok=(x,z)=>inR(x,z,RR)||(inR(x,z,FP.areas)&&!FP.walls.some(w=>x>w[0]-PR&&x<w[1]+PR&&z>w[2]-PR&&z<w[3]+PR));
+    if(ok(nx,nz)){tour.x=nx;tour.z=nz;}else if(ok(nx,tour.z))tour.x=nx;else if(ok(tour.x,nz))tour.z=nz;
     return;
   }
   if(zn==='apt'){
     const S=tour.apt,xl=BL-0.2-nz,zl=nx-0.2,fd=FRONT_DOORS[S.floor];
     if(!S.stair&&fd.t>0.8&&zl>5.82&&zl<6.36&&xl>5.3){
-      if(xl>5.9){tour.zone='hall';tour.L=S.floor+1;tour.x=nx;tour.z=nz;return;}
+      if(xl>5.9){tour.zone='hall';tour.L=S.floor+16;tour.x=nx;tour.z=nz;return;}
       S.x=xl;S.z=zl;tour.x=nx;tour.z=nz;return;
     }
     stepAptS(S,xl,zl,doorCols(S.floor));tour.x=0.2+S.z;tour.z=BL-0.2-S.x;
@@ -2163,7 +2232,7 @@ function zoneHints(){
   if(w==='Elevador') hintOnce('lift','Escolha T, 16 ou 17 no painel à direita da porta.',5);
   if(w==='16º andar') hintOnce('h16','16º andar. O apartamento 12 fica no fim do corredor da direita.',6);
   if(w==='17º andar') hintOnce('h17','17º andar, nível da cobertura. O apartamento 12 fica no fim do corredor da direita.',6);
-  if(tour.zone==='hall'&&tour.z>46&&FRONT_DOORS[tour.L-1].t<0.5) hintOnce('door'+tour.L,'Toque na porta para abrir.',4);
+  if(tour.zone==='hall'&&tour.L>=16&&tour.z>46&&FRONT_DOORS[tour.L-16].t<0.5) hintOnce('door'+tour.L,'Toque na porta para abrir.',4);
   if(tour.zone==='apt') hintOnce('apt',tour.xr?'Bem-vindos à casa nova! Para medir: aponte para um ponto, segure o gatilho, arraste até o outro ponto e solte.':'Bem-vindos à casa nova! Aperte M duas vezes (início e fim) para medir distâncias.',8);
   if(w==='Terraço descoberto') hintOnce('ter','Terraço descoberto: a torre vizinha fica a uns 32 m.',5);
   if(w!==tour.where){tour.where=w;const el=$('walkwhere');if(el.textContent!==w)el.textContent=w;}
@@ -2396,7 +2465,7 @@ function tvUpdate(dt){
   rig.position.y=tour.ys+(renderer.xr.isPresenting?tour.adj:0);
   zoneHints();
 }
-const SPOTS={rua:['ground',0,88.8,63.5,Math.PI/2],hall:['ground',0,6.6,27.0,Math.PI/2],casa:['apt',1,5.2,50.1,Math.PI]};
+const SPOTS={rua:['ground',0,88.8,63.5,Math.PI/2],hall:['ground',0,6.6,27.0,Math.PI/2],casa:['apt',16,5.2,50.1,Math.PI]};
 function tvGo(k){
   const [zn,L,x,z,yaw]=SPOTS[k];
   if(zn==='apt'){enterApt(x,z,L);tour.apt.x=4.3;tour.apt.z=5.0;tour.x=0.2+5.0;tour.z=BL-0.2-4.3;}else{tour.zone=zn;tour.L=L;tour.x=x;tour.z=z;}
