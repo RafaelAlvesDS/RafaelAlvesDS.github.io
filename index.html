@@ -2333,7 +2333,7 @@ function whereName(){
   if(inPoly([tour.x,tour.z],SITE))return 'Condomínio';
   return 'Rua';
 }
-function zoneHints(){
+function zoneHints(){if(BR.on)return;
   const w=whereName();
   if(w==='Condomínio') hintOnce('site','Bem-vindos! A Torre 1 é a mais próxima, à direita. A entrada fica no meio do prédio, do lado do estacionamento.',7);
   if(w.startsWith('Hall de entrada')) hintOnce('lobby','Toque no botão ao lado das portas para chamar o elevador.',5);
@@ -2662,7 +2662,10 @@ function brLoadAssets(){if(BRA.p)return BRA.p;
 // --- vista de linha: grade 3D com as caixas dos prédios e dos móveis
 const LOS={grid:null,C:4};
 function losBuild(){const G=new Map(),C=LOS.C,k=(i,j,l)=>i*73856093^j*19349663^l*83492791;
-  ['wall','band','inner','floor','glass','glassLit','door','fwood','fsoft','fwhite','fsteel'].forEach(n=>(IB[n]||[]).forEach(b=>{
+  const CB=[];CARS.forEach(c=>{const y=groundY((c[0]+c[1])/2,(c[2]+c[3])/2),lx=c[1]-c[0]>c[3]-c[2],ix=lx?(c[1]-c[0])*0.22:0,iz=lx?0:(c[3]-c[2])*0.22;
+    CB.push([c[0]+0.05,c[1]-0.05,y+0.28,y+0.95,c[2]+0.05,c[3]-0.05],[c[0]+ix+0.1,c[1]-ix-0.1,y+0.95,y+1.42,c[2]+iz+0.1,c[3]-iz-0.1]);});
+  LOS.cars=CB;
+  [...['wall','band','inner','floor','glass','glassLit','door','fwood','fsoft','fwhite','fsteel'].map(n=>IB[n]||[]),CB].forEach(L=>L.forEach(b=>{
     for(let i=Math.floor(b[0]/C);i<=Math.floor(b[1]/C);i++)for(let j=Math.floor(b[2]/C);j<=Math.floor(b[3]/C);j++)for(let l=Math.floor(b[4]/C);l<=Math.floor(b[5]/C);l++){
       const key=k(i,j,l);let a=G.get(key);if(!a)G.set(key,a=[]);a.push(b);}}));
   LOS.grid=G;LOS.key=k;}
@@ -2705,7 +2708,39 @@ function makeSoldier(i){const o=THREE.SkeletonUtils.clone(BRA.sold.scene);
   const mx=new THREE.AnimationMixer(o),acts={};BRA.sold.animations.forEach(c=>{acts[c.name]=mx.clipAction(c);});
   acts.die.setLoop(THREE.LoopOnce,1);acts.die.clampWhenFinished=true;
   const hold=new THREE.Group();hold.matrixAutoUpdate=false;hold.matrix.copy(BRA.gunLocal);o.getObjectByName('chest').add(hold);
-  NPCG.add(o);return {o,mx,acts,hold,anim:null};}
+  o.rotation.order='YXZ';
+  const chute=new THREE.Mesh(NCHG,NCHM[i%NCHM.length]);chute.position.y=3.3;chute.visible=false;chute.castShadow=true;o.add(chute);chute.add(new THREE.LineSegments(NCHL,NCHLM));
+  NPCG.add(o);return {o,mx,acts,hold,anim:null,chute};}
+const NCHG=(()=>{const g=new THREE.SphereGeometry(2.2,14,6,0,Math.PI*2,0,Math.PI/3.2);g.scale(1,0.55,0.8);return g;})();
+const NCHL=new THREE.BufferGeometry().setFromPoints([[1.83,0,0.15],[-1.83,0,-0.15],[0,1.46,0.12],[0,-1.46,-0.12],[1.3,1.03,0.15],[-1.3,1.03,-0.15],[1.3,-1.03,0.15],[-1.3,-1.03,-0.15]]
+  .flatMap(([x,z,sx])=>[new THREE.Vector3(x,0.66,z),new THREE.Vector3(sx,-1.72,0)])),NCHLM=new THREE.LineBasicMaterial({color:0x2a2a2a});
+const NCHM=[0xd9a441,0x3f6fb0,0xb5463c,0x4f7d45,0xe0e0dc,0x7a4f9a].map(c=>new THREE.MeshStandardMaterial({color:c,side:THREE.DoubleSide,roughness:.8}));
+// salto dos NPCs: queda livre, paraquedas a ~55 m e pouso no ponto sorteado; quem vai para um apartamento desce até o andar
+// do lado de fora da fachada mais próxima e entra pela janela/varanda
+function npcDropSetup(n,s){const ty=spotY(s),A={delay:brRnd()*12,y:ty+150+brRnd()*25,vy:0,ty,tx:s.x,tz:s.z,ex:s.x,ez:s.z,indoor:s.f>=0};
+  let ox=0,dx=0,dz=0;
+  if(A.indoor){ox=BX.reduce((a,b)=>Math.abs(s.x-(b+BW/2))<Math.abs(s.x-(a+BW/2))?b:a);
+    const c=[[s.x-ox,-1,0],[ox+BW-s.x,1,0],[s.z,0,-1],[BL-s.z,0,1]].sort((a,b)=>a[0]-b[0])[0];dx=c[1];dz=c[2];
+    A.ex=dx?(dx<0?ox-1.3:ox+BW+1.3):s.x;A.ez=dz?(dz<0?-1.3:BL+1.3):s.z;}
+  const a=brRnd()*6.283,r=10+brRnd()*30;n.x=A.ex+Math.cos(a)*r+dx*25;n.z=A.ez+Math.sin(a)*r+dz*25;n.y=A.y;n.air=A;n.s.o.visible=false;}
+function npcAir(n,dt){const A=n.air,S=n.s;if(A.delay>0){A.delay-=dt;S.o.visible=false;return;}S.o.visible=true;
+  if(A.enter){const dx=A.tx-n.x,dz=A.tz-n.z,d=Math.hypot(dx,dz);S.chute.visible=false;
+    if(d<0.1){n.x=A.tx;n.z=A.tz;n.air=null;n.think=0;return;}const s=Math.min(d,3*dt);n.x+=dx/d*s;n.z+=dz/d*s;n.yaw=Math.atan2(dx,dz);n.y=A.ty;npcPlay(n,'run');return;}
+  const open=A.y-A.ty<55;A.vy=open?Math.max(5.5,A.vy-14*dt):Math.min(30,A.vy+9.8*dt);A.y-=A.vy*dt;
+  if(open&&!S.chute.visible){S.chute.visible=true;if(Math.hypot(n.x-tour.x,n.z-tour.z)<60)sound3d(new THREE.Vector3(n.x,A.y+3,n.z),'step',1.5);}
+  const dx=A.ex-n.x,dz=A.ez-n.z,d=Math.hypot(dx,dz),hs=open?5.5:9;
+  if(d>0.05){const s=Math.min(d,hs*dt);n.x+=dx/d*s;n.z+=dz/d*s;n.yaw=Math.atan2(dx,dz);}
+  n.y=A.y;
+  if(A.y<=A.ty){n.y=A.ty;S.chute.visible=false;
+    if(A.indoor){A.enter=true;return;}
+    if(!groundOK(n.x,n.z)){n.x=A.tx;n.z=A.tz;}n.air=null;n.think=0;npcPlay(n,'idle');}}
+// procura carro para se proteger: ponto do lado oposto ao inimigo
+function findCover(n,T){if(n.f>=0||!LOS.cars)return null;let best=null,bd=14;
+  for(let i=0;i<LOS.cars.length;i+=2){const c=LOS.cars[i],cx=(c[0]+c[1])/2,cz=(c[4]+c[5])/2,dn=Math.hypot(cx-n.x,cz-n.z);if(dn>bd)continue;
+    let ux=cx-T.x,uz=cz-T.z;const L=Math.hypot(ux,uz);if(L<5)continue;ux/=L;uz/=L;
+    const ext=Math.abs(ux)*(c[1]-c[0])/2+Math.abs(uz)*(c[5]-c[4])/2+0.55,px=cx+ux*ext,pz=cz+uz*ext;
+    if(groundOK(px,pz)){bd=dn;best={x:px,z:pz};}}
+  return best;}
 function npcPlay(n,name,ts=1){const S=n.s;if(S.anim===name){S.acts[name].timeScale=ts;return;}
   const a=S.acts[name],p=S.anim&&S.acts[S.anim];a.reset();a.timeScale=ts;a.play();if(p){if(name==='die')p.fadeOut(0.15);else p.crossFadeTo(a,0.22,false);}S.anim=name;}
 function npcArm(n,k,r=0){n.wpn=k;n.rar=r;n.s.hold.clear();if(k)n.s.hold.add(BRA.w[k].o.clone());}
@@ -2868,7 +2903,7 @@ async function brStart(){
   for(let i=0;i<NPCN;i++){const s=i%2?randGround():randIndoor(),S=BR.pool[i];S.anim=null;S.mx.stopAllAction();S.o.visible=true;
     const n={i,s:S,x:s.x,z:s.z,f:s.f,y:spotY(s),hp:100,sh:brRnd()<0.3?50:0,wpn:null,rar:0,mag:0,cd:0,yaw:brRnd()*6.28,tx:null,tz:null,think:brRnd(),tgt:null,dead:0,
       spd:1.2+brRnd()*0.5,gren:brRnd()<0.3?1:0,acc:0.22+brRnd()*0.33,crouch:false,mv:0,acc_t:0,stepT:brRnd(),name:NAMES[i%NAMES.length]+(i>=NAMES.length?' '+(1+Math.floor(i/NAMES.length)):'')};
-    npcArm(n,null);npcPlay(n,'idle');BR.npcs.push(n);}
+    npcArm(n,null);npcPlay(n,'idle');S.chute.visible=false;npcDropSetup(n,s);BR.npcs.push(n);}
   NPCG.visible=true;
   // salto: começa a 160 m de altura sobre o condomínio; WASD/analógico guia, o paraquedas abre sozinho a 60 m
   const c=randGround();tour.zone='air';tour.L=0;tour.spi=-1;tour.tw=0;tour.x=c.x;tour.z=c.z;BR.drop={y:160,vy:0};tour.ys=160;walk.yaw=brRnd()*6.28;walk.pitch=-0.5;
@@ -2903,6 +2938,7 @@ function hurtNpc(n,d,byPlayer,byName){if(n.dead)return;const a=Math.min(n.sh,d);
   if(byPlayer){BR.dealt+=d;if(n.wpn&&!n.tgt){n.tgt='P';n.react=0.35+brRnd()*0.4;}
     else if(!n.wpn){const a=Math.atan2(n.z-tour.z,n.x-tour.x);n.tx=n.x+Math.cos(a)*10;n.tz=n.z+Math.sin(a)*10;n.run=true;n.crouch=false;n.want=null;}}
   if(n.hp<=0){n.dead=1;BR.alive--;npcPlay(n,'die');
+    if(n.air){burst(new THREE.Vector3(n.x,n.y+1,n.z),BLOODM,10);n.x=n.air.tx;n.z=n.air.tz;n.y=n.air.ty;n.air=null;n.s.o.visible=false;n.s.chute.visible=false;n.dead=99;}
     if(byPlayer){BR.kills++;feed('Você eliminou '+n.name);$('br-kill').textContent='ELIMINOU '+n.name.toUpperCase();$('br-kill').style.opacity=1;BR.killT=1.6;tone(900,0.08,'sine',0.08);tone(1350,0.12,'sine',0.08,0.07);}
     else feed((byName||'A zona')+' eliminou '+n.name);
     const s={x:n.x,z:n.z,f:n.f};if(n.wpn){addItem({t:'w',k:n.wpn,r:n.rar},{x:n.x+0.5,z:n.z,f:n.f});addItem({t:'ammo',k:WPN[n.wpn].ammo,n:AMMO[WPN[n.wpn].ammo].box},{x:n.x-0.4,z:n.z+0.3,f:n.f});n.s.hold.clear();}
@@ -3086,29 +3122,41 @@ function npcThink(n){
   const r=n.f<0?10:3;n.tx=n.x+(brRnd()-0.5)*2*r;n.tz=n.z+(brRnd()-0.5)*2*r;n.want=null;n.run=false;n.crouch=brRnd()<0.25;}
 function npcUpdate(n,dt,P){
   if(n.dead)return;
+  if(n.air){npcAir(n,dt);return;}
   const x0=n.x,z0=n.z;n.cd-=dt;n.think-=dt;
   if(BR.zone&&outZone(n.x,n.z)){n.zt=(n.zt||0)+dt;if(n.zt>1){n.zt=0;hurtNpc(n,BR.zone.dmg,false,null);if(n.dead)return;}}
   if(n.wpn&&n.think<=0){const w=WPN[n.wpn];let best=null,bd=w.range;
     const pd=Math.hypot(P.x-n.x,P.z-n.z,P.y-(n.y+1.5));if(!BR.over&&!BR.drop&&pd<bd&&canSee(n.x,n.y+npcH(n)-0.2,n.z,P.x,P.y-0.15,P.z)){best='P';bd=pd;}
-    let tries=0;for(const m of BR.npcs){if(m===n||m.dead)continue;const d=Math.hypot(m.x-n.x,m.z-n.z,m.y-n.y);if(d<bd&&tries<4){tries++;if(canSee(n.x,n.y+1.5,n.z,m.x,m.y+1.4,m.z)){best=m;bd=d;}}}
-    if(best!==n.tgt){n.tgt=best;n.react=0.55+brRnd()*0.7;if(best)n.crouch=brRnd()<0.45;}}
+    let tries=0;for(const m of BR.npcs){if(m===n||m.dead||m.air)continue;const d=Math.hypot(m.x-n.x,m.z-n.z,m.y-n.y);if(d<bd&&tries<4){tries++;if(canSee(n.x,n.y+1.5,n.z,m.x,m.y+1.4,m.z)){best=m;bd=d;}}}
+    if(best)n.seenT=BR.t;
+    const keep=!best&&n.tgt&&(n.tgt==='P'||!n.tgt.dead)&&BR.t-(n.seenT||0)<6;               // perdeu de vista atrás de cobertura: segura o alvo um tempo
+    n.vis=!!best&&best===n.tgt;
+    if(best!==n.tgt&&!keep){n.tgt=best;n.react=0.55+brRnd()*0.7;n.cover=null;
+      if(best){n.crouch=brRnd()<0.45;const T=best==='P'?{x:tour.x,z:tour.z}:best;n.cover=brRnd()<0.8?findCover(n,T):null;}}}
   if(n.think<=0){n.think=0.5+brRnd()*0.6;if(!n.tgt&&(n.tx===null||brRnd()<0.25))npcThink(n);}
   if(n.tgt&&n.wpn&&(n.tgt==='P'?BR.hp>0&&!BR.over:!n.tgt.dead)){const T=n.tgt==='P'?{x:P.x,y:P.y-BR.eye,z:P.z}:n.tgt,w=WPN[n.wpn];
     n.yaw=Math.atan2(T.x-n.x,T.z-n.z);n.react-=dt;
+    let canShoot=n.vis;
+    if(n.cover){const cx=n.cover.x-n.x,cz=n.cover.z-n.z,cd=Math.hypot(cx,cz);
+      if(cd>0.35){n.crouch=false;canShoot=false;const s=Math.min(cd,n.spd*2.2*dt);n.yaw=Math.atan2(cx,cz);
+        if(!npcMoveTo(n,n.x+cx/cd*s,n.z+cz/cd*s)&&!npcMoveTo(n,n.x+cx/cd*s,n.z)&&!npcMoveTo(n,n.x,n.z+cz/cd*s))n.cover=null;}
+      else{n.crouch=((BR.t*0.42+n.i*0.37)%1)<0.5;if(n.crouch)canShoot=false;}}             // atrás do carro: abaixa, levanta e atira
     if(n.gren>0&&n.react<=0){const dd=Math.hypot(T.x-n.x,T.z-n.z);if(dd>6&&dd<30&&brRnd()<dt*0.5){n.gren--;n.cd=1;
       const ft=0.6+dd/14,o=new THREE.Vector3(n.x,n.y+1.6,n.z),tx=T.x+(brRnd()-.5)*3,tz=T.z+(brRnd()-.5)*3;
       throwGren(o,new THREE.Vector3((tx-n.x)/ft,(T.y+0.2-o.y+4.9*ft*ft)/ft,(tz-n.z)/ft),false,n.name,ft+0.6+brRnd()*0.6);}}
-    if(n.react<=0&&n.cd<=0){if(n.mag<=0){n.mag=w.mag;n.cd=w.rl;}else{n.mag--;n.cd=w.rate*(1.6+brRnd());
+    if(n.react<=0&&n.cd<=0&&(canShoot||n.mag<=0)){if(n.mag<=0){n.mag=w.mag;n.cd=w.rl;}else{n.mag--;n.cd=w.rate*(1.6+brRnd());
       const d=Math.hypot(T.x-n.x,T.z-n.z,T.y-n.y),hitP=n.acc*Math.max(0.1,1-d/w.range)*(w.pel?1.4:1)*(n.tgt==='P'?(BR.crouch?0.35:0.55)*(Math.hypot(tour.vx||0,tour.vz||0)>2?0.6:1):1);
       n.s.hold.updateWorldMatrix(true,true);const g=n.s.hold.children[0];
       const mz=g?BRA.w[n.wpn].muzzle.clone().applyMatrix4(g.matrixWorld):new THREE.Vector3(n.x,n.y+1.3,n.z);
       const th=n.tgt==='P'?BR.eye-0.3:npcH(n.tgt)-0.4,hitPt=new THREE.Vector3(T.x+(brRnd()-0.5)*0.6,T.y+th+(brRnd()-0.5)*0.5,T.z+(brRnd()-0.5)*0.6);
+      _ld.copy(hitPt).sub(mz);const sl=_ld.length();_ld.divideScalar(sl);const blk=losHit(mz,_ld,sl-0.25);          // carro, parede ou móvel no caminho segura o tiro
+      if(blk<Infinity){hitPt.copy(mz).addScaledVector(_ld,blk);burst(hitPt,SPARKM,3,1.2);}
       tracer(mz,hitPt);muzzleFlash(mz);sound3d(mz,w.dmg>50||w.pel?'heavy':'shot',0.8);
-      if(brRnd()<hitP){const dmg=w.dmg*RAR[n.rar].k*(w.pel?3:1)*(0.6+brRnd()*0.4),head=brRnd()<0.18;
+      if(blk===Infinity&&brRnd()<hitP){const dmg=w.dmg*RAR[n.rar].k*(w.pel?3:1)*(0.6+brRnd()*0.4),head=brRnd()<0.18;
         if(n.tgt==='P')hurtPlayer(dmg,n.name,n,head);else{hurtNpc(n.tgt,dmg*(head?2:1),false,n.name);burst(hitPt,BLOODM,4);}}}}
-    if(!n.crouch&&brRnd()<dt*0.8){const a=n.yaw+Math.PI/2*(brRnd()<0.5?1:-1);npcMoveTo(n,n.x+Math.sin(a)*0.4,n.z+Math.cos(a)*0.4);}
+    if(!n.cover&&!n.crouch&&brRnd()<dt*0.8){const a=n.yaw+Math.PI/2*(brRnd()<0.5?1:-1);npcMoveTo(n,n.x+Math.sin(a)*0.4,n.z+Math.cos(a)*0.4);}
   }else{
-    n.tgt=null;
+    n.tgt=null;n.cover=null;
     if(n.tx!==null){const dx=n.tx-n.x,dz=n.tz-n.z,d=Math.hypot(dx,dz);
       if(d<0.4){if(n.want&&!n.want.taken&&Math.hypot(n.want.x-n.x,n.want.z-n.z)<1.2){n.want.taken=true;ITEMG.remove(n.want.g);npcArm(n,n.want.k,n.want.r);n.mag=WPN[n.wpn].mag;}
         n.tx=null;n.want=null;}
@@ -3123,7 +3171,7 @@ function npcUpdate(n,dt,P){
 }
 function npcDraw(dt,P){BR.frame=(BR.frame||0)+1;for(const n of BR.npcs){const S=n.s,o=S.o;
   if(n.dead){n.dead+=dt;if(n.dead>15){o.visible=false;continue;}}
-  o.position.set(n.x,n.y,n.z);o.rotation.y=n.yaw;
+  o.position.set(n.x,n.y,n.z);o.rotation.y=n.yaw;o.rotation.x=n.air&&!n.air.enter&&!S.chute.visible?1.15:0;
   const d=Math.hypot(n.x-P.x,n.z-P.z);n.acc_t+=dt;
   const every=d<25?1:d<70?3:6;if(BR.frame%every===n.i%every){S.mx.update(n.acc_t);n.acc_t=0;}}}
 // --- salto de paraquedas
