@@ -875,10 +875,11 @@ if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader();
         return;}
       // caixilho de alumínio: quadro, travessa central (folhas de correr) e contramarcos
       const f=0.04,d=0.03;
-      B(w,o.a,o.a+f,o.lo,o.hi,-d,d,AL);B(w,o.b-f,o.b,o.lo,o.hi,-d,d,AL);B(w,o.a,o.b,o.lo,o.lo+f,-d,d,AL);B(w,o.a,o.b,o.hi-f,o.hi,-d,d,AL);
-      if(o.b-o.a>0.7){const m=(o.a+o.b)/2;B(w,m-0.025,m-0.005,o.lo,o.hi,-d,0,AL);B(w,m+0.005,m+0.025,o.lo,o.hi,0,d,AL);}
+      const pass=[];                                                                       // na porta de correr: trilho, montantes do meio e soleira não barram quem passa
+      B(w,o.a,o.a+f,o.lo,o.hi,-d,d,AL);B(w,o.b-f,o.b,o.lo,o.hi,-d,d,AL);pass.push(B(w,o.a,o.b,o.lo,o.lo+f,-d,d,AL));B(w,o.a,o.b,o.hi-f,o.hi,-d,d,AL);
+      if(o.b-o.a>0.7){const m=(o.a+o.b)/2;pass.push(B(w,m-0.025,m-0.005,o.lo,o.hi,-d,0,AL),B(w,m+0.005,m+0.025,o.lo,o.hi,0,d,AL));}
       if(o.lo>0.05)B(w,o.a-0.03,o.b+0.03,o.lo-0.02,o.lo,-t-0.03,t+0.03,FM.granite);          // peitoril de granito
-      else B(w,o.a,o.b,0,0.012,-t,t,FM.granite);                                             // soleira da porta de correr
+      else{pass.push(B(w,o.a,o.b,0,0.012,-t,t,FM.granite));pass.forEach(x=>x&&(x.userData.pass=1));}   // soleira da porta de correr
     });
   });
 })();
@@ -1847,7 +1848,7 @@ function colliders(list,parent){
   for(const {m,y0} of list){
     if(m.parent!==parent||y0>1.0) continue;
     if(m.material===M.glass&&y0===0) continue;           // porta de correr do terraço: passa
-    if(m.userData.dyn) continue;                         // vidro do box: colisão própria (abre e fecha)
+    if(m.userData.dyn||m.userData.pass) continue;        // vidro do box (colisão própria) e trilho/soleira da porta de correr
     const g=m.geometry.parameters;if(!g||g.width===undefined) continue;
     out.push([m.position.x-g.width/2,m.position.x+g.width/2,m.position.z-g.depth/2,m.position.z+g.depth/2]);
   }
@@ -1930,6 +1931,7 @@ function walkUpdate(dt){
 }
 function startWalk(){
   if(state.dims) setDims(false);
+  if(!state.furn) setFurn(true);
   if(!COL) buildColliders();
   state.explode=false;press('b-exp',false);state.expOff=0;upper.position.y=0;
   if(state.cut){state.cut=false;press('b-cut',false);applyCut();}
@@ -2661,6 +2663,7 @@ function tvGo(k){
 let shadowWas=true;
 function startTour(xr){
   if(state.dims) setDims(false);
+  if(!state.furn) setFurn(true);
   audio();
   if(walk.on) stopWalk();
   if(state.mode!=='ctx') setMode('ctx'); else loadOSM();
@@ -2668,7 +2671,7 @@ function startTour(xr){
   if(state.cut){state.cut=false;press('b-cut',false);applyCut();}
   state.view='both';applyView();
   tvBuildShapes();if(!COL)buildColliders();
-  FRONT_DOORS.forEach(d=>{d.goal=d.t=0;});if(SLD){SLD.goal=SLD.t=0;}
+  FRONT_DOORS.forEach(d=>{d.goal=d.t=0;});if(SLD){SLD.goal=SLD.t=1;}             // porta do terraço começa aberta
   Object.assign(LIFT,{y:LV[0],lvl:0,target:-1,pend:-1,doors:0,goal:0,moving:false});PED.goal=PED.t=0;
   tour.on=true;tour.xr=!!xr;tour.seen={};tour.where='';
   controls.enabled=false;document.getElementById('app').classList.add('walking');$('walkhud').hidden=false;$('tourbtns').hidden=false;
