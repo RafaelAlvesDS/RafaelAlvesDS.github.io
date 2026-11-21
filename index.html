@@ -1780,7 +1780,11 @@ function applyView(){
   lower.visible=state.view!=='up';
   upper.visible=state.view!=='low';
   ['both','low','up'].forEach(v=>press('b-'+v,state.view===v));
+  if(state.dims&&state.mode==='apt')$('b-top').click();               // planta: reenquadra (um andar ou os dois lado a lado)
 }
+// "Ambos" na planta com medidas: o pavimento superior sai de cima do inferior e fica ao lado (embaixo, em tela em pé)
+function sideBySide(){return !!state.dims&&state.view==='both'&&state.mode==='apt'&&!walk.on&&!tour.on;}
+function sideOff(){return sideBySide()?(camera.aspect<0.9?[0,8.2]:[6.8,0]):[0,0];}
 $('b-both').onclick=()=>{state.view='both';applyView();};
 $('b-low').onclick=()=>{state.view='low';applyView();};
 $('b-up').onclick=()=>{state.view='up';applyView();};
@@ -1795,8 +1799,9 @@ $('b-top').onclick=()=>{
     const H0=canvas.clientHeight||1,top=document.querySelector('.card').getBoundingClientRect().bottom+8,bot=document.querySelector('.dock').getBoundingClientRect().top-8;
     const fr=Math.max(0.35,Math.min(1,(bot-top)/H0)),mid=((top+bot)/2)/H0-0.5;
     const vf=camera.fov*Math.PI/360,hf=Math.atan(Math.tan(vf)*camera.aspect);
-    const d=Math.min(22,Math.max(3.4/Math.tan(hf),3.9/(Math.tan(vf)*fr))+3),sh=-mid*2*(d-3)*Math.tan(vf);
-    controls.target.set(CENTER.x,CENTER.y,CENTER.z+sh);camera.position.set(CENTER.x+0.01,d,CENTER.z+sh+0.6);}
+    const [ox,oz]=sideOff(),cx=CENTER.x+ox/2,cz=CENTER.z-0.3+oz/2,hw=3.4+ox/2,hd=4.2+oz/2;
+    const d=Math.min(36,Math.max(hw/Math.tan(hf),hd/(Math.tan(vf)*fr))+3),sh=-mid*2*(d-3)*Math.tan(vf);
+    controls.target.set(cx,CENTER.y,cz+sh);camera.position.set(cx+0.01,d,cz+sh+0.6);}
   controls.update();};
 function setMode(m){
   state.mode=m;press('m-apt',m==='apt');press('m-ctx',m==='ctx');
@@ -1930,7 +1935,7 @@ function startWalk(){
   if(state.dims) setDims(false);
   if(!state.furn) setFurn(true);
   if(!COL) buildColliders();
-  state.explode=false;press('b-exp',false);state.expOff=0;upper.position.y=0;
+  state.explode=false;press('b-exp',false);state.expOff=state.sx=state.sz=0;upper.position.set(0,0,0);
   if(state.cut){state.cut=false;press('b-cut',false);applyCut();}
   state.view='both';applyView();
   Object.assign(walk,{on:true,x:4.95,z:5.95,y:0,floor:0,stair:false,yaw:Math.PI*0.62,pitch:0,keys:{},mv:[0,0]});
@@ -2659,7 +2664,7 @@ function startTour(xr){
   audio();
   if(walk.on) stopWalk();
   if(state.mode!=='ctx') setMode('ctx'); else loadOSM();
-  state.explode=false;press('b-exp',false);state.expOff=0;upper.position.y=0;
+  state.explode=false;press('b-exp',false);state.expOff=state.sx=state.sz=0;upper.position.set(0,0,0);
   if(state.cut){state.cut=false;press('b-cut',false);applyCut();}
   state.view='both';applyView();
   tvBuildShapes();if(!COL)buildColliders();
@@ -2729,6 +2734,7 @@ function dimLine(g,x0,z0,x1,z1,y,text){
     [0,6.1,5.6,6.1],[5.2,2.97,5.2,6.5],[0.4,4.03,0.4,6.5],[2.23,3.4,5.6,3.4]];        // sala
   LOW.forEach(([a,b,c,d])=>dimLine(DIM_L,a,b,c,d,Y));
   UP.forEach(([a,b,c,d])=>dimLine(DIM_U,a,b,c,d,Y));
+  flatLabel(DIM_L,'PAVIMENTO INFERIOR · 16º ANDAR',2.8,Y,-0.8,0,0.3);flatLabel(DIM_U,'PAVIMENTO SUPERIOR E TERRAÇO · 17º ANDAR',2.8,Y,-0.8,0,0.3);
   // portas e janelas de cada parede: largura e, nas janelas, peitoril e altura
   for(const w of WALLREC){
     const g=w.parent===lower?DIM_L:w.parent===U?DIM_U:null;if(!g)continue;
@@ -2757,7 +2763,6 @@ function setDims(on){
   if(state.tags){state.tags=false;press('b-tag',false);tagsEl.hidden=true;}   // nomes dos cômodos encobrem as cotas
   if(!state.cut){state.cut=true;press('b-cut',true);applyCut();}
   state.explode=false;press('b-exp',false);
-  if(state.view==='both'){state.view='low';applyView();}
   $('b-top').click();
 }
 state.furn=true;state.dims=false;
@@ -2876,9 +2881,9 @@ function indoorLight(dt){const ind=tour.on&&(tour.zone==='hall'||tour.zone==='ap
   INL.intensity+=((ind?0.55:0)-INL.intensity)*Math.min(1,dt*4);}
 function frame(){
   const now=performance.now(),dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
-  const target=state.explode?3.2:0;
-  state.expOff+=(target-state.expOff)*0.12;
-  upper.position.y=state.expOff;
+  const [sox,soz]=sideOff(),target=sox||soz?-LEVEL:state.explode?3.2:0;
+  state.expOff+=(target-state.expOff)*0.12;state.sx=(state.sx||0)+(sox-(state.sx||0))*0.12;state.sz=(state.sz||0)+(soz-(state.sz||0))*0.12;
+  upper.position.set(state.sx,state.expOff,state.sz);
   if(tour.on) tvUpdate(dt); else if(walk.on) walkUpdate(dt); else controls.update();
   tvAnimate(dt);roofVis();indoorLight(dt);
   if(!tour.on){const dist=camera.position.distanceTo(controls.target);
@@ -2890,11 +2895,11 @@ function frame(){
   if(state.tags&&!walk.on&&!tour.on){
     const w=canvas.clientWidth,h=canvas.clientHeight;
     for(const t of tags){
-      const lowSeen=lower.visible&&(!upper.visible||state.expOff>1.5);
+      const lowSeen=lower.visible&&(!upper.visible||state.expOff>1.5||(state.sx||0)>1||(state.sz||0)>1);
       const inCtx=state.mode==='ctx';
       const vis=t.f==='ctx'?(inCtx&&state.vp==='all'):(!inCtx&&(t.f==='low'?lowSeen:upper.visible));
       tmp.copy(t.v);
-      if(t.f!=='ctx'){tmp.y+=(t.f==='up'?state.expOff:0)+0.05;tmp.applyMatrix4(apt.matrixWorld);}
+      if(t.f!=='ctx'){tmp.y+=(t.f==='up'?state.expOff:0)+0.05;if(t.f==='up'){tmp.x+=state.sx||0;tmp.z+=state.sz||0;}tmp.applyMatrix4(apt.matrixWorld);}
       tmp.project(camera);
       const show=vis&&tmp.z<1&&Math.abs(tmp.x)<1.1&&Math.abs(tmp.y)<1.1;
       t.el.hidden=!show;
