@@ -46,3 +46,7 @@ Da coleção [Khronos glTF Sample Assets](https://github.com/KhronosGroup/glTF-S
 `scripts/blender/moveis.py` e `moveis2.py` geram os móveis em `models/` (sofá, cama, cadeiras, lounge, ombrelone, TV, monitor, geladeira)
 (rodar com o módulo `bpy`: `pip install bpy && python scripts/blender/moveis.py models`, depois `gltf-transform quantize`).
 Os materiais saem com nomes (`linen`, `walnut`, `leather`…) que o site troca pelos materiais dele.
+
+## Battle royale
+
+O mini game de battle royale no condomínio fica em uma página separada: [battle-royale.html](https://rafaelalvesds.github.io/battle-royale.html). A página principal (`index.html`) é só o apartamento e o condomínio.
